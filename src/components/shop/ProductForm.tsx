@@ -69,9 +69,9 @@ export function ProductForm({ categories, gcsBucket, productId, defaultValues = 
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ contentType: file.type, filename: file.name, folder: "shop-products" }),
       });
-      const { uploadUrl, key } = await res.json();
+      const { uploadUrl, gcsKey } = await res.json();
       await fetch(uploadUrl, { method: "PUT", body: file, headers: { "Content-Type": file.type } });
-      setImageKeys((prev) => [...prev, key]);
+      setImageKeys((prev) => [...prev, gcsKey]);
     } catch {
       setError("Image upload failed.");
     } finally {
@@ -193,8 +193,8 @@ export function ProductForm({ categories, gcsBucket, productId, defaultValues = 
           <div>
             <label className="block text-xs font-medium text-text-muted mb-1">Images (up to 6)</label>
             <div className="grid grid-cols-3 gap-2">
-              {imageKeys.map((key) => (
-                <div key={key} className="relative aspect-square rounded-xl overflow-hidden bg-bg-elevated border border-bg-border">
+              {imageKeys.map((key, i) => (
+                <div key={i} className="relative aspect-square rounded-xl overflow-hidden bg-bg-elevated border border-bg-border">
                   <img src={gcsUrl(key)} alt="" className="w-full h-full object-cover" />
                   <button
                     type="button"
@@ -206,7 +206,7 @@ export function ProductForm({ categories, gcsBucket, productId, defaultValues = 
                 </div>
               ))}
               {imageKeys.length < 6 && (
-                <label className={`aspect-square rounded-xl border-2 border-dashed border-bg-border flex flex-col items-center justify-center cursor-pointer hover:border-neon-blue/40 transition-colors ${uploading ? "opacity-50 pointer-events-none" : ""}`}>
+                <label key="upload-btn" className={`aspect-square rounded-xl border-2 border-dashed border-bg-border flex flex-col items-center justify-center cursor-pointer hover:border-neon-blue/40 transition-colors ${uploading ? "opacity-50 pointer-events-none" : ""}`}>
                   <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
                   {uploading ? <Loader2 size={20} className="animate-spin text-text-muted" /> : <Upload size={20} className="text-text-muted" />}
                   <span className="text-xs text-text-muted mt-1">{uploading ? "Uploading…" : "Upload"}</span>

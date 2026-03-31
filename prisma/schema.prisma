@@ -90,6 +90,26 @@ enum MatchResult {
   CHALLENGER_WIN
 }
 
+enum TournamentType {
+  LEAGUE
+  KNOCKOUT
+}
+
+enum TournamentStatus {
+  DRAFT
+  REGISTRATION_OPEN
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum TournamentMatchStatus {
+  SCHEDULED
+  IN_PROGRESS
+  COMPLETED
+  WALKOVER
+}
+
 // ─────────────────────────────────────────────
 // CORE MODELS
 // ─────────────────────────────────────────────
@@ -132,6 +152,9 @@ model User {
   challengeMessages      ChallengeMessage[] @relation("ChallengeSender")
   cart                   Cart?
   shopOrders             ShopOrder[]        @relation("UserShopOrders")
+  tournamentEntries      TournamentParticipant[] @relation("TournamentParticipants")
+  tournamentMatchesAsP1  TournamentMatch[]  @relation("TournamentMatchP1")
+  tournamentMatchesAsP2  TournamentMatch[]  @relation("TournamentMatchP2")
 
   @@index([email])
   @@index([username])
@@ -380,7 +403,8 @@ model Challenge {
   winnerId         String?
   winner           User?       @relation("ChallengeWinner", fields: [winnerId], references: [id])
 
-  adminNote String? @db.Text
+  platformFee Decimal? @db.Decimal(10, 2)
+  adminNote   String?  @db.Text
 
   expiresAt   DateTime
   completedAt DateTime?
@@ -544,4 +568,90 @@ model SiteConfig {
   sellerWindowDays Int      @default(2)
   maintenanceMode  Boolean  @default(false)
   updatedAt        DateTime @updatedAt
+}
+
+// ─────────────────────────────────────────────
+// PLATFORM FEES
+// ─────────────────────────────────────────────
+
+model PlatformFeeRule {
+  id        String   @id @default(cuid())
+  label     String
+  minWager  Decimal  @db.Decimal(10, 2)
+  maxWager  Decimal  @db.Decimal(10, 2)
+  fee       Decimal  @db.Decimal(10, 2)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([isActive])
+}
+
+// ─────────────────────────────────────────────
+// TOURNAMENTS
+// ─────────────────────────────────────────────
+
+model Tournament {
+  id              String                  @id @default(cuid())
+  name            String
+  slug            String                  @unique
+  game            String
+  type            TournamentType
+  status          TournamentStatus        @default(DRAFT)
+  maxParticipants Int
+  entryFee        Decimal                 @default(0) @db.Decimal(10, 2)
+  prizePool       Decimal                 @default(0) @db.Decimal(10, 2)
+  currency        String                  @default("KES")
+  description     String?                 @db.Text
+  rules           String?                 @db.Text
+  imageKey        String?
+  startDate       DateTime?
+  endDate         DateTime?
+  participants    TournamentParticipant[]
+  matches         TournamentMatch[]
+  createdAt       DateTime                @default(now())
+  updatedAt       DateTime                @updatedAt
+
+  @@index([status])
+  @@index([type])
+  @@index([slug])
+}
+
+model TournamentParticipant {
+  id           String     @id @default(cuid())
+  tournamentId String
+  tournament   Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  userId       String
+  user         User       @relation("TournamentParticipants", fields: [userId], references: [id])
+  seed         Int?
+  joinedAt     DateTime   @default(now())
+
+  @@unique([tournamentId, userId])
+  @@index([tournamentId])
+  @@index([userId])
+}
+
+model TournamentMatch {
+  id           String                @id @default(cuid())
+  tournamentId String
+  tournament   Tournament            @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  round        Int
+  matchNumber  Int
+  player1Id    String?
+  player1      User?                 @relation("TournamentMatchP1", fields: [player1Id], references: [id])
+  player2Id    String?
+  player2      User?                 @relation("TournamentMatchP2", fields: [player2Id], references: [id])
+  player1Score Int?
+  player2Score Int?
+  winnerId     String?
+  status       TournamentMatchStatus @default(SCHEDULED)
+  scheduledAt  DateTime?
+  completedAt  DateTime?
+  nextMatchId  String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tournamentId])
+  @@index([round])
 }

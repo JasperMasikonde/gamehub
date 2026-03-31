@@ -11,7 +11,7 @@ export function CartIcon() {
   const [count, setCount] = useState(0);
   const pathname = usePathname();
 
-  useEffect(() => {
+  function fetchCount() {
     if (!session?.user) { setCount(0); return; }
     fetch("/api/shop/cart")
       .then((r) => r.ok ? r.json() : null)
@@ -21,7 +21,14 @@ export function CartIcon() {
         }
       })
       .catch(() => {});
-  }, [pathname, session?.user]);
+  }
+
+  useEffect(() => { fetchCount(); }, [pathname, session?.user]);
+
+  useEffect(() => {
+    window.addEventListener("cart:updated", fetchCount);
+    return () => window.removeEventListener("cart:updated", fetchCount);
+  }, [session?.user]);
 
   if (!session?.user) return null;
 

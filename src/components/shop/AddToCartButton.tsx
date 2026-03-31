@@ -30,6 +30,7 @@ export function AddToCartButton({ productId, inStock, className }: AddToCartButt
       }
       if (!res.ok) throw new Error();
       setState("added");
+      window.dispatchEvent(new CustomEvent("cart:updated"));
       router.refresh();
       setTimeout(() => setState("idle"), 2000);
     } catch {
