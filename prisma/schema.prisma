@@ -130,6 +130,8 @@ model User {
   challengesJoined       Challenge[]        @relation("ChallengeChallenger")
   challengesWon          Challenge[]        @relation("ChallengeWinner")
   challengeMessages      ChallengeMessage[] @relation("ChallengeSender")
+  cart                   Cart?
+  shopOrders             ShopOrder[]        @relation("UserShopOrders")
 
   @@index([email])
   @@index([username])
@@ -405,6 +407,134 @@ model ChallengeMessage {
   createdAt DateTime @default(now())
 
   @@index([challengeId, createdAt])
+}
+
+// ─────────────────────────────────────────────
+// SHOP
+// ─────────────────────────────────────────────
+
+enum ProductType {
+  PERIPHERAL
+  MERCH
+  GIFT_CARD
+  IN_GAME_ITEM
+}
+
+enum ProductStatus {
+  DRAFT
+  ACTIVE
+  ARCHIVED
+}
+
+enum ShopOrderStatus {
+  PENDING_PAYMENT
+  PAID
+  PROCESSING
+  SHIPPED
+  DELIVERED
+  CANCELLED
+  REFUNDED
+}
+
+model ProductCategory {
+  id          String    @id @default(cuid())
+  name        String    @unique
+  slug        String    @unique
+  description String?   @db.Text
+  imageUrl    String?
+  sortOrder   Int       @default(0)
+  isActive    Boolean   @default(true)
+  products    Product[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([slug])
+  @@index([isActive])
+}
+
+model Product {
+  id          String          @id @default(cuid())
+  categoryId  String
+  category    ProductCategory @relation(fields: [categoryId], references: [id])
+  type        ProductType
+  status      ProductStatus   @default(DRAFT)
+  name        String
+  slug        String          @unique
+  description String          @db.Text
+  price       Decimal         @db.Decimal(10, 2)
+  currency    String          @default("KES")
+  stock       Int             @default(0)
+  imageKeys   String[]
+  isFeatured  Boolean         @default(false)
+  tags        String[]
+  cartItems   CartItem[]
+  orderItems  ShopOrderItem[]
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  @@index([categoryId])
+  @@index([status])
+  @@index([slug])
+  @@index([isFeatured])
+}
+
+model Cart {
+  id        String     @id @default(cuid())
+  userId    String     @unique
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items     CartItem[]
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+}
+
+model CartItem {
+  id        String   @id @default(cuid())
+  cartId    String
+  cart      Cart     @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product  @relation(fields: [productId], references: [id])
+  quantity  Int      @default(1)
+  addedAt   DateTime @default(now())
+
+  @@unique([cartId, productId])
+  @@index([cartId])
+}
+
+model ShopOrder {
+  id              String          @id @default(cuid())
+  userId          String
+  user            User            @relation("UserShopOrders", fields: [userId], references: [id])
+  status          ShopOrderStatus @default(PENDING_PAYMENT)
+  total           Decimal         @db.Decimal(10, 2)
+  currency        String          @default("KES")
+  shippingName    String?
+  shippingLine1   String?
+  shippingCity    String?
+  shippingCountry String?
+  shippingPostal  String?
+  trackingNumber  String?
+  adminNote       String?         @db.Text
+  items           ShopOrderItem[]
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  @@index([userId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model ShopOrderItem {
+  id          String    @id @default(cuid())
+  orderId     String
+  order       ShopOrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId   String
+  product     Product   @relation(fields: [productId], references: [id])
+  productName String
+  unitPrice   Decimal   @db.Decimal(10, 2)
+  quantity    Int
+  subtotal    Decimal   @db.Decimal(10, 2)
+
+  @@index([orderId])
 }
 
 model SiteConfig {

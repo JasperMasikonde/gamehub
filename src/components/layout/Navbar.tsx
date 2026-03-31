@@ -4,9 +4,10 @@ import Link from "next/link";
 import { useSession, signOut } from "next-auth/react";
 import { useState } from "react";
 import { Button } from "@/components/ui/Button";
-import { User, LogOut, Plus, ShieldCheck, Menu, X, Gamepad2, Swords } from "lucide-react";
+import { User, LogOut, Plus, ShieldCheck, Menu, X, Gamepad2, Swords, ShoppingBag } from "lucide-react";
 import { NotificationBell } from "@/components/layout/NotificationBell";
 import { MessagesIcon } from "@/components/layout/MessagesIcon";
+import { CartIcon } from "@/components/shop/CartIcon";
 
 export function Navbar() {
   const { data: session } = useSession();
@@ -36,6 +37,10 @@ export function Navbar() {
               <Swords size={13} />
               Challenges
             </Link>
+            <Link href="/shop" className="text-sm text-text-subtle hover:text-text-primary transition-colors flex items-center gap-1">
+              <ShoppingBag size={13} />
+              Shop
+            </Link>
             {session?.user && (
               <Link href="/dashboard" className="text-sm text-text-subtle hover:text-text-primary transition-colors">
                 Dashboard
@@ -61,6 +66,7 @@ export function Navbar() {
                     Sell Account
                   </Button>
                 </Link>
+                <CartIcon />
                 <MessagesIcon />
                 <NotificationBell />
                 <div className="relative group">
@@ -130,6 +136,9 @@ export function Navbar() {
           </Link>
           <Link href="/challenges" className="text-sm text-text-subtle hover:text-text-primary flex items-center gap-1" onClick={() => setMobileOpen(false)}>
             <Swords size={13} /> Challenges
+          </Link>
+          <Link href="/shop" className="text-sm text-text-subtle hover:text-text-primary flex items-center gap-1" onClick={() => setMobileOpen(false)}>
+            <ShoppingBag size={13} /> Shop
           </Link>
           {session?.user ? (
             <>

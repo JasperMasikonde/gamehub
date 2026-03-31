@@ -12,10 +12,14 @@ import {
   ArrowLeft,
   MessageSquare,
   Swords,
+  ShoppingBag,
+  Package,
+  Tag,
+  ClipboardList,
 } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 
-const links = [
+const mainLinks = [
   { href: "/admin", label: "Overview", icon: LayoutDashboard, exact: true },
   { href: "/admin/listings", label: "Listings", icon: ListOrdered },
   { href: "/admin/transactions", label: "Transactions", icon: CreditCard },
@@ -23,6 +27,13 @@ const links = [
   { href: "/admin/challenges", label: "Challenges", icon: Swords },
   { href: "/admin/users", label: "Users", icon: Users },
   { href: "/admin/messages", label: "Messages", icon: MessageSquare },
+];
+
+const shopLinks = [
+  { href: "/admin/shop", label: "Overview", icon: ShoppingBag, exact: true },
+  { href: "/admin/shop/products", label: "Products", icon: Package },
+  { href: "/admin/shop/categories", label: "Categories", icon: Tag },
+  { href: "/admin/shop/orders", label: "Orders", icon: ClipboardList },
 ];
 
 export function AdminSidebar() {
@@ -41,7 +52,7 @@ export function AdminSidebar() {
       </div>
 
       <nav className="p-2 flex flex-col gap-1 flex-1">
-        {links.map(({ href, label, icon: Icon, exact }) => {
+        {mainLinks.map(({ href, label, icon: Icon, exact }) => {
           const active = exact ? pathname === href : pathname.startsWith(href);
           return (
             <Link
@@ -51,6 +62,28 @@ export function AdminSidebar() {
                 "flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-colors",
                 active
                   ? "bg-neon-blue/10 text-neon-blue border border-neon-blue/20"
+                  : "text-text-muted hover:text-text-primary hover:bg-bg-elevated"
+              )}
+            >
+              <Icon size={15} />
+              {label}
+            </Link>
+          );
+        })}
+
+        <div className="mx-3 my-2 border-t border-bg-border" />
+        <p className="px-3 text-[10px] font-semibold text-text-muted uppercase tracking-widest mb-1">Shop</p>
+
+        {shopLinks.map(({ href, label, icon: Icon, exact }) => {
+          const active = exact ? pathname === href : pathname.startsWith(href);
+          return (
+            <Link
+              key={href}
+              href={href}
+              className={cn(
+                "flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-colors",
+                active
+                  ? "bg-neon-green/10 text-neon-green border border-neon-green/20"
                   : "text-text-muted hover:text-text-primary hover:bg-bg-elevated"
               )}
             >
