@@ -1,0 +1,84 @@
+"use client";
+
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { signIn } from "next-auth/react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Input } from "@/components/ui/Input";
+import { Button } from "@/components/ui/Button";
+import { loginSchema, type LoginInput } from "@/lib/validations/user";
+import Link from "next/link";
+
+export function LoginForm() {
+  const router = useRouter();
+  const [serverError, setServerError] = useState("");
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+  } = useForm<LoginInput>({
+    resolver: zodResolver(loginSchema),
+  });
+
+  const onSubmit = async (data: LoginInput) => {
+    setServerError("");
+    const result = await signIn("credentials", {
+      email: data.email,
+      password: data.password,
+      redirect: false,
+    });
+
+    if (!result?.ok) {
+      setServerError("Invalid email or password");
+      return;
+    }
+
+    router.push("/dashboard");
+    router.refresh();
+  };
+
+  return (
+    <form
+      method="post"
+      onSubmit={(e) => {
+        e.preventDefault();
+        void handleSubmit(onSubmit)(e);
+      }}
+      className="flex flex-col gap-4"
+    >
+      {serverError && (
+        <div className="bg-neon-red/10 border border-neon-red/30 rounded-lg px-4 py-2 text-sm text-neon-red">
+          {serverError}
+        </div>
+      )}
+
+      <Input
+        label="Email"
+        type="email"
+        placeholder="you@example.com"
+        error={errors.email?.message}
+        {...register("email")}
+      />
+      <Input
+        label="Password"
+        type="password"
+        placeholder="Your password"
+        error={errors.password?.message}
+        {...register("password")}
+      />
+
+      <Button type="submit" loading={isSubmitting} className="mt-2">
+        Sign In
+      </Button>
+
+      <p className="text-center text-sm text-text-muted">
+        Don&apos;t have an account?{" "}
+        <Link href="/register" className="text-neon-blue hover:underline">
+          Register
+        </Link>
+      </p>
+    </form>
+  );
+}
