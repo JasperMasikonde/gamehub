@@ -33,7 +33,11 @@ export function LoginForm() {
     });
 
     if (!result?.ok) {
-      setServerError("Invalid email or password");
+      setServerError(
+        result?.error === "CredentialsSignin"
+          ? "Invalid email or password"
+          : (result?.error ?? "Sign in failed — please try again")
+      );
       return;
     }
 
