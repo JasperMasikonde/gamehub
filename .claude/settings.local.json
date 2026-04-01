@@ -49,7 +49,21 @@
       "Bash(ls /home/jasper/gamehub/src/app/\\\\\\(marketplace\\\\\\)/)",
       "Bash(cat /home/jasper/gamehub/src/app/\\\\\\(marketplace\\\\\\)/shop/page.tsx)",
       "Bash(cat /home/jasper/gamehub/src/app/api/admin/tournaments/[id]/route.ts)",
-      "Bash(git push:*)"
+      "Bash(git push:*)",
+      "Bash(find /home/jasper/gamehub/src -name socket* -o -name *socket*)",
+      "Bash(grep -n \"challenge_update\\\\|tournament\\\\|socket\\\\|join-\" /home/jasper/gamehub/src/app/\\\\\\(marketplace\\\\\\)/challenges/[id]/page.tsx)",
+      "Bash(grep -n \"return NextResponse.json\" /home/jasper/gamehub/src/app/api/admin/tournaments/[id]/route.ts)",
+      "Bash(tail -5 /home/jasper/gamehub/src/app/api/admin/tournaments/[id]/start/route.ts)",
+      "Bash(tail -5 /home/jasper/gamehub/src/app/api/admin/tournaments/[id]/matches/[matchId]/route.ts)",
+      "Bash(grep -n \"max-w-6xl\\\\|space-y-8\" /home/jasper/gamehub/src/app/\\\\\\(marketplace\\\\\\)/tournaments/[slug]/page.tsx)",
+      "Bash(grep -n \"space-y-6\\\\|Link href.*admin.*tournaments.*edit\\\\|TournamentStartButton\" /home/jasper/gamehub/src/app/admin/tournaments/[id]/page.tsx)",
+      "Bash(cat:*)",
+      "Bash(mkdir -p /home/jasper/gamehub/src/app/api/admin/tournaments/[id]/participants)",
+      "Bash(mkdir -p \"/home/jasper/gamehub/src/app/api/admin/tournaments/[id]/participants/[userId]\")",
+      "Bash(grep -r \"ncba\\\\|NCBA\\\\|bank\\\\|payment\\\\|mpesa\\\\|M-Pesa\" /home/jasper/gamehub --include=*.ts --include=*.tsx -l)",
+      "Read(//home/jasper/**)",
+      "Bash(find / -maxdepth 5 -type d -name nc)",
+      "Bash(git rm:*)"
     ]
   }
 }

@@ -50,6 +50,13 @@ app.prepare().then(() => {
       }
     });
 
+    // Join a tournament room to receive live bracket/score updates
+    socket.on("join-tournament", (slug: string) => {
+      if (typeof slug === "string" && slug.length > 0) {
+        socket.join(`tournament:${slug}`);
+      }
+    });
+
     socket.on("disconnect", () => {
       // rooms cleaned up automatically by socket.io
     });
