@@ -29,7 +29,6 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col bg-bg-primary text-text-primary antialiased">
         <NextTopLoader
           color="#00ff87"
-          shadowColor="#00ff87"
           height={3}
           showSpinner={false}
           easing="ease"
