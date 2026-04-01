@@ -65,9 +65,9 @@ export function DashboardSidebar() {
         <div className="p-3">
           <Link
             href="/listings/create"
-            className="flex items-center gap-2 w-full px-3 py-2 rounded-lg text-sm bg-neon-green/10 border border-neon-green/20 text-neon-green hover:bg-neon-green/20 transition-colors font-medium"
+            className="flex items-center justify-center gap-2 w-full px-3 py-2.5 rounded-xl text-sm bg-neon-green text-bg-primary font-semibold hover:opacity-90 transition-opacity shadow-sm"
           >
-            <Plus size={14} />
+            <Plus size={15} strokeWidth={2.5} />
             New Listing
           </Link>
         </div>
@@ -93,9 +93,11 @@ export function DashboardSidebar() {
         })}
         <Link
           href="/listings/create"
-          className="flex flex-col items-center gap-0.5 flex-1 py-2 text-[10px] text-neon-green"
+          className="flex flex-col items-center gap-0.5 flex-1 py-2 text-[10px] text-text-muted"
         >
-          <Plus size={20} strokeWidth={2} />
+          <span className="flex items-center justify-center w-9 h-9 rounded-full bg-neon-green text-bg-primary shadow-md -mt-5 mb-0.5">
+            <Plus size={18} strokeWidth={2.5} />
+          </span>
           <span>Sell</span>
         </Link>
       </nav>
