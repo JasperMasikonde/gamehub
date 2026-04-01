@@ -5,9 +5,14 @@ let _storage: Storage | null = null;
 function getStorage(): Storage {
   if (!_storage) {
     const keyFile = process.env.GCS_KEY_FILE;
+    const keyJson = process.env.GCS_KEY_JSON; // full service-account JSON as a string
     _storage = new Storage({
       projectId: process.env.GCS_PROJECT_ID,
-      ...(keyFile ? { keyFilename: keyFile } : {}),
+      ...(keyJson
+        ? { credentials: JSON.parse(keyJson) }
+        : keyFile
+        ? { keyFilename: keyFile }
+        : {}),
     });
   }
   return _storage;
