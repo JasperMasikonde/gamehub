@@ -14,7 +14,7 @@ export async function POST(req: Request) {
       );
     }
 
-    const { email, username, password, displayName } = data.data;
+    const { email, username, password } = data.data;
 
     const existing = await prisma.user.findFirst({
       where: { OR: [{ email }, { username }] },
@@ -32,7 +32,7 @@ export async function POST(req: Request) {
       data: {
         email,
         username,
-        displayName: displayName ?? username,
+        displayName: username,
         passwordHash,
       },
       select: { id: true, email: true, username: true },

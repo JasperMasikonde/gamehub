@@ -1,8 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { signIn } from "next-auth/react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Input } from "@/components/ui/Input";
@@ -11,7 +9,6 @@ import { registerSchema, type RegisterInput } from "@/lib/validations/user";
 import Link from "next/link";
 
 export function RegisterForm() {
-  const router = useRouter();
   const [serverError, setServerError] = useState("");
 
   const {
@@ -36,15 +33,8 @@ export function RegisterForm() {
       return;
     }
 
-    const signInResult = await signIn("credentials", {
-      email: data.email,
-      password: data.password,
-      redirect: false,
-    });
-
-    if (signInResult?.ok) {
-      router.push("/dashboard");
-    }
+    // Hard redirect to login so the user signs in fresh with their new credentials
+    window.location.href = "/login?registered=1";
   };
 
   return (
@@ -72,15 +62,9 @@ export function RegisterForm() {
       <Input
         label="Username"
         placeholder="gamertag123"
-        error={errors.username?.message}
         hint="Letters, numbers, and underscores only"
+        error={errors.username?.message}
         {...register("username")}
-      />
-      <Input
-        label="Display Name"
-        placeholder="Your name (optional)"
-        error={errors.displayName?.message}
-        {...register("displayName")}
       />
       <Input
         label="Password"
@@ -88,6 +72,13 @@ export function RegisterForm() {
         placeholder="Min. 8 characters"
         error={errors.password?.message}
         {...register("password")}
+      />
+      <Input
+        label="Confirm Password"
+        type="password"
+        placeholder="Repeat your password"
+        error={errors.confirmPassword?.message}
+        {...register("confirmPassword")}
       />
 
       <Button type="submit" loading={isSubmitting} className="mt-2">

@@ -1,18 +1,20 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
 import { useForm } from "react-hook-form";
+import { useSearchParams } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { loginSchema, type LoginInput } from "@/lib/validations/user";
+import { CheckCircle } from "lucide-react";
 import Link from "next/link";
 
 export function LoginForm() {
-  const router = useRouter();
   const [serverError, setServerError] = useState("");
+  const searchParams = useSearchParams();
+  const justRegistered = searchParams.get("registered") === "1";
 
   const {
     register,
@@ -35,8 +37,8 @@ export function LoginForm() {
       return;
     }
 
-    router.push("/dashboard");
-    router.refresh();
+    // Hard redirect forces a full session reload — avoids stale session in production
+    window.location.href = "/dashboard";
   };
 
   return (
@@ -48,6 +50,13 @@ export function LoginForm() {
       }}
       className="flex flex-col gap-4"
     >
+      {justRegistered && (
+        <div className="flex items-center gap-2 bg-neon-green/10 border border-neon-green/30 rounded-lg px-4 py-2 text-sm text-neon-green">
+          <CheckCircle size={14} />
+          Account created! Sign in below.
+        </div>
+      )}
+
       {serverError && (
         <div className="bg-neon-red/10 border border-neon-red/30 rounded-lg px-4 py-2 text-sm text-neon-red">
           {serverError}
