@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { SessionProvider } from "@/components/providers/SessionProvider";
 import { SocketProvider } from "@/components/providers/SocketProvider";
+import NextTopLoader from "nextjs-toploader";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 
@@ -26,6 +27,14 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${inter.variable} h-full`}>
       <body className="min-h-full flex flex-col bg-bg-primary text-text-primary antialiased">
+        <NextTopLoader
+          color="#00ff87"
+          shadowColor="#00ff87"
+          height={3}
+          showSpinner={false}
+          easing="ease"
+          speed={200}
+        />
         <SessionProvider>
           <SocketProvider>{children}</SocketProvider>
         </SessionProvider>

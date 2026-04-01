@@ -63,7 +63,8 @@
       "Bash(grep -r \"ncba\\\\|NCBA\\\\|bank\\\\|payment\\\\|mpesa\\\\|M-Pesa\" /home/jasper/gamehub --include=*.ts --include=*.tsx -l)",
       "Read(//home/jasper/**)",
       "Bash(find / -maxdepth 5 -type d -name nc)",
-      "Bash(git rm:*)"
+      "Bash(git rm:*)",
+      "Bash(DATABASE_URL=\"postgresql://postgres:kepOracquritxbAGgzLpTKSypCqRgaRu@hopper.proxy.rlwy.net:10208/railway\" npm run:*)"
     ]
   }
 }
