@@ -14,7 +14,8 @@ export async function POST(req: Request) {
       );
     }
 
-    const { email, username, password } = data.data;
+    const { email: rawEmail, username, password } = data.data;
+    const email = rawEmail.toLowerCase().trim();
 
     const existing = await prisma.user.findFirst({
       where: { OR: [{ email }, { username }] },

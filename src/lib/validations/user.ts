@@ -2,7 +2,7 @@ import { z } from "zod";
 
 export const registerSchema = z
   .object({
-    email: z.string().email("Enter a valid email"),
+    email: z.string().email("Enter a valid email").toLowerCase().trim(),
     username: z
       .string()
       .min(3, "At least 3 characters")
@@ -19,7 +19,7 @@ export const registerSchema = z
 export type RegisterInput = z.infer<typeof registerSchema>;
 
 export const loginSchema = z.object({
-  email: z.string().email(),
+  email: z.string().email().toLowerCase().trim(),
   password: z.string().min(1),
 });
 
