@@ -94,3 +94,25 @@ export function emitEscrowRequestUpdate(
   if (!io) return;
   io.to(`user:${initiatorId}`).to(`user:${counterpartyId}`).emit("escrow_request_update", { requestId });
 }
+
+/** Broadcast a tournament update to everyone watching that tournament + the global list. */
+export function emitTournamentUpdate(tournamentId: string, slug: string): void {
+  const io = getIO();
+  if (!io) return;
+  io.to(`tournament:${slug}`).emit("tournament_update", { tournamentId, slug });
+  io.emit("tournaments_list_update");
+}
+
+/** Broadcast any admin action to trigger a refresh on relevant admin pages. */
+export function broadcastAdminRefresh(resource: string): void {
+  const io = getIO();
+  if (!io) return;
+  io.to("admins").emit("admin_refresh", { resource });
+}
+
+/** Emit an order update to a specific user. */
+export function emitOrderUpdate(userId: string, orderId: string): void {
+  const io = getIO();
+  if (!io) return;
+  io.to(`user:${userId}`).emit("order_update", { orderId });
+}

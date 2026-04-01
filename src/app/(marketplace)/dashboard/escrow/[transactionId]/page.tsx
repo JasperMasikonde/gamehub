@@ -267,7 +267,7 @@ export default async function EscrowDetailPage({
 
       <div className="flex items-center gap-1.5 text-xs text-text-muted justify-center">
         <ShieldCheck size={12} className="text-neon-green" />
-        Protected by GameHub Escrow
+        Protected by Eshabiki Escrow
       </div>
     </div>
   );

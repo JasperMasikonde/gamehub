@@ -293,7 +293,7 @@ export function NewEscrowRequestForm() {
         <div className="text-xs text-text-muted leading-relaxed">
           <span className="text-neon-green font-semibold">How this works: </span>
           Once both parties accept, the buyer pays into escrow. The seller delivers
-          the account credentials through GameHub. The buyer confirms, and funds are released.
+          the account credentials through Eshabiki. The buyer confirms, and funds are released.
           If there&apos;s a dispute, our admins will resolve it.
         </div>
       </div>

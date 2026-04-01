@@ -138,7 +138,7 @@ export function ListingCard({ listing }: { listing: ListingWithRelations }) {
                 <div className="flex items-center gap-0.5">
                   <span className="truncate max-w-[70px]">
                     {listing.seller.role === "ADMIN"
-                      ? "GameHub"
+                      ? "Eshabiki"
                       : (listing.seller.displayName ?? listing.seller.username)}
                   </span>
                   {listing.seller.role === "ADMIN" ? (

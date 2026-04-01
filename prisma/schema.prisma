@@ -110,6 +110,13 @@ enum TournamentMatchStatus {
   WALKOVER
 }
 
+enum PaymentStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
 // ─────────────────────────────────────────────
 // CORE MODELS
 // ─────────────────────────────────────────────
@@ -155,6 +162,7 @@ model User {
   tournamentEntries      TournamentParticipant[] @relation("TournamentParticipants")
   tournamentMatchesAsP1  TournamentMatch[]  @relation("TournamentMatchP1")
   tournamentMatchesAsP2  TournamentMatch[]  @relation("TournamentMatchP2")
+  payments               Payment[]
 
   @@index([email])
   @@index([username])
@@ -618,13 +626,15 @@ model Tournament {
 }
 
 model TournamentParticipant {
-  id           String     @id @default(cuid())
-  tournamentId String
-  tournament   Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
-  userId       String
-  user         User       @relation("TournamentParticipants", fields: [userId], references: [id])
-  seed         Int?
-  joinedAt     DateTime   @default(now())
+  id                String     @id @default(cuid())
+  tournamentId      String
+  tournament        Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  userId            String
+  user              User       @relation("TournamentParticipants", fields: [userId], references: [id])
+  seed              Int?
+  teamName          String?
+  squadScreenshotKey String?
+  joinedAt          DateTime   @default(now())
 
   @@unique([tournamentId, userId])
   @@index([tournamentId])
@@ -644,14 +654,47 @@ model TournamentMatch {
   player1Score Int?
   player2Score Int?
   winnerId     String?
-  status       TournamentMatchStatus @default(SCHEDULED)
-  scheduledAt  DateTime?
-  completedAt  DateTime?
-  nextMatchId  String?
+  status              TournamentMatchStatus @default(SCHEDULED)
+  scheduledAt         DateTime?
+  completedAt         DateTime?
+  nextMatchId         String?
+  player1ResultKey    String?
+  player2ResultKey    String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([tournamentId])
   @@index([round])
+}
+
+// ─────────────────────────────────────────────
+// PAYMENTS
+// ─────────────────────────────────────────────
+
+model Payment {
+  id                String        @id @default(cuid())
+  userId            String
+  user              User          @relation(fields: [userId], references: [id])
+  amount            Decimal       @db.Decimal(10, 2)
+  currency          String        @default("KES")
+  phone             String
+  ncbaTransactionId String?
+  referenceId       String?
+  status            PaymentStatus @default(PENDING)
+  // purpose: "escrow" | "challenge" | "tournament" | "shop"
+  purpose           String
+  // entityId: transactionId / challengeId / tournamentId / orderId
+  entityId          String
+  // JSON metadata (e.g. challengerSquadUrl for challenge payments)
+  metadata          String?       @db.Text
+  failureReason     String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([ncbaTransactionId])
+  @@index([entityId])
+  @@index([status])
 }

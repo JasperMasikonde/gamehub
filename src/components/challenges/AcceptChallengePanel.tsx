@@ -4,6 +4,7 @@ import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Swords, Camera, Upload, Loader2, X } from "lucide-react";
 import { Button } from "@/components/ui/Button";
+import { PaymentPanel } from "@/components/payments/PaymentPanel";
 import { formatCurrency } from "@/lib/utils/format";
 import { cn } from "@/lib/utils/cn";
 
@@ -11,16 +12,18 @@ export function AcceptChallengePanel({
   challengeId,
   wagerAmount,
   format,
+  hostId,
 }: {
   challengeId: string;
   wagerAmount: string;
   format: string;
+  hostId: string;
 }) {
   const router = useRouter();
   const [squadUpload, setSquadUpload] = useState<{ url: string; previewUrl: string } | null>(null);
   const [uploading, setUploading] = useState(false);
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [showPayment, setShowPayment] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -50,26 +53,39 @@ export function AcceptChallengePanel({
     setUploading(false);
   };
 
-  const accept = async () => {
-    if (!squadUpload) { setError("Upload your squad screenshot first"); return; }
-    setError("");
-    setLoading(true);
-    try {
-      const res = await fetch(`/api/challenges/${challengeId}/accept`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ challengerSquadUrl: squadUpload.url }),
-      });
-      const data = await res.json();
-      if (!res.ok) { setError(data.error ?? "Failed to accept"); return; }
-      router.refresh();
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const formatLabel = format === "BEST_OF_3" ? "Best of 3" : "Best of 5";
 
+  // ── Step 2: Payment ─────────────────────────────────────────────────────
+  if (showPayment && squadUpload) {
+    return (
+      <div className="border border-neon-purple/30 bg-neon-purple/5 rounded-xl p-5 space-y-4">
+        <div>
+          <p className="text-sm font-semibold text-neon-purple flex items-center gap-2">
+            <Swords size={14} />
+            Pay wager to accept challenge
+          </p>
+          <p className="text-xs text-text-muted mt-1">
+            {formatLabel} · Wager: <span className="text-neon-green font-semibold">{formatCurrency(wagerAmount)}</span>
+          </p>
+        </div>
+        <PaymentPanel
+          purpose="challenge"
+          entityId={challengeId}
+          amount={Number(wagerAmount)}
+          metadata={{ challengerSquadUrl: squadUpload.url, hostId }}
+          onSuccess={() => router.refresh()}
+        />
+        <button
+          onClick={() => setShowPayment(false)}
+          className="text-xs text-text-muted hover:text-text-primary underline"
+        >
+          ← Change squad screenshot
+        </button>
+      </div>
+    );
+  }
+
+  // ── Step 1: Squad upload ────────────────────────────────────────────────
   return (
     <div className="border border-neon-purple/30 bg-neon-purple/5 rounded-xl p-5 space-y-4">
       <div>
@@ -119,12 +135,11 @@ export function AcceptChallengePanel({
       <Button
         variant="primary"
         className="w-full"
-        onClick={accept}
-        loading={loading}
+        onClick={() => { if (!squadUpload) { setError("Upload your squad screenshot first"); return; } setError(""); setShowPayment(true); }}
         disabled={!squadUpload}
       >
         <Swords size={14} />
-        Accept & Enter Challenge
+        Continue to Payment
       </Button>
     </div>
   );

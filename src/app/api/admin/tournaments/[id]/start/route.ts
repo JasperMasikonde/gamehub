@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { emitTournamentUpdate } from "@/lib/socket-server";
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -99,6 +100,7 @@ export async function POST(_req: Request, { params }: Ctx) {
     }
   }
 
-  await prisma.tournament.update({ where: { id }, data: { status: "IN_PROGRESS" } });
+  const updated = await prisma.tournament.update({ where: { id }, data: { status: "IN_PROGRESS" } });
+  emitTournamentUpdate(id, updated.slug);
   return NextResponse.json({ success: true });
 }

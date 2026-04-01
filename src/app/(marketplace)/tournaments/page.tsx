@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import { Trophy, Users, Calendar, Zap } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
+import { RealtimeRefresh } from "@/components/escrow/RealtimeRefresh";
 
 const STATUS_COLORS: Record<string, string> = {
   REGISTRATION_OPEN: "bg-neon-blue/10 text-neon-blue border-neon-blue/20",
@@ -26,6 +27,7 @@ export default async function TournamentsPage() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-10 space-y-10">
+      <RealtimeRefresh events={["tournaments_list_update", "tournament_update"]} />
       {/* Hero */}
       <div className="relative rounded-3xl overflow-hidden bg-gradient-to-br from-bg-surface via-bg-elevated to-purple-500/5 border border-bg-border p-8 sm:p-12">
         <div className="relative z-10">

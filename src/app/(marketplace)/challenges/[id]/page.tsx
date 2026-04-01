@@ -234,6 +234,7 @@ export default async function ChallengeDetailPage({
           challengeId={id}
           wagerAmount={challenge.wagerAmount.toString()}
           format={challenge.format}
+          hostId={challenge.hostId}
         />
       )}
 

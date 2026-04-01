@@ -75,7 +75,7 @@ export default async function AdminOrderDetailPage({ params }: { params: Promise
             <h2 className="font-semibold text-sm mb-3">Customer</h2>
             <p className="text-sm font-medium">{order.user.displayName ?? order.user.username}</p>
             <p className="text-sm text-text-muted">{order.user.email}</p>
-            <Link href={`/admin/messages/${order.user.id}`} className="text-xs text-neon-blue hover:underline block mt-2">Message customer</Link>
+            <Link href={`/messages/${order.user.id}`} className="text-xs text-neon-blue hover:underline block mt-2">Message customer</Link>
           </div>
 
           {/* Shipping */}

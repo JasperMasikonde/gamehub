@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" fill="none">
+  <defs>
+    <!-- Main E gradient: top-left green → bottom-right blue -->
+    <linearGradient id="eGrad" x1="40" y1="49" x2="162" y2="151" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#00ff87"/>
+      <stop offset="1" stop-color="#00d4ff"/>
+    </linearGradient>
+
+    <!-- Border gradient -->
+    <linearGradient id="borderGrad" x1="0" y1="0" x2="200" y2="200" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#00ff87" stop-opacity="0.35"/>
+      <stop offset="1" stop-color="#00d4ff" stop-opacity="0.35"/>
+    </linearGradient>
+
+    <!-- Subtle inner glow on the E -->
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="5" result="blur"/>
+      <feColorMatrix in="blur" type="matrix"
+        values="0 0 0 0 0
+                0 1 0 0 0.53
+                0 0 1 0 0.85
+                0 0 0 0.55 0" result="glow"/>
+      <feMerge>
+        <feMergeNode in="glow"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="200" height="200" rx="40" fill="#0a0a14"/>
+
+  <!-- Subtle inner corner accents -->
+  <circle cx="40" cy="40" r="60" fill="url(#eGrad)" fill-opacity="0.04"/>
+  <circle cx="160" cy="160" r="60" fill="url(#eGrad)" fill-opacity="0.04"/>
+
+  <!-- Border ring -->
+  <rect width="200" height="200" rx="40" stroke="url(#borderGrad)" stroke-width="1.5"/>
+
+  <!-- ── E letterform ── -->
+  <!-- Spine + 3 bars form the letter E, centered at (100,100) -->
+  <!-- E bounding box: x 40–162, y 49–151 (122×102 px) -->
+  <g fill="url(#eGrad)" filter="url(#glow)">
+    <!-- Spine (vertical bar) -->
+    <rect x="40" y="49" width="22" height="102" rx="4"/>
+    <!-- Top bar (full width) -->
+    <rect x="40" y="49" width="122" height="22" rx="4"/>
+    <!-- Middle bar (72% width, slightly right-inset) -->
+    <rect x="40" y="89" width="88" height="22" rx="4"/>
+    <!-- Bottom bar (full width) -->
+    <rect x="40" y="129" width="122" height="22" rx="4"/>
+  </g>
+
+  <!-- Accent: thin neon line at bottom-right corner — speed/motion cue -->
+  <line x1="130" y1="168" x2="170" y2="168" stroke="#00ff87" stroke-width="2.5" stroke-linecap="round" stroke-opacity="0.5"/>
+  <line x1="148" y1="175" x2="170" y2="175" stroke="#00d4ff" stroke-width="1.5" stroke-linecap="round" stroke-opacity="0.4"/>
+</svg>

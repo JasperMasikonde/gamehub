@@ -8,7 +8,6 @@ import {
   Tag,
   AlertTriangle,
   Plus,
-  Gamepad2,
   ChevronRight,
   MessageSquare,
   ShieldCheck,
@@ -30,11 +29,8 @@ export function DashboardSidebar() {
   return (
     <aside className="w-56 shrink-0 border-r border-bg-border bg-bg-surface">
       <div className="p-4 border-b border-bg-border">
-        <Link href="/" className="flex items-center gap-2">
-          <Gamepad2 size={18} className="text-neon-green" />
-          <span className="font-bold text-sm">
-            Game<span className="text-neon-green">Hub</span>
-          </span>
+        <Link href="/" className="flex items-center">
+          <img src="/logo.svg" alt="Eshabiki" className="h-7 w-auto" />
         </Link>
         <p className="text-xs text-text-muted mt-1">My Account</p>
       </div>

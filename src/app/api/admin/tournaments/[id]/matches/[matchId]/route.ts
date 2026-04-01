@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { emitTournamentUpdate } from "@/lib/socket-server";
 
 type Ctx = { params: Promise<{ id: string; matchId: string }> };
 
@@ -39,5 +40,6 @@ export async function PATCH(req: NextRequest, { params }: Ctx) {
   }
 
   const updated = await prisma.tournamentMatch.findUnique({ where: { id: matchId } });
+  if (tournament) emitTournamentUpdate(tournamentId, tournament.slug);
   return NextResponse.json({ match: updated });
 }

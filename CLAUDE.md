@@ -100,6 +100,6 @@ Production image uses multi-stage build with `output: "standalone"` in `next.con
 
 | Role | Email | Password |
 |---|---|---|
-| Admin | admin@gamehub.com | admin123! |
-| Seller | seller@gamehub.com | seller123! |
-| Buyer | buyer@gamehub.com | buyer123! |
+| Admin | admin@eshabiki.com | admin123! |
+| Seller | seller@eshabiki.com | seller123! |
+| Buyer | buyer@eshabiki.com | buyer123! |

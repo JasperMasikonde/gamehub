@@ -38,13 +38,13 @@ export async function POST(
   emitNewMessage(recipientId, {
     messageId: message.id,
     senderId: session.user.id,
-    senderUsername: "GameHub Admin",
+    senderUsername: "Eshabiki Admin",
     content: content.trim(),
   });
 
   emitToast(recipientId, {
     type: "info",
-    title: "New message from GameHub Admin",
+    title: "New message from Eshabiki Admin",
     message: content.trim().slice(0, 80),
     linkUrl: `/messages/${session.user.id}`,
     linkLabel: "View message →",

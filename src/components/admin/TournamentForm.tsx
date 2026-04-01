@@ -48,7 +48,11 @@ export function TournamentForm({ tournamentId, defaultValues = {} }: Props) {
       });
       const data = await res.json();
       if (!res.ok) { setError(data.error ?? "Something went wrong"); return; }
-      router.push("/admin/tournaments");
+      if (isEdit) {
+        router.push(`/admin/tournaments/${tournamentId}`);
+      } else {
+        router.push("/admin/tournaments");
+      }
       router.refresh();
     } catch { setError("Network error."); }
     finally { setLoading(false); }

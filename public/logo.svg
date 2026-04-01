@@ -1,0 +1,69 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 80" fill="none">
+  <defs>
+    <!-- Icon E gradient -->
+    <linearGradient id="eGrad" x1="16" y1="20" x2="65" y2="61" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#00ff87"/>
+      <stop offset="1" stop-color="#00d4ff"/>
+    </linearGradient>
+
+    <!-- Icon border gradient -->
+    <linearGradient id="bgBorder" x1="0" y1="0" x2="80" y2="80" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#00ff87" stop-opacity="0.35"/>
+      <stop offset="1" stop-color="#00d4ff" stop-opacity="0.35"/>
+    </linearGradient>
+
+    <!-- Wordmark gradient (horizontal) -->
+    <linearGradient id="textGrad" x1="95" y1="0" x2="400" y2="0" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#00ff87"/>
+      <stop offset="0.6" stop-color="#00d4ff"/>
+      <stop offset="1" stop-color="#a855f7"/>
+    </linearGradient>
+
+    <!-- E glow -->
+    <filter id="glow" x="-25%" y="-25%" width="150%" height="150%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="2.5" result="blur"/>
+      <feColorMatrix in="blur" type="matrix"
+        values="0 0 0 0 0
+                0 1 0 0 0.53
+                0 0 1 0 0.85
+                0 0 0 0.5 0" result="g"/>
+      <feMerge>
+        <feMergeNode in="g"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- ── Icon block (80×80) ── -->
+  <rect width="80" height="80" rx="16" fill="#0a0a14"/>
+  <circle cx="16" cy="16" r="24" fill="#00ff87" fill-opacity="0.04"/>
+  <rect width="80" height="80" rx="16" stroke="url(#bgBorder)" stroke-width="1.5"/>
+
+  <!-- E letterform (scaled 0.4× from 200×200 master) -->
+  <!-- Master: spine 40,49,22,102 | bars 40,49,122,22 | 40,89,88,22 | 40,129,122,22 -->
+  <!-- Scaled : spine 16,20, 9,41 | bars 16,20, 49, 9 | 16,36,35, 9 | 16,52, 49, 9 -->
+  <g fill="url(#eGrad)" filter="url(#glow)">
+    <rect x="16" y="20" width="9"  height="41" rx="1.5"/> <!-- spine -->
+    <rect x="16" y="20" width="49" height="9"  rx="1.5"/> <!-- top bar -->
+    <rect x="16" y="36" width="35" height="9"  rx="1.5"/> <!-- mid bar -->
+    <rect x="16" y="52" width="49" height="9"  rx="1.5"/> <!-- bot bar -->
+  </g>
+
+  <!-- Accent lines (bottom-right of icon) -->
+  <line x1="52" y1="68" x2="67" y2="68" stroke="#00ff87" stroke-width="1.5" stroke-linecap="round" stroke-opacity="0.45"/>
+  <line x1="59" y1="73" x2="67" y2="73" stroke="#00d4ff" stroke-width="1"   stroke-linecap="round" stroke-opacity="0.35"/>
+
+  <!-- ── Wordmark ── -->
+  <text
+    x="96"
+    y="59"
+    font-family="-apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', Helvetica, Arial, sans-serif"
+    font-size="46"
+    font-weight="800"
+    letter-spacing="-1.5"
+    fill="url(#textGrad)"
+  >eshabiki</text>
+
+  <!-- Underline accent -->
+  <line x1="96" y1="67" x2="384" y2="67" stroke="url(#textGrad)" stroke-width="1.5" stroke-opacity="0.25" stroke-linecap="round"/>
+</svg>

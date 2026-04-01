@@ -145,7 +145,7 @@ export default async function HomePage() {
       <section className="max-w-5xl mx-auto w-full px-4 sm:px-6 py-16">
         <div className="text-center mb-12">
           <h2 className="text-3xl font-bold mb-3">
-            How <span className="gradient-text">GameHub</span> Works
+            How <span className="gradient-text">Eshabiki</span> Works
           </h2>
           <p className="text-text-muted">
             Safe, simple, and secure in 4 steps
@@ -184,7 +184,7 @@ export default async function HomePage() {
       <section className="bg-bg-surface border-y border-bg-border">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 py-16">
           <h2 className="text-center text-2xl font-bold mb-10">
-            Why Gamers Choose <span className="text-neon-green">GameHub</span>
+            Why Gamers Choose <span className="text-neon-green">Eshabiki</span>
           </h2>
           <div className="grid md:grid-cols-3 gap-5">
             {[

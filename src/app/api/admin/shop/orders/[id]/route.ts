@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { emitOrderUpdate, emitToast } from "@/lib/socket-server";
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -29,6 +30,12 @@ export async function PATCH(req: NextRequest, { params }: Ctx) {
   const validStatuses = ["PENDING_PAYMENT", "PAID", "PROCESSING", "SHIPPED", "DELIVERED", "CANCELLED", "REFUNDED"];
   if (!validStatuses.includes(status))
     return NextResponse.json({ error: "Invalid status" }, { status: 400 });
-  const order = await prisma.shopOrder.update({ where: { id }, data: { status } });
+  const order = await prisma.shopOrder.update({
+    where: { id },
+    data: { status },
+    include: { user: { select: { id: true } } },
+  });
+  emitOrderUpdate(order.user.id, order.id);
+  emitToast(order.user.id, { type: "info", title: "Order Updated", message: `Your order status changed to ${status.replace(/_/g, " ").toLowerCase()}.` });
   return NextResponse.json({ order });
 }

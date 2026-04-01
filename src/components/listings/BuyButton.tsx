@@ -31,14 +31,6 @@ export function BuyButton({ listingId }: { listingId: string }) {
     }
 
     const { transaction } = await res.json();
-
-    // Confirm payment (stub — in production this would be a payment gateway)
-    await fetch(`/api/transactions/${transaction.id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "confirm_payment" }),
-    });
-
     router.push(`/dashboard/escrow/${transaction.id}`);
   };
 
@@ -75,7 +67,7 @@ export function BuyButton({ listingId }: { listingId: string }) {
               <ShieldCheck size={14} /> How escrow works
             </p>
             <ol className="list-decimal list-inside space-y-1 text-xs text-text-muted">
-              <li>Your payment is held securely in escrow</li>
+              <li>Pay via M-Pesa — funds held securely in escrow</li>
               <li>The seller delivers the account credentials</li>
               <li>You confirm receipt within 3 days</li>
               <li>Funds are released to the seller</li>
@@ -98,7 +90,7 @@ export function BuyButton({ listingId }: { listingId: string }) {
               Cancel
             </Button>
             <Button loading={loading} className="flex-1" onClick={handleBuy}>
-              Confirm & Pay
+              Continue to Payment
             </Button>
           </div>
         </div>

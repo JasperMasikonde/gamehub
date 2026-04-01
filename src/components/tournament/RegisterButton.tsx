@@ -2,16 +2,26 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
+import { Modal } from "@/components/ui/Modal";
 import { Loader2, UserPlus, Check } from "lucide-react";
+import { PaymentPanel } from "@/components/payments/PaymentPanel";
 
-interface Props { slug: string; isRegistered: boolean; isOpen: boolean; isFull: boolean; }
+interface Props {
+  slug: string;
+  tournamentId: string;
+  entryFee: number;
+  isRegistered: boolean;
+  isOpen: boolean;
+  isFull: boolean;
+}
 
-export function RegisterButton({ slug, isRegistered, isOpen, isFull }: Props) {
+export function RegisterButton({ slug, tournamentId, entryFee, isRegistered, isOpen, isFull }: Props) {
   const [state, setState] = useState<"idle" | "loading" | "done">(isRegistered ? "done" : "idle");
   const [error, setError] = useState("");
+  const [showPayModal, setShowPayModal] = useState(false);
   const router = useRouter();
 
-  async function register() {
+  async function registerFree() {
     setState("loading"); setError("");
     try {
       const res = await fetch(`/api/tournaments/${slug}/register`, { method: "POST" });
@@ -19,6 +29,14 @@ export function RegisterButton({ slug, isRegistered, isOpen, isFull }: Props) {
       if (!res.ok) { setError(data.error ?? "Failed to register"); setState("idle"); return; }
       setState("done"); router.refresh();
     } catch { setError("Network error"); setState("idle"); }
+  }
+
+  function handleRegisterClick() {
+    if (entryFee > 0) {
+      setShowPayModal(true);
+    } else {
+      registerFree();
+    }
   }
 
   if (state === "done" || isRegistered) {
@@ -32,11 +50,28 @@ export function RegisterButton({ slug, isRegistered, isOpen, isFull }: Props) {
   if (isFull) return <span className="text-sm text-neon-red font-semibold">Tournament Full</span>;
 
   return (
-    <div>
-      <Button variant="primary" onClick={register} disabled={state === "loading"}>
-        {state === "loading" ? <><Loader2 size={15} className="animate-spin" /> Registering…</> : <><UserPlus size={15} /> Register</>}
-      </Button>
-      {error && <p className="text-xs text-neon-red mt-1">{error}</p>}
-    </div>
+    <>
+      <div>
+        <Button variant="primary" onClick={handleRegisterClick} disabled={state === "loading"}>
+          {state === "loading" ? <><Loader2 size={15} className="animate-spin" /> Registering…</> : <><UserPlus size={15} /> {entryFee > 0 ? `Register — KES ${entryFee.toLocaleString()}` : "Register"}</>}
+        </Button>
+        {error && <p className="text-xs text-neon-red mt-1">{error}</p>}
+      </div>
+
+      {showPayModal && (
+        <Modal isOpen onClose={() => setShowPayModal(false)} title="Pay Entry Fee">
+          <PaymentPanel
+            purpose="tournament"
+            entityId={tournamentId}
+            amount={entryFee}
+            onSuccess={() => {
+              setShowPayModal(false);
+              setState("done");
+              router.refresh();
+            }}
+          />
+        </Modal>
+      )}
+    </>
   );
 }

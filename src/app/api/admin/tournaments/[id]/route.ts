@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { emitTournamentUpdate } from "@/lib/socket-server";
 
 export async function GET(
   _req: NextRequest,
@@ -102,6 +103,7 @@ export async function PATCH(
     },
   });
 
+  emitTournamentUpdate(tournament.id, tournament.slug);
   return NextResponse.json({ tournament });
 }
 

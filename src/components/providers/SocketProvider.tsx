@@ -74,6 +74,11 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
       setUnreadMessages((prev) => prev + 1);
     });
 
+    // Tournament list updates — any page using RealtimeRefresh with this event will auto-refresh
+    socket.on("tournaments_list_update", () => {
+      // Handled by RealtimeRefresh components on individual pages
+    });
+
     // Load initial unread count
     refreshUnread();
 

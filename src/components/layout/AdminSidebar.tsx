@@ -8,7 +8,6 @@ import {
   Users,
   CreditCard,
   AlertTriangle,
-  Gamepad2,
   ArrowLeft,
   MessageSquare,
   Swords,
@@ -49,12 +48,7 @@ export function AdminSidebar() {
   return (
     <aside className="w-56 shrink-0 border-r border-bg-border bg-bg-surface flex flex-col min-h-screen">
       <div className="p-4 border-b border-bg-border">
-        <div className="flex items-center gap-2">
-          <Gamepad2 size={20} className="text-neon-green" />
-          <span className="font-bold text-sm">
-            Game<span className="text-neon-green">Hub</span>
-          </span>
-        </div>
+        <img src="/logo-icon.svg" alt="Eshabiki" className="w-8 h-8" />
         <p className="text-xs text-neon-red font-semibold mt-1">Admin Panel</p>
       </div>
 

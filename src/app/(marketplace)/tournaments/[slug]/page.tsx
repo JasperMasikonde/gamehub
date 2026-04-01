@@ -7,6 +7,9 @@ import { ArrowLeft, Trophy, Users, Calendar, Info } from "lucide-react";
 import { KnockoutBracket } from "@/components/tournament/KnockoutBracket";
 import { LeagueStandings } from "@/components/tournament/LeagueStandings";
 import { RegisterButton } from "@/components/tournament/RegisterButton";
+import { TournamentRealtimeRefresh } from "@/components/tournament/TournamentRealtimeRefresh";
+import { MatchPrepCard } from "@/components/tournament/MatchPrepCard";
+import { SquadScreenshotUpload } from "@/components/tournament/SquadScreenshotUpload";
 import { cn } from "@/lib/utils/cn";
 
 const STATUS_COLORS: Record<string, string> = {
@@ -38,12 +41,28 @@ export default async function TournamentDetailPage({ params }: { params: Promise
   });
   if (!tournament || tournament.status === "DRAFT") notFound();
 
-  const isRegistered = session?.user ? tournament.participants.some(p => p.userId === session.user.id) : false;
+  // Build a map of userId -> squadScreenshotKey for quick lookup
+  const squadMap = new Map(tournament.participants.map(p => [p.userId, p.squadScreenshotKey ?? null]));
+
+  const userId = session?.user?.id ?? null;
+  const myParticipant = userId ? tournament.participants.find(p => p.userId === userId) : null;
+  const isRegistered = !!myParticipant;
   const isFull = tournament.participants.length >= tournament.maxParticipants;
   const isOpen = tournament.status === "REGISTRATION_OPEN";
+  const isLive = tournament.status === "IN_PROGRESS";
+
+  // My pending matches (not yet completed)
+  const myPendingMatches = isLive && userId
+    ? tournament.matches.filter(
+        m => m.status !== "COMPLETED" && m.status !== "WALKOVER" &&
+          (m.player1Id === userId || m.player2Id === userId)
+      )
+    : [];
 
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 py-10 space-y-8">
+      <TournamentRealtimeRefresh slug={slug} />
+
       {/* Header */}
       <div className="flex items-start gap-3">
         <Link href="/tournaments" className="text-text-muted hover:text-text-primary mt-1"><ArrowLeft size={18} /></Link>
@@ -59,7 +78,7 @@ export default async function TournamentDetailPage({ params }: { params: Promise
           </div>
           <p className="text-text-muted">{tournament.game}</p>
         </div>
-        <RegisterButton slug={slug} isRegistered={isRegistered} isOpen={isOpen} isFull={isFull} />
+        <RegisterButton slug={slug} tournamentId={tournament.id} entryFee={Number(tournament.entryFee)} isRegistered={isRegistered} isOpen={isOpen} isFull={isFull} />
       </div>
 
       {/* Stats */}
@@ -77,8 +96,17 @@ export default async function TournamentDetailPage({ params }: { params: Promise
         ))}
       </div>
 
+      {/* ── Squad screenshot (once per player, shown when tournament is live) ── */}
+      {isRegistered && isLive && myParticipant && (
+        <div className="bg-bg-surface border border-bg-border rounded-2xl p-5">
+          <h2 className="font-semibold text-sm mb-3">Step 1 — Verify Your Squad</h2>
+          <SquadScreenshotUpload slug={slug} currentKey={myParticipant.squadScreenshotKey ?? null} currentTeamName={myParticipant.teamName ?? null} />
+        </div>
+      )}
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">
+
           {/* Bracket / Standings */}
           <div className="bg-bg-surface border border-bg-border rounded-2xl overflow-hidden">
             <div className="p-4 border-b border-bg-border flex items-center gap-2">
@@ -92,6 +120,36 @@ export default async function TournamentDetailPage({ params }: { params: Promise
               }
             </div>
           </div>
+
+          {/* Step 2 — Match prep cards (chat with opponent) */}
+          {myPendingMatches.length > 0 && (
+            <div className="space-y-4">
+              <h2 className="font-semibold text-sm flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-yellow-400 animate-pulse" />
+                Step 2 — Match Preparation
+              </h2>
+              {myPendingMatches.map(m => {
+                const isMe1 = m.player1Id === userId;
+                const opponent = isMe1 ? m.player2 : m.player1;
+                const opponentId = isMe1 ? m.player2Id : m.player1Id;
+                const match = m as typeof m & { player1ResultKey: string | null; player2ResultKey: string | null };
+                const myResultKey = isMe1 ? match.player1ResultKey : match.player2ResultKey;
+                const opponentResultKey = isMe1 ? match.player2ResultKey : match.player1ResultKey;
+                return (
+                  <MatchPrepCard
+                    key={m.id}
+                    slug={slug}
+                    matchId={m.id}
+                    opponent={opponent}
+                    mySquadSubmitted={!!myParticipant?.squadScreenshotKey}
+                    opponentSquadSubmitted={!!(opponentId && squadMap.get(opponentId))}
+                    myResultKey={myResultKey}
+                    opponentResultKey={opponentResultKey}
+                  />
+                );
+              })}
+            </div>
+          )}
 
           {/* Match list (league) */}
           {tournament.type === "LEAGUE" && tournament.matches.length > 0 && (
@@ -125,7 +183,11 @@ export default async function TournamentDetailPage({ params }: { params: Promise
                   <div className="w-7 h-7 rounded-full bg-bg-elevated border border-bg-border overflow-hidden shrink-0">
                     {p.user.avatarUrl ? <img src={p.user.avatarUrl} alt="" className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-xs text-text-muted">{(p.user.displayName ?? p.user.username)[0]}</div>}
                   </div>
-                  <span className="text-sm truncate">{p.user.displayName ?? p.user.username}</span>
+                  <span className="text-sm truncate flex-1">{p.user.displayName ?? p.user.username}</span>
+                  {/* Squad submitted indicator */}
+                  {isLive && p.squadScreenshotKey && (
+                    <span className="text-[10px] text-neon-green" title="Squad verified">✓</span>
+                  )}
                 </div>
               ))}
             </div>

@@ -19,12 +19,12 @@ async function main() {
   // Admin user
   const adminHash = await bcrypt.hash("admin123!", 12);
   const admin = await prisma.user.upsert({
-    where: { email: "admin@gamehub.com" },
+    where: { email: "admin@eshabiki.com" },
     update: {},
     create: {
-      email: "admin@gamehub.com",
+      email: "admin@eshabiki.com",
       username: "admin",
-      displayName: "GameHub Admin",
+      displayName: "Eshabiki Admin",
       passwordHash: adminHash,
       role: "ADMIN",
     },
@@ -33,10 +33,10 @@ async function main() {
   // Seller
   const sellerHash = await bcrypt.hash("seller123!", 12);
   const seller = await prisma.user.upsert({
-    where: { email: "seller@gamehub.com" },
+    where: { email: "seller@eshabiki.com" },
     update: {},
     create: {
-      email: "seller@gamehub.com",
+      email: "seller@eshabiki.com",
       username: "ProSeller",
       displayName: "Pro Seller",
       passwordHash: sellerHash,
@@ -50,10 +50,10 @@ async function main() {
   // Buyer
   const buyerHash = await bcrypt.hash("buyer123!", 12);
   await prisma.user.upsert({
-    where: { email: "buyer@gamehub.com" },
+    where: { email: "buyer@eshabiki.com" },
     update: {},
     create: {
-      email: "buyer@gamehub.com",
+      email: "buyer@eshabiki.com",
       username: "GameBuyer",
       displayName: "Game Buyer",
       passwordHash: buyerHash,
@@ -125,9 +125,9 @@ async function main() {
   }
 
   console.log("Seed complete!");
-  console.log("Admin:  admin@gamehub.com / admin123!");
-  console.log("Seller: seller@gamehub.com / seller123!");
-  console.log("Buyer:  buyer@gamehub.com / buyer123!");
+  console.log("Admin:  admin@eshabiki.com / admin123!");
+  console.log("Seller: seller@eshabiki.com / seller123!");
+  console.log("Buyer:  buyer@eshabiki.com / buyer123!");
 }
 
 main()

@@ -7,10 +7,15 @@ import { SocketProvider } from "@/components/providers/SocketProvider";
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 
 export const metadata: Metadata = {
-  title: "GameHub | eFootball Account Marketplace",
+  title: "Eshabiki | eFootball Account Marketplace",
   description:
     "Buy and sell eFootball gaming accounts securely with our escrow-protected marketplace.",
   keywords: "eFootball, gaming accounts, buy sell, marketplace, escrow",
+  icons: {
+    icon: "/logo-icon.svg",
+    shortcut: "/logo-icon.svg",
+    apple: "/logo-icon.svg",
+  },
 };
 
 export default function RootLayout({

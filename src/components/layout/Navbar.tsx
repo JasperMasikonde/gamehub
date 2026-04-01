@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useSession, signOut } from "next-auth/react";
 import { useState } from "react";
 import { Button } from "@/components/ui/Button";
-import { User, LogOut, Plus, ShieldCheck, Menu, X, Gamepad2, Swords, ShoppingBag, Trophy } from "lucide-react";
+import { User, LogOut, Plus, ShieldCheck, Menu, X, Swords, ShoppingBag, Trophy } from "lucide-react";
 import { NotificationBell } from "@/components/layout/NotificationBell";
 import { MessagesIcon } from "@/components/layout/MessagesIcon";
 import { CartIcon } from "@/components/shop/CartIcon";
@@ -18,14 +18,8 @@ export function Navbar() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-2 group">
-            <Gamepad2
-              size={28}
-              className="text-neon-green group-hover:text-neon-blue transition-colors"
-            />
-            <span className="text-xl font-bold text-text-primary">
-              Game<span className="text-neon-green text-glow-green">Hub</span>
-            </span>
+          <Link href="/" className="flex items-center">
+            <img src="/logo.svg" alt="Eshabiki" className="h-9 w-auto" />
           </Link>
 
           {/* Desktop Nav */}

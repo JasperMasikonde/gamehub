@@ -115,7 +115,7 @@ export default async function EscrowRequestsPage() {
           <ShieldCheck size={36} className="mx-auto mb-3 opacity-30" />
           <p className="font-medium">No escrow requests yet</p>
           <p className="text-sm mt-1 mb-6">
-            Already agreed on a deal? Use GameHub&apos;s escrow to protect both parties.
+            Already agreed on a deal? Use Eshabiki&apos;s escrow to protect both parties.
           </p>
           <Link href="/escrow-requests/new">
             <Button variant="primary" size="sm">

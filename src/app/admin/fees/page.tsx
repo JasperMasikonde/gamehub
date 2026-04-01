@@ -12,7 +12,7 @@ export default async function AdminFeesPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold">Platform Fee Rules</h1>
-        <p className="text-text-muted text-sm mt-1">Define how much GameHub charges per wager tier on challenges</p>
+        <p className="text-text-muted text-sm mt-1">Define how much Eshabiki charges per wager tier on challenges</p>
       </div>
 
       <FeeRuleForm />
