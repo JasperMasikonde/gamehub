@@ -19,13 +19,11 @@ async function getToken(): Promise<string> {
 
   const credentials = Buffer.from(`${username}:${password}`).toString("base64");
 
-  const res = await fetch(`${BASE_URL}/auth/v1/oauth/token`, {
-    method: "POST",
+  const res = await fetch(`${BASE_URL}/payments/api/v1/auth/token`, {
+    method: "GET",
     headers: {
       Authorization: `Basic ${credentials}`,
-      "Content-Type": "application/x-www-form-urlencoded",
     },
-    body: "grant_type=client_credentials",
   });
 
   if (!res.ok) {
