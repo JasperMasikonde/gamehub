@@ -50,6 +50,7 @@ export async function POST(req: NextRequest) {
       description,
       hostSquadUrl,
       expiresAt,
+      status: "PENDING_HOST_PAYMENT",
     },
   });
 

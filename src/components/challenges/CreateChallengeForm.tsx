@@ -6,6 +6,7 @@ import { Swords, Banknote, Camera, Upload, Loader2, X, ArrowRight, FileText } fr
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Textarea } from "@/components/ui/Textarea";
+import { PaymentPanel } from "@/components/payments/PaymentPanel";
 import { cn } from "@/lib/utils/cn";
 
 export function CreateChallengeForm() {
@@ -17,6 +18,7 @@ export function CreateChallengeForm() {
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [createdChallenge, setCreatedChallenge] = useState<{ id: string; wagerAmount: number } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -62,11 +64,34 @@ export function CreateChallengeForm() {
       });
       const data = await res.json();
       if (!res.ok) { setError(data.error ?? "Failed to create challenge"); return; }
-      router.push(`/challenges/${data.challenge.id}`);
+      setCreatedChallenge({ id: data.challenge.id, wagerAmount: w });
     } finally {
       setLoading(false);
     }
   };
+
+  // ── Step 2: Pay wager to list challenge ──────────────────────────────────────
+  if (createdChallenge) {
+    return (
+      <div className="space-y-5">
+        <div className="flex items-center gap-3 p-4 rounded-xl bg-neon-purple/5 border border-neon-purple/20">
+          <Swords size={16} className="text-neon-purple shrink-0" />
+          <div>
+            <p className="text-sm font-semibold text-neon-purple">Pay your wager to list the challenge</p>
+            <p className="text-xs text-text-muted mt-0.5">
+              Your challenge is ready. Pay the wager now — it will be held securely until the match is resolved.
+            </p>
+          </div>
+        </div>
+        <PaymentPanel
+          purpose="challenge_host"
+          entityId={createdChallenge.id}
+          amount={createdChallenge.wagerAmount}
+          onSuccess={() => router.push(`/challenges/${createdChallenge.id}`)}
+        />
+      </div>
+    );
+  }
 
   return (
     <form onSubmit={submit} className="space-y-6">

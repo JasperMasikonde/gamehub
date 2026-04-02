@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { Card, CardContent, CardHeader } from "@/components/ui/Card";
 import { formatCurrency, formatDate } from "@/lib/utils/format";
 import { AcceptChallengePanel } from "@/components/challenges/AcceptChallengePanel";
+import { HostPaymentBanner } from "@/components/challenges/HostPaymentBanner";
 import { SubmitResultPanel } from "@/components/challenges/SubmitResultPanel";
 import { ChallengeChat } from "@/components/challenges/ChallengeChat";
 import { RealtimeRefresh } from "@/components/escrow/RealtimeRefresh";
@@ -15,6 +16,7 @@ import Link from "next/link";
 export const dynamic = "force-dynamic";
 
 const STATUS_COLORS: Record<string, string> = {
+  PENDING_HOST_PAYMENT: "text-neon-yellow",
   OPEN: "text-neon-yellow",
   ACTIVE: "text-neon-blue",
   SUBMITTED: "text-neon-purple",
@@ -24,6 +26,7 @@ const STATUS_COLORS: Record<string, string> = {
 };
 
 const STATUS_LABELS: Record<string, string> = {
+  PENDING_HOST_PAYMENT: "Awaiting host payment",
   OPEN: "Open — waiting for challenger",
   ACTIVE: "In Progress — match underway",
   SUBMITTED: "Awaiting second result",
@@ -65,7 +68,7 @@ export default async function ChallengeDetailPage({
     ? await prisma.user.findFirst({ where: { role: "ADMIN" }, select: { id: true } })
     : null;
 
-  // Non-parties can view OPEN challenges; others redirect
+  // Non-parties can view OPEN challenges; pending/in-progress challenges are private
   if (!isParty && !isAdmin && challenge.status !== "OPEN") redirect("/challenges");
 
   // Mark inbox messages for this challenge as read
@@ -226,6 +229,15 @@ export default async function ChallengeDetailPage({
             <p className="text-xs text-text-muted mt-0.5">Both parties submitted different results. An admin will resolve this.</p>
           </div>
         </div>
+      )}
+
+      {/* Host payment banner — shown to host when wager not yet paid */}
+      {challenge.status === "PENDING_HOST_PAYMENT" && isHost && (
+        <HostPaymentBanner
+          challengeId={id}
+          wagerAmount={challenge.wagerAmount.toString()}
+          format={challenge.format}
+        />
       )}
 
       {/* Accept panel — shown to non-parties when OPEN */}
