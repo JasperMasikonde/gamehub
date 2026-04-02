@@ -14,7 +14,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
   }
 
-  if (!["escrow", "challenge", "tournament", "shop"].includes(purpose)) {
+  if (!["escrow", "challenge", "challenge_host", "tournament", "shop"].includes(purpose)) {
     return NextResponse.json({ error: "Invalid purpose" }, { status: 400 });
   }
 
