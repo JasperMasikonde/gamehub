@@ -1,4 +1,4 @@
-import type { Role, UserStatus } from "@prisma/client";
+import type { Role, UserStatus, AdminPermission } from "@prisma/client";
 
 declare module "next-auth" {
   interface Session {
@@ -10,6 +10,8 @@ declare module "next-auth" {
       image?: string | null;
       role: Role;
       status: UserStatus;
+      isSuperAdmin: boolean;
+      adminPermissions: AdminPermission[];
     };
   }
 
@@ -21,6 +23,8 @@ declare module "next-auth" {
     image?: string | null;
     role: Role;
     status: UserStatus;
+    isSuperAdmin: boolean;
+    adminPermissions: AdminPermission[];
   }
 }
 
@@ -30,5 +34,7 @@ declare module "next-auth/jwt" {
     username: string;
     role: Role;
     status: UserStatus;
+    isSuperAdmin: boolean;
+    adminPermissions: AdminPermission[];
   }
 }

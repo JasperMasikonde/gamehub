@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireAdmin } from "@/lib/auth";
+import { requirePermission } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { emitTournamentUpdate } from "@/lib/socket-server";
 
@@ -8,7 +8,7 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    await requireAdmin();
+    await requirePermission("MANAGE_TOURNAMENTS");
   } catch {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
@@ -46,7 +46,7 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    await requireAdmin();
+    await requirePermission("MANAGE_TOURNAMENTS");
   } catch {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
@@ -112,7 +112,7 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    await requireAdmin();
+    await requirePermission("MANAGE_TOURNAMENTS");
   } catch {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }

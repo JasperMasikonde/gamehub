@@ -17,6 +17,19 @@ enum Role {
   ADMIN
 }
 
+enum AdminPermission {
+  MANAGE_USERS
+  MANAGE_LISTINGS
+  MANAGE_TRANSACTIONS
+  MANAGE_DISPUTES
+  MANAGE_CHALLENGES
+  MANAGE_MESSAGES
+  SEND_SUPPORT_EMAIL
+  MANAGE_SHOP
+  MANAGE_TOURNAMENTS
+  MANAGE_FEES
+}
+
 enum UserStatus {
   ACTIVE
   BANNED
@@ -133,6 +146,8 @@ model User {
   role             Role       @default(BUYER)
   status           UserStatus @default(ACTIVE)
   isVerifiedSeller Boolean    @default(false)
+  isSuperAdmin     Boolean    @default(false)
+  adminPermissions AdminPermission[]
   bio              String?
 
   totalSales     Int   @default(0)

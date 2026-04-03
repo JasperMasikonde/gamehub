@@ -3,7 +3,7 @@ import Credentials from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { authConfig } from "@/lib/auth.config";
-import type { Role, UserStatus } from "@prisma/client";
+import type { AdminPermission, Role, UserStatus } from "@prisma/client";
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
   ...authConfig,
@@ -30,6 +30,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             role: true,
             status: true,
             passwordHash: true,
+            isSuperAdmin: true,
+            adminPermissions: true,
           },
         });
 
@@ -50,6 +52,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           image: user.avatarUrl,
           role: user.role,
           status: user.status,
+          isSuperAdmin: user.isSuperAdmin,
+          adminPermissions: user.adminPermissions,
         };
       },
     }),
@@ -73,5 +77,31 @@ export async function requireAdmin() {
   if ((user as { role: Role }).role !== "ADMIN") {
     throw new Response(JSON.stringify({ error: "Forbidden" }), { status: 403 });
   }
-  return user as typeof user & { role: Role; status: UserStatus };
+  return user as typeof user & { role: Role; status: UserStatus; isSuperAdmin: boolean; adminPermissions: AdminPermission[] };
+}
+
+/** Throws a 403 response if not super admin */
+export async function requireSuperAdmin() {
+  const user = await requireAdmin();
+  if (!user.isSuperAdmin) {
+    throw new Response(JSON.stringify({ error: "Forbidden" }), { status: 403 });
+  }
+  return user;
+}
+
+/** Throws a 403 response if admin lacks the given permission (super admin always passes) */
+export async function requirePermission(permission: AdminPermission) {
+  const user = await requireAdmin();
+  if (user.isSuperAdmin) return user;
+
+  // Always check DB for fresh permissions
+  const fresh = await prisma.user.findUnique({
+    where: { id: user.id },
+    select: { isSuperAdmin: true, adminPermissions: true },
+  });
+
+  if (!fresh?.isSuperAdmin && !fresh?.adminPermissions.includes(permission)) {
+    throw new Response(JSON.stringify({ error: "Forbidden" }), { status: 403 });
+  }
+  return user;
 }

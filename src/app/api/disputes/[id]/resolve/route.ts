@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { requireAdmin } from "@/lib/auth";
+import { requirePermission } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { transitionTransaction } from "@/lib/escrow";
 import { resolveDisputeSchema } from "@/lib/validations/transaction";
@@ -12,7 +12,7 @@ export async function POST(
   const { id } = await params;
   let admin;
   try {
-    admin = await requireAdmin();
+    admin = await requirePermission("MANAGE_DISPUTES");
   } catch {
     return new Response(JSON.stringify({ error: "Forbidden" }), { status: 403 });
   }

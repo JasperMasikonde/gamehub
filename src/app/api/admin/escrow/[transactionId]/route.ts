@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { requireAdmin } from "@/lib/auth";
+import { requirePermission } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { transitionTransaction } from "@/lib/escrow";
 import { TransactionStatus } from "@prisma/client";
@@ -11,7 +11,7 @@ export async function POST(
   const { transactionId } = await params;
   let admin;
   try {
-    admin = await requireAdmin();
+    admin = await requirePermission("MANAGE_TRANSACTIONS");
   } catch {
     return new Response(JSON.stringify({ error: "Forbidden" }), { status: 403 });
   }

@@ -21,34 +21,94 @@ import {
   HeadphonesIcon,
   Menu,
   X,
+  ShieldCheck,
 } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
+import type { AdminPermission } from "@prisma/client";
 
-const mainLinks = [
+type NavLink = {
+  href: string;
+  label: string;
+  icon: React.ElementType;
+  exact?: boolean;
+  permission?: AdminPermission;
+  superAdminOnly?: boolean;
+};
+
+const mainLinks: NavLink[] = [
   { href: "/admin", label: "Overview", icon: LayoutDashboard, exact: true },
-  { href: "/admin/listings", label: "Listings", icon: ListOrdered },
-  { href: "/admin/transactions", label: "Transactions", icon: CreditCard },
-  { href: "/admin/disputes", label: "Disputes", icon: AlertTriangle },
-  { href: "/admin/challenges", label: "Challenges", icon: Swords },
-  { href: "/admin/users", label: "Users", icon: Users },
-  { href: "/admin/messages", label: "Messages", icon: MessageSquare },
-  { href: "/admin/support", label: "Support", icon: HeadphonesIcon },
+  { href: "/admin/listings", label: "Listings", icon: ListOrdered, permission: "MANAGE_LISTINGS" },
+  { href: "/admin/transactions", label: "Transactions", icon: CreditCard, permission: "MANAGE_TRANSACTIONS" },
+  { href: "/admin/disputes", label: "Disputes", icon: AlertTriangle, permission: "MANAGE_DISPUTES" },
+  { href: "/admin/challenges", label: "Challenges", icon: Swords, permission: "MANAGE_CHALLENGES" },
+  { href: "/admin/users", label: "Users", icon: Users, permission: "MANAGE_USERS" },
+  { href: "/admin/messages", label: "Messages", icon: MessageSquare, permission: "MANAGE_MESSAGES" },
+  { href: "/admin/support", label: "Support", icon: HeadphonesIcon, permission: "SEND_SUPPORT_EMAIL" },
+  { href: "/admin/admins", label: "Admins", icon: ShieldCheck, superAdminOnly: true },
 ];
 
-const shopLinks = [
-  { href: "/admin/shop", label: "Overview", icon: ShoppingBag, exact: true },
-  { href: "/admin/shop/products", label: "Products", icon: Package },
-  { href: "/admin/shop/categories", label: "Categories", icon: Tag },
-  { href: "/admin/shop/orders", label: "Orders", icon: ClipboardList },
+const shopLinks: NavLink[] = [
+  { href: "/admin/shop", label: "Overview", icon: ShoppingBag, exact: true, permission: "MANAGE_SHOP" },
+  { href: "/admin/shop/products", label: "Products", icon: Package, permission: "MANAGE_SHOP" },
+  { href: "/admin/shop/categories", label: "Categories", icon: Tag, permission: "MANAGE_SHOP" },
+  { href: "/admin/shop/orders", label: "Orders", icon: ClipboardList, permission: "MANAGE_SHOP" },
 ];
 
-const tournamentLinks = [
-  { href: "/admin/tournaments", label: "Tournaments", icon: Trophy, exact: true },
-  { href: "/admin/fees", label: "Platform Fees", icon: DollarSign, exact: true },
+const tournamentLinks: NavLink[] = [
+  { href: "/admin/tournaments", label: "Tournaments", icon: Trophy, exact: true, permission: "MANAGE_TOURNAMENTS" },
+  { href: "/admin/fees", label: "Platform Fees", icon: DollarSign, exact: true, permission: "MANAGE_FEES" },
 ];
 
-function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
+function canSee(link: NavLink, isSuperAdmin: boolean, adminPermissions: AdminPermission[]) {
+  if (isSuperAdmin) return true;
+  if (link.superAdminOnly) return false;
+  if (!link.permission) return true; // overview — always visible
+  return adminPermissions.includes(link.permission);
+}
+
+function NavItem({
+  link,
+  activeColor,
+  onNavigate,
+  isSuperAdmin,
+  adminPermissions,
+}: {
+  link: NavLink;
+  activeColor: string;
+  onNavigate?: () => void;
+  isSuperAdmin: boolean;
+  adminPermissions: AdminPermission[];
+}) {
   const pathname = usePathname();
+  if (!canSee(link, isSuperAdmin, adminPermissions)) return null;
+  const active = link.exact ? pathname === link.href : pathname.startsWith(link.href);
+  const Icon = link.icon;
+  return (
+    <Link
+      href={link.href}
+      onClick={onNavigate}
+      className={cn(
+        "flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-colors",
+        active ? activeColor : "text-text-muted hover:text-text-primary hover:bg-bg-elevated"
+      )}
+    >
+      <Icon size={15} />
+      {link.label}
+    </Link>
+  );
+}
+
+function SidebarContent({
+  onNavigate,
+  isSuperAdmin,
+  adminPermissions,
+}: {
+  onNavigate?: () => void;
+  isSuperAdmin: boolean;
+  adminPermissions: AdminPermission[];
+}) {
+  const shopVisible = shopLinks.some((l) => canSee(l, isSuperAdmin, adminPermissions));
+  const tournamentVisible = tournamentLinks.some((l) => canSee(l, isSuperAdmin, adminPermissions));
 
   return (
     <aside className="w-56 shrink-0 border-r border-bg-border bg-bg-surface flex flex-col h-full">
@@ -58,47 +118,50 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
       </div>
 
       <nav className="p-2 flex flex-col gap-1 flex-1 overflow-y-auto">
-        {mainLinks.map(({ href, label, icon: Icon, exact }) => {
-          const active = exact ? pathname === href : pathname.startsWith(href);
-          return (
-            <Link
-              key={href}
-              href={href}
-              onClick={onNavigate}
-              className={cn(
-                "flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-colors",
-                active
-                  ? "bg-neon-blue/10 text-neon-blue border border-neon-blue/20"
-                  : "text-text-muted hover:text-text-primary hover:bg-bg-elevated"
-              )}
-            >
-              <Icon size={15} />
-              {label}
-            </Link>
-          );
-        })}
+        {mainLinks.map((link) => (
+          <NavItem
+            key={link.href}
+            link={link}
+            activeColor="bg-neon-blue/10 text-neon-blue border border-neon-blue/20"
+            onNavigate={onNavigate}
+            isSuperAdmin={isSuperAdmin}
+            adminPermissions={adminPermissions}
+          />
+        ))}
 
-        <div className="mx-3 my-2 border-t border-bg-border" />
-        <p className="px-3 text-[10px] font-semibold text-text-muted uppercase tracking-widest mb-1">Shop</p>
-        {shopLinks.map(({ href, label, icon: Icon, exact }) => {
-          const active = exact ? pathname === href : pathname.startsWith(href);
-          return (
-            <Link key={href} href={href} onClick={onNavigate} className={cn("flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-colors", active ? "bg-neon-green/10 text-neon-green border border-neon-green/20" : "text-text-muted hover:text-text-primary hover:bg-bg-elevated")}>
-              <Icon size={15} />{label}
-            </Link>
-          );
-        })}
+        {shopVisible && (
+          <>
+            <div className="mx-3 my-2 border-t border-bg-border" />
+            <p className="px-3 text-[10px] font-semibold text-text-muted uppercase tracking-widest mb-1">Shop</p>
+            {shopLinks.map((link) => (
+              <NavItem
+                key={link.href}
+                link={link}
+                activeColor="bg-neon-green/10 text-neon-green border border-neon-green/20"
+                onNavigate={onNavigate}
+                isSuperAdmin={isSuperAdmin}
+                adminPermissions={adminPermissions}
+              />
+            ))}
+          </>
+        )}
 
-        <div className="mx-3 my-2 border-t border-bg-border" />
-        <p className="px-3 text-[10px] font-semibold text-text-muted uppercase tracking-widest mb-1">Tournaments</p>
-        {tournamentLinks.map(({ href, label, icon: Icon, exact }) => {
-          const active = exact ? pathname === href : pathname.startsWith(href);
-          return (
-            <Link key={href} href={href} onClick={onNavigate} className={cn("flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-colors", active ? "bg-purple-500/10 text-purple-400 border border-purple-500/20" : "text-text-muted hover:text-text-primary hover:bg-bg-elevated")}>
-              <Icon size={15} />{label}
-            </Link>
-          );
-        })}
+        {tournamentVisible && (
+          <>
+            <div className="mx-3 my-2 border-t border-bg-border" />
+            <p className="px-3 text-[10px] font-semibold text-text-muted uppercase tracking-widest mb-1">Tournaments</p>
+            {tournamentLinks.map((link) => (
+              <NavItem
+                key={link.href}
+                link={link}
+                activeColor="bg-purple-500/10 text-purple-400 border border-purple-500/20"
+                onNavigate={onNavigate}
+                isSuperAdmin={isSuperAdmin}
+                adminPermissions={adminPermissions}
+              />
+            ))}
+          </>
+        )}
       </nav>
 
       <div className="p-3 border-t border-bg-border">
@@ -115,20 +178,23 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
   );
 }
 
-export function AdminSidebar() {
+export function AdminSidebar({
+  isSuperAdmin,
+  adminPermissions,
+}: {
+  isSuperAdmin: boolean;
+  adminPermissions: AdminPermission[];
+}) {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
 
-  // Close drawer on route change
-  useEffect(() => {
-    setOpen(false);
-  }, [pathname]);
+  useEffect(() => { setOpen(false); }, [pathname]);
 
   return (
     <>
       {/* Desktop sidebar */}
       <div className="hidden md:flex min-h-screen">
-        <SidebarContent />
+        <SidebarContent isSuperAdmin={isSuperAdmin} adminPermissions={adminPermissions} />
       </div>
 
       {/* Mobile top bar */}
@@ -145,7 +211,7 @@ export function AdminSidebar() {
         </button>
       </div>
 
-      {/* Mobile drawer backdrop */}
+      {/* Mobile backdrop */}
       {open && (
         <div
           className="md:hidden fixed inset-0 z-50 bg-black/60"
@@ -168,7 +234,11 @@ export function AdminSidebar() {
             <X size={18} />
           </button>
         </div>
-        <SidebarContent onNavigate={() => setOpen(false)} />
+        <SidebarContent
+          onNavigate={() => setOpen(false)}
+          isSuperAdmin={isSuperAdmin}
+          adminPermissions={adminPermissions}
+        />
       </div>
     </>
   );

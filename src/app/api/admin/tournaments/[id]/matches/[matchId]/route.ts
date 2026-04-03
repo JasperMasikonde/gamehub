@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireAdmin } from "@/lib/auth";
+import { requirePermission } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { emitTournamentUpdate } from "@/lib/socket-server";
 
 type Ctx = { params: Promise<{ id: string; matchId: string }> };
 
 export async function PATCH(req: NextRequest, { params }: Ctx) {
-  try { await requireAdmin(); } catch {
+  try { await requirePermission("MANAGE_TOURNAMENTS"); } catch {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
   const { id: tournamentId, matchId } = await params;

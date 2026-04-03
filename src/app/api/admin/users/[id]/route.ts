@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { requireAdmin } from "@/lib/auth";
+import { requirePermission } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import type { UserStatus } from "@prisma/client";
 
@@ -8,7 +8,7 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    await requireAdmin();
+    await requirePermission("MANAGE_USERS");
   } catch {
     return new Response(JSON.stringify({ error: "Forbidden" }), { status: 403 });
   }
@@ -37,7 +37,7 @@ export async function PATCH(
   const { id } = await params;
   let admin;
   try {
-    admin = await requireAdmin();
+    admin = await requirePermission("MANAGE_USERS");
   } catch {
     return new Response(JSON.stringify({ error: "Forbidden" }), { status: 403 });
   }

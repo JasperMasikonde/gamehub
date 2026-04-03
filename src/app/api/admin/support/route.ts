@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireAdmin } from "@/lib/auth";
+import { requirePermission } from "@/lib/auth";
 import { sendSupportReply } from "@/lib/email";
 import { z } from "zod";
 
@@ -12,8 +12,7 @@ const schema = z.object({
 });
 
 export async function POST(req: NextRequest) {
-  const session = await requireAdmin();
-  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  await requirePermission("SEND_SUPPORT_EMAIL");
 
   const body = await req.json();
   const parsed = schema.safeParse(body);

@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireAdmin } from "@/lib/auth";
+import { requirePermission } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
 // GET /api/admin/users?search=<term>&limit=<n>
 export async function GET(req: NextRequest) {
   try {
-    await requireAdmin();
+    await requirePermission("MANAGE_USERS");
   } catch {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }

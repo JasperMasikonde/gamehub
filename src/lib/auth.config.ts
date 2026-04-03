@@ -12,26 +12,27 @@ export const authConfig: NextAuthConfig = {
   callbacks: {
     jwt({ token, user }) {
       if (user) {
-        token.id = user.id;
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        token.username = (user as any).username;
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        token.role = (user as any).role;
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        token.status = (user as any).status;
+        const u = user as any;
+        token.id = u.id;
+        token.username = u.username;
+        token.role = u.role;
+        token.status = u.status;
+        token.isSuperAdmin = u.isSuperAdmin ?? false;
+        token.adminPermissions = u.adminPermissions ?? [];
       }
       return token;
     },
     session({ session, token }) {
       if (session.user) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (session.user as any).id = token.id;
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (session.user as any).username = token.username;
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (session.user as any).role = token.role;
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (session.user as any).status = token.status;
+        const u = session.user as any;
+        u.id = token.id;
+        u.username = token.username;
+        u.role = token.role;
+        u.status = token.status;
+        u.isSuperAdmin = token.isSuperAdmin ?? false;
+        u.adminPermissions = token.adminPermissions ?? [];
       }
       return session;
     },
