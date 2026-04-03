@@ -80,10 +80,14 @@ export async function requireAdmin() {
   return user as typeof user & { role: Role; status: UserStatus; isSuperAdmin: boolean; adminPermissions: AdminPermission[] };
 }
 
-/** Throws a 403 response if not super admin */
+/** Throws a 403 response if not super admin — always checks DB */
 export async function requireSuperAdmin() {
   const user = await requireAdmin();
-  if (!user.isSuperAdmin) {
+  const dbUser = await prisma.user.findUnique({
+    where: { id: user.id },
+    select: { isSuperAdmin: true },
+  });
+  if (!dbUser?.isSuperAdmin) {
     throw new Response(JSON.stringify({ error: "Forbidden" }), { status: 403 });
   }
   return user;

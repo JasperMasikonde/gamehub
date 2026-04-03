@@ -3,9 +3,21 @@ import { requireSuperAdmin } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
 
-// GET — list all admins (excluding super admin)
-export async function GET() {
+// GET — list all admins (excluding super admin) + all promotable users
+export async function GET(req: NextRequest) {
   await requireSuperAdmin();
+
+  const { searchParams } = new URL(req.url);
+
+  if (searchParams.get("type") === "users") {
+    // All non-admin, non-super-admin users for the picker
+    const users = await prisma.user.findMany({
+      where: { role: { not: "ADMIN" } },
+      select: { id: true, username: true, email: true },
+      orderBy: { username: "asc" },
+    });
+    return NextResponse.json(users);
+  }
 
   const admins = await prisma.user.findMany({
     where: { role: "ADMIN", isSuperAdmin: false },
