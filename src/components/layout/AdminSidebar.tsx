@@ -17,6 +17,7 @@ import {
   ClipboardList,
   Trophy,
   DollarSign,
+  HeadphonesIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 
@@ -28,6 +29,7 @@ const mainLinks = [
   { href: "/admin/challenges", label: "Challenges", icon: Swords },
   { href: "/admin/users", label: "Users", icon: Users },
   { href: "/admin/messages", label: "Messages", icon: MessageSquare },
+  { href: "/admin/support", label: "Support", icon: HeadphonesIcon },
 ];
 
 const shopLinks = [
