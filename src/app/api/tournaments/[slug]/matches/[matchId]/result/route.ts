@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
+import { resolveSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { emitTournamentUpdate } from "@/lib/socket-server";
 
 type Ctx = { params: Promise<{ slug: string; matchId: string }> };
 
 export async function POST(req: NextRequest, { params }: Ctx) {
-  const session = await auth();
+  const session = await resolveSession();
   if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const { slug, matchId } = await params;

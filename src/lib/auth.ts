@@ -61,6 +61,50 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   ],
 });
 
+/** Returns a session-compatible object for either a NextAuth session or an agent bearer token. */
+export async function resolveSession() {
+  const session = await auth();
+  if (session) return session;
+
+  const headersList = await headers();
+  const authHeader = headersList.get("authorization");
+  if (authHeader?.startsWith("Bearer ")) {
+    const token = authHeader.slice(7);
+    const agent = await prisma.user.findUnique({
+      where: { agentToken: token, isAgent: true },
+      select: {
+        id: true,
+        email: true,
+        username: true,
+        displayName: true,
+        avatarUrl: true,
+        role: true,
+        status: true,
+        isSuperAdmin: true,
+        adminPermissions: true,
+      },
+    });
+    if (agent && agent.role === "ADMIN" && agent.status === "ACTIVE") {
+      return {
+        user: {
+          id: agent.id,
+          email: agent.email,
+          username: agent.username,
+          displayName: agent.displayName,
+          image: agent.avatarUrl,
+          role: agent.role as Role,
+          status: agent.status as UserStatus,
+          isSuperAdmin: agent.isSuperAdmin,
+          adminPermissions: agent.adminPermissions as AdminPermission[],
+        },
+        expires: new Date(Date.now() + 86400_000).toISOString(),
+      };
+    }
+  }
+
+  return null;
+}
+
 /** Throws a 401 response if not authenticated */
 export async function requireAuth() {
   const session = await auth();

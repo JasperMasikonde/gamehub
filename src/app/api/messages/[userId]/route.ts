@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
+import { resolveSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
 // GET /api/messages/[userId]  — fetch conversation + mark incoming as read
@@ -7,7 +7,7 @@ export async function GET(
   _req: NextRequest,
   { params }: { params: Promise<{ userId: string }> }
 ) {
-  const session = await auth();
+  const session = await resolveSession();
   if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const { userId: otherUserId } = await params;

@@ -10,7 +10,7 @@ export default auth((req) => {
 
   // Agent API calls use Bearer token auth — let them through, auth.ts validates
   const authHeader = req.headers.get("authorization");
-  if (authHeader?.startsWith("Bearer ") && pathname.startsWith("/api/admin")) {
+  if (authHeader?.startsWith("Bearer ") && pathname.startsWith("/api/")) {
     return NextResponse.next();
   }
 

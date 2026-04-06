@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
+import { resolveSession } from "@/lib/auth";
 import { generateQR } from "@/lib/ncba";
 
 export async function POST(req: NextRequest) {
-  const session = await auth();
+  const session = await resolveSession();
   if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const { amount, narration } = await req.json();

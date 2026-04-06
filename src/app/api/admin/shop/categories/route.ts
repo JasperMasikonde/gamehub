@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
+import { resolveSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { createCategorySchema } from "@/lib/validations/shop";
 
 export async function GET() {
-  const session = await auth();
+  const session = await resolveSession();
   if (!session?.user || session.user.role !== "ADMIN")
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   const categories = await prisma.productCategory.findMany({
@@ -15,7 +15,7 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
-  const session = await auth();
+  const session = await resolveSession();
   if (!session?.user || session.user.role !== "ADMIN")
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   const body = await req.json();

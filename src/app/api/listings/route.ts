@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
+import { resolveSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { createListingSchema, listingFilterSchema } from "@/lib/validations/listing";
 import { getPublicUrl } from "@/lib/gcs";
@@ -10,7 +10,7 @@ export async function GET(req: Request) {
   const params = Object.fromEntries(searchParams.entries());
   const filter = listingFilterSchema.parse(params);
 
-  const session = await auth();
+  const session = await resolveSession();
   const isAdmin = session?.user?.role === "ADMIN";
 
   const where = {
@@ -68,7 +68,7 @@ export async function GET(req: Request) {
 }
 
 export async function POST(req: Request) {
-  const session = await auth();
+  const session = await resolveSession();
   if (!session?.user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }

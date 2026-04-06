@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
+import { resolveSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
 import { emitToast } from "@/lib/socket-server";
@@ -16,7 +16,7 @@ const createSchema = z.object({
 
 // GET /api/escrow-requests — list my requests (sent + received)
 export async function GET(_req: NextRequest) {
-  const session = await auth();
+  const session = await resolveSession();
   if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const [sent, received] = await Promise.all([
@@ -41,7 +41,7 @@ export async function GET(_req: NextRequest) {
 
 // POST /api/escrow-requests — create a new request
 export async function POST(req: NextRequest) {
-  const session = await auth();
+  const session = await resolveSession();
   if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const body = await req.json();

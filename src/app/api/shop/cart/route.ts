@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
+import { resolveSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
 export async function GET() {
-  const session = await auth();
+  const session = await resolveSession();
   if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const cart = await prisma.cart.findUnique({
@@ -20,7 +20,7 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
-  const session = await auth();
+  const session = await resolveSession();
   if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const { productId, quantity = 1 } = await req.json();
@@ -55,7 +55,7 @@ export async function POST(req: NextRequest) {
 }
 
 export async function DELETE() {
-  const session = await auth();
+  const session = await resolveSession();
   if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const cart = await prisma.cart.findUnique({ where: { userId: session.user.id } });
   if (cart) await prisma.cartItem.deleteMany({ where: { cartId: cart.id } });

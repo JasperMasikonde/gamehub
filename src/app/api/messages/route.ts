@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
+import { resolveSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { emitNewMessage, emitToast } from "@/lib/socket-server";
 
@@ -14,7 +14,7 @@ const USER_SELECT = {
 // ?unread=true  → returns { unreadCount }
 // otherwise     → returns { conversations }
 export async function GET(req: NextRequest) {
-  const session = await auth();
+  const session = await resolveSession();
   if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const userId = session.user.id;
@@ -69,7 +69,7 @@ export async function GET(req: NextRequest) {
 // POST /api/messages  — send a message
 // body: { recipientId, content }
 export async function POST(req: NextRequest) {
-  const session = await auth();
+  const session = await resolveSession();
   if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const { recipientId, content, imageUrl } = await req.json();

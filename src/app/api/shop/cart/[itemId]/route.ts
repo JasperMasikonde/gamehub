@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
+import { resolveSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
 async function getOwnedItem(itemId: string, userId: string) {
@@ -10,7 +10,7 @@ export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ itemId: string }> }
 ) {
-  const session = await auth();
+  const session = await resolveSession();
   if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const { itemId } = await params;
   const { quantity } = await req.json();
@@ -26,7 +26,7 @@ export async function DELETE(
   _req: NextRequest,
   { params }: { params: Promise<{ itemId: string }> }
 ) {
-  const session = await auth();
+  const session = await resolveSession();
   if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const { itemId } = await params;
   const item = await getOwnedItem(itemId, session.user.id);

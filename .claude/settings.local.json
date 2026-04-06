@@ -95,7 +95,9 @@
       "Bash(sed -i 's/import { requireAdmin } from \"@\\\\/lib\\\\/auth\";/import { requirePermission } from \"@\\\\/lib\\\\/auth\";/' '/home/jasper/gamehub/src/app/api/admin/listings/[id]/route.ts')",
       "Bash(sed -i 's/await requireAdmin\\(\\)/await requirePermission\\(\"MANAGE_LISTINGS\"\\)/' '/home/jasper/gamehub/src/app/api/admin/listings/[id]/route.ts')",
       "Bash(sed -i 's/import { requireAdmin } from \"@\\\\/lib\\\\/auth\";/import { requirePermission } from \"@\\\\/lib\\\\/auth\";/' '/home/jasper/gamehub/src/app/api/admin/escrow/[transactionId]/route.ts')",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Bash(find:*)",
+      "Bash(echo \"exit: $?\")"
     ]
   }
 }

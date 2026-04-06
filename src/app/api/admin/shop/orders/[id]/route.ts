@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
+import { resolveSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { emitOrderUpdate, emitToast } from "@/lib/socket-server";
 
 type Ctx = { params: Promise<{ id: string }> };
 
 export async function GET(_req: NextRequest, { params }: Ctx) {
-  const session = await auth();
+  const session = await resolveSession();
   if (!session?.user || session.user.role !== "ADMIN")
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   const { id } = await params;
@@ -22,7 +22,7 @@ export async function GET(_req: NextRequest, { params }: Ctx) {
 }
 
 export async function PATCH(req: NextRequest, { params }: Ctx) {
-  const session = await auth();
+  const session = await resolveSession();
   if (!session?.user || session.user.role !== "ADMIN")
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   const { id } = await params;

@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
+import { resolveSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { createTransactionSchema } from "@/lib/validations/transaction";
 import { transitionTransaction, calculateFees } from "@/lib/escrow";
 import { TransactionStatus } from "@prisma/client";
 
 export async function POST(req: Request) {
-  const session = await auth();
+  const session = await resolveSession();
   if (!session?.user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
