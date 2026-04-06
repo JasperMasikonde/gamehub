@@ -30,6 +30,14 @@ enum AdminPermission {
   MANAGE_FEES
 }
 
+enum AgentStatus {
+  RUNNING
+  STOPPED
+  STARTING
+  STOPPING
+  ERROR
+}
+
 enum UserStatus {
   ACTIVE
   BANNED
@@ -148,6 +156,14 @@ model User {
   isVerifiedSeller Boolean    @default(false)
   isSuperAdmin     Boolean    @default(false)
   adminPermissions AdminPermission[]
+
+  // AI agent fields (only set when isAgent = true)
+  isAgent          Boolean     @default(false)
+  agentHostUrl     String?
+  agentApiKey      String?     // AES-256-GCM encrypted host API key
+  agentStatus      AgentStatus @default(STOPPED)
+  agentToken       String?     @unique // token for agent to call this app's API
+
   bio              String?
 
   totalSales     Int   @default(0)
