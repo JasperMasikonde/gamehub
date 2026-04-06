@@ -1,6 +1,7 @@
 import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
+import { headers } from "next/headers";
 import { prisma } from "@/lib/prisma";
 import { authConfig } from "@/lib/auth.config";
 import type { AdminPermission, Role, UserStatus } from "@prisma/client";
@@ -63,12 +64,43 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 /** Throws a 401 response if not authenticated */
 export async function requireAuth() {
   const session = await auth();
-  if (!session?.user) {
-    throw new Response(JSON.stringify({ error: "Unauthorized" }), {
-      status: 401,
+  if (session?.user) return session.user;
+
+  // Fallback: agent bearer token auth
+  const headersList = await headers();
+  const authHeader = headersList.get("authorization");
+  if (authHeader?.startsWith("Bearer ")) {
+    const token = authHeader.slice(7);
+    const agent = await prisma.user.findUnique({
+      where: { agentToken: token, isAgent: true },
+      select: {
+        id: true,
+        email: true,
+        username: true,
+        displayName: true,
+        avatarUrl: true,
+        role: true,
+        status: true,
+        isSuperAdmin: true,
+        adminPermissions: true,
+      },
     });
+    if (agent && agent.role === "ADMIN" && agent.status === "ACTIVE") {
+      return {
+        id: agent.id,
+        email: agent.email,
+        username: agent.username,
+        displayName: agent.displayName,
+        image: agent.avatarUrl,
+        role: agent.role as Role,
+        status: agent.status as UserStatus,
+        isSuperAdmin: agent.isSuperAdmin,
+        adminPermissions: agent.adminPermissions as AdminPermission[],
+      };
+    }
   }
-  return session.user;
+
+  throw new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401 });
 }
 
 /** Throws a 403 response if not admin */
