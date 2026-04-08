@@ -12,6 +12,7 @@ declare module "next-auth" {
       status: UserStatus;
       isSuperAdmin: boolean;
       adminPermissions: AdminPermission[];
+      isRankPusher?: boolean;
     };
   }
 
@@ -25,6 +26,7 @@ declare module "next-auth" {
     status: UserStatus;
     isSuperAdmin: boolean;
     adminPermissions: AdminPermission[];
+    isRankPusher?: boolean;
   }
 }
 
@@ -36,5 +38,6 @@ declare module "next-auth/jwt" {
     status: UserStatus;
     isSuperAdmin: boolean;
     adminPermissions: AdminPermission[];
+    isRankPusher?: boolean;
   }
 }

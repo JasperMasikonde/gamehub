@@ -33,6 +33,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             passwordHash: true,
             isSuperAdmin: true,
             adminPermissions: true,
+            isRankPusher: true,
           },
         });
 
@@ -55,6 +56,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           status: user.status,
           isSuperAdmin: user.isSuperAdmin,
           adminPermissions: user.adminPermissions,
+          isRankPusher: user.isRankPusher,
         };
       },
     }),

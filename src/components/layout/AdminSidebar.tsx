@@ -22,6 +22,7 @@ import {
   Menu,
   X,
   ShieldCheck,
+  TrendingUp,
 } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 import type { AdminPermission } from "@prisma/client";
@@ -57,6 +58,13 @@ const shopLinks: NavLink[] = [
 const tournamentLinks: NavLink[] = [
   { href: "/admin/tournaments", label: "Tournaments", icon: Trophy, exact: true, permission: "MANAGE_TOURNAMENTS" },
   { href: "/admin/fees", label: "Platform Fees", icon: DollarSign, exact: true, permission: "MANAGE_FEES" },
+];
+
+const rankPushLinks: NavLink[] = [
+  { href: "/admin/rank-push", label: "Overview", icon: TrendingUp, exact: true },
+  { href: "/admin/rank-push/categories", label: "Categories", icon: Tag },
+  { href: "/admin/rank-push/providers", label: "Providers", icon: Users },
+  { href: "/admin/rank-push/orders", label: "Orders", icon: ClipboardList },
 ];
 
 function canSee(link: NavLink, isSuperAdmin: boolean, adminPermissions: AdminPermission[]) {
@@ -109,6 +117,7 @@ function SidebarContent({
 }) {
   const shopVisible = shopLinks.some((l) => canSee(l, isSuperAdmin, adminPermissions));
   const tournamentVisible = tournamentLinks.some((l) => canSee(l, isSuperAdmin, adminPermissions));
+  const rankPushVisible = rankPushLinks.some((l) => canSee(l, isSuperAdmin, adminPermissions));
 
   return (
     <aside className="w-56 shrink-0 border-r border-bg-border bg-bg-surface flex flex-col h-full">
@@ -155,6 +164,23 @@ function SidebarContent({
                 key={link.href}
                 link={link}
                 activeColor="bg-purple-500/10 text-purple-400 border border-purple-500/20"
+                onNavigate={onNavigate}
+                isSuperAdmin={isSuperAdmin}
+                adminPermissions={adminPermissions}
+              />
+            ))}
+          </>
+        )}
+
+        {rankPushVisible && (
+          <>
+            <div className="mx-3 my-2 border-t border-bg-border" />
+            <p className="px-3 text-[10px] font-semibold text-text-muted uppercase tracking-widest mb-1">Rank Push</p>
+            {rankPushLinks.map((link) => (
+              <NavItem
+                key={link.href}
+                link={link}
+                activeColor="bg-neon-purple/10 text-neon-purple border border-neon-purple/20"
                 onNavigate={onNavigate}
                 isSuperAdmin={isSuperAdmin}
                 adminPermissions={adminPermissions}

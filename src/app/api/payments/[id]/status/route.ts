@@ -135,4 +135,31 @@ async function fulfillPayment(
     });
     return;
   }
+
+  if (purpose === "rank_push") {
+    await prisma.rankPushOrder.update({
+      where: { id: entityId },
+      data: { status: "IN_PROGRESS" },
+    });
+    const order = await prisma.rankPushOrder.findUnique({
+      where: { id: entityId },
+      select: { providerId: true, clientId: true },
+    });
+    if (order) {
+      await createNotification(order.providerId, "RANK_PUSH_ORDER", {
+        title: "New rank push order!",
+        body: "A client has paid for your rank pushing service.",
+        linkUrl: `/dashboard/rank-push`,
+      });
+      emitToast(order.providerId, {
+        type: "success",
+        title: "New order received!",
+        message: "A client paid for your rank push service.",
+        linkUrl: `/dashboard/rank-push`,
+        linkLabel: "View order →",
+        duration: 10000,
+      });
+    }
+    return;
+  }
 }

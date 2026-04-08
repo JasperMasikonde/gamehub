@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useSession, signOut } from "next-auth/react";
 import { useState } from "react";
 import { Button } from "@/components/ui/Button";
-import { User, LogOut, Plus, ShieldCheck, Menu, X, Swords, ShoppingBag, Trophy } from "lucide-react";
+import { User, LogOut, Plus, ShieldCheck, Menu, X, Swords, ShoppingBag, Trophy, TrendingUp } from "lucide-react";
 import { NotificationBell } from "@/components/layout/NotificationBell";
 import { MessagesIcon } from "@/components/layout/MessagesIcon";
 import { CartIcon } from "@/components/shop/CartIcon";
@@ -39,6 +39,10 @@ export function Navbar() {
             <Link href="/tournaments" className="text-sm text-text-subtle hover:text-text-primary transition-colors flex items-center gap-1">
               <Trophy size={13} />
               Tournaments
+            </Link>
+            <Link href="/rank-push" className="text-sm text-text-subtle hover:text-text-primary transition-colors flex items-center gap-1">
+              <TrendingUp size={13} />
+              Rank Push
             </Link>
             {session?.user && (
               <Link href="/dashboard" className="text-sm text-text-subtle hover:text-text-primary transition-colors">
@@ -141,6 +145,9 @@ export function Navbar() {
           </Link>
           <Link href="/tournaments" className="text-sm text-text-subtle hover:text-text-primary flex items-center gap-1" onClick={() => setMobileOpen(false)}>
             <Trophy size={13} /> Tournaments
+          </Link>
+          <Link href="/rank-push" className="text-sm text-text-subtle hover:text-text-primary flex items-center gap-1" onClick={() => setMobileOpen(false)}>
+            <TrendingUp size={13} /> Rank Push
           </Link>
           {session?.user ? (
             <>

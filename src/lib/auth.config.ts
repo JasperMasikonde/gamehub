@@ -20,6 +20,7 @@ export const authConfig: NextAuthConfig = {
         token.status = u.status;
         token.isSuperAdmin = u.isSuperAdmin ?? false;
         token.adminPermissions = u.adminPermissions ?? [];
+        token.isRankPusher = u.isRankPusher ?? false;
       }
       return token;
     },
@@ -33,6 +34,7 @@ export const authConfig: NextAuthConfig = {
         u.status = token.status;
         u.isSuperAdmin = token.isSuperAdmin ?? false;
         u.adminPermissions = token.adminPermissions ?? [];
+        u.isRankPusher = token.isRankPusher ?? false;
       }
       return session;
     },
