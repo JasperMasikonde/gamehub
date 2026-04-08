@@ -1,0 +1,10 @@
+User-agent: *
+Allow: /
+
+# Keep private areas out of search results
+Disallow: /admin/
+Disallow: /dashboard/
+Disallow: /messages/
+Disallow: /api/
+
+Sitemap: https://eshabiki.com/sitemap.xml

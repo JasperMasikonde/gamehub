@@ -1,3 +1,13 @@
+import type { Metadata } from "next";
+export const metadata: Metadata = {
+  title: "eFootball Tournaments Kenya",
+  description: "Join eFootball tournaments in Kenya. Knockout and league formats. Compete for prize pools. Register via M-Pesa.",
+  openGraph: {
+    title: "eFootball Tournaments Kenya — Eshabiki",
+    description: "Compete in eFootball tournaments. Knockout and league formats with real prize pools.",
+  },
+};
+
 export const dynamic = "force-dynamic";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";

@@ -1,3 +1,13 @@
+import type { Metadata } from "next";
+export const metadata: Metadata = {
+  title: "Buy eFootball Accounts",
+  description: "Browse and buy verified eFootball accounts in Kenya. Safe escrow payments via M-Pesa. Find the perfect squad for your game.",
+  openGraph: {
+    title: "Buy eFootball Accounts — Eshabiki",
+    description: "Browse verified eFootball accounts with escrow-protected M-Pesa payments.",
+  },
+};
+
 import { Suspense } from "react";
 import { ListingCard } from "@/components/listings/ListingCard";
 import { ListingFilters } from "@/components/listings/ListingFilters";

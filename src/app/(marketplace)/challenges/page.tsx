@@ -1,3 +1,13 @@
+import type { Metadata } from "next";
+export const metadata: Metadata = {
+  title: "eFootball Match Challenges",
+  description: "Challenge other players to wager-based eFootball matches in Kenya. Win the pot. Powered by M-Pesa.",
+  openGraph: {
+    title: "eFootball Match Challenges — Eshabiki",
+    description: "Wager-based eFootball 1v1 matches. Beat your opponent and win the prize pot.",
+  },
+};
+
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import Link from "next/link";

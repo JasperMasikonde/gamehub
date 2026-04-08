@@ -8,10 +8,59 @@ import NextTopLoader from "nextjs-toploader";
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 
 export const metadata: Metadata = {
-  title: "Eshabiki | eFootball Account Marketplace",
+  metadataBase: new URL("https://eshabiki.com"),
+  title: {
+    default: "Eshabiki — eFootball Account Marketplace Kenya",
+    template: "%s | Eshabiki",
+  },
   description:
-    "Buy and sell eFootball gaming accounts securely with our escrow-protected marketplace.",
-  keywords: "eFootball, gaming accounts, buy sell, marketplace, escrow",
+    "Kenya's #1 platform to buy and sell eFootball accounts safely. Escrow-protected payments, wager-based match challenges, and tournaments. Powered by M-Pesa.",
+  keywords: [
+    "eFootball accounts Kenya",
+    "buy eFootball account",
+    "sell eFootball account",
+    "eFootball marketplace",
+    "eFootball challenges",
+    "eFootball tournaments Kenya",
+    "gaming accounts Kenya",
+    "eshabiki",
+  ],
+  authors: [{ name: "Eshabiki" }],
+  creator: "Eshabiki",
+  openGraph: {
+    type: "website",
+    locale: "en_KE",
+    url: "https://eshabiki.com",
+    siteName: "Eshabiki",
+    title: "Eshabiki — eFootball Account Marketplace Kenya",
+    description:
+      "Buy and sell eFootball accounts safely in Kenya. Escrow payments, match challenges, and tournaments.",
+    images: [
+      {
+        url: "/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "Eshabiki — eFootball Marketplace",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Eshabiki — eFootball Account Marketplace Kenya",
+    description:
+      "Buy and sell eFootball accounts safely in Kenya. Escrow payments, match challenges, and tournaments.",
+    images: ["/og-image.png"],
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
+  },
   icons: {
     icon: "/logo-icon.svg",
     shortcut: "/logo-icon.svg",
