@@ -15,18 +15,7 @@ export function Navbar() {
 
   return (
     <>
-    {/* Mobile FAB — fixed bottom-right, only for logged-in users */}
-    {session?.user && (
-      <Link
-        href="/listings/create"
-        className="md:hidden fixed bottom-6 right-5 z-50 flex items-center gap-2 px-4 py-3 rounded-full bg-neon-blue text-bg-base font-semibold text-sm shadow-[0_0_20px_rgba(0,212,255,0.45)] active:scale-95 transition-transform"
-        style={{ WebkitTapHighlightColor: "transparent" }}
-      >
-        <Plus size={18} strokeWidth={2.5} />
-        Sell Account
-      </Link>
-    )}
-    <nav className="sticky top-0 z-40 border-b border-bg-border bg-bg-surface/80 backdrop-blur-md">
+<nav className="sticky top-0 z-40 border-b border-bg-border bg-bg-surface/80 backdrop-blur-md">
       <div className="max-w-7xl mx-auto px-4 sm:px-6">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
