@@ -2,10 +2,21 @@ import { createServer } from "http";
 import { parse } from "url";
 import next from "next";
 import { Server as SocketIOServer } from "socket.io";
+import { execSync } from "child_process";
 
 const dev = process.env.NODE_ENV !== "production";
 const hostname = "0.0.0.0";
 const port = parseInt(process.env.PORT ?? "3000", 10);
+
+// Auto-migrate DB schema on startup (safe for both dev and prod)
+try {
+  console.log("> Syncing database schema…");
+  execSync("npx prisma db push --accept-data-loss", { stdio: "inherit" });
+  console.log("> Database schema up to date.");
+} catch (err) {
+  console.error("Warning: prisma db push failed:", err);
+  // Don't crash — DB might already be in sync
+}
 
 const app = next({ dev, hostname, port });
 const handle = app.getRequestHandler();
