@@ -48,6 +48,7 @@ const ALL_PERMISSIONS: { value: AdminPermission; label: string }[] = [
   { value: "MANAGE_SHOP", label: "Shop" },
   { value: "MANAGE_TOURNAMENTS", label: "Tournaments" },
   { value: "MANAGE_FEES", label: "Platform Fees" },
+  { value: "MANAGE_RANK_PUSH", label: "Rank Push" },
 ];
 
 const STATUS_META: Record<AgentStatus, { label: string; color: string }> = {

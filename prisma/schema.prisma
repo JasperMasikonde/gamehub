@@ -28,6 +28,7 @@ enum AdminPermission {
   MANAGE_SHOP
   MANAGE_TOURNAMENTS
   MANAGE_FEES
+  MANAGE_RANK_PUSH
 }
 
 enum AgentStatus {
