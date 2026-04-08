@@ -42,7 +42,7 @@ export default async function ChallengeDetailPage({
 }) {
   const { id } = await params;
   const session = await auth();
-  if (!session?.user) redirect("/login");
+  if (!session?.user) redirect(`/login?next=/challenges/${id}`);
 
   const challenge = await prisma.challenge.findUnique({
     where: { id },

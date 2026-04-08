@@ -15,6 +15,9 @@ export function LoginForm() {
   const [serverError, setServerError] = useState("");
   const searchParams = useSearchParams();
   const justRegistered = searchParams.get("registered") === "1";
+  const next = searchParams.get("next");
+  // Only allow relative paths to prevent open redirect
+  const redirectTo = next?.startsWith("/") ? next : "/dashboard";
 
   const {
     register,
@@ -42,7 +45,7 @@ export function LoginForm() {
     }
 
     // Hard redirect forces a full session reload — avoids stale session in production
-    window.location.href = "/dashboard";
+    window.location.href = redirectTo;
   };
 
   return (

@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import Link from "next/link";
-import { Swords, Plus, Trophy, Clock, CheckCircle } from "lucide-react";
+import { Swords, Plus, Trophy, Clock, CheckCircle, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Card, CardContent } from "@/components/ui/Card";
 import { formatCurrency, formatDate } from "@/lib/utils/format";
@@ -189,17 +189,23 @@ export default async function ChallengesPage({
                         )}
                         <p className="text-xs text-text-muted mt-1">Posted {formatDate(c.createdAt)}</p>
                       </div>
-                      <div className="text-right shrink-0">
-                        <p className="text-lg font-black text-neon-green">
-                          {formatCurrency(c.wagerAmount.toString())}
-                        </p>
-                        <p className="text-xs text-text-muted">wager</p>
-                        <div className="mt-2">
-                          <span className="text-xs text-neon-purple font-medium flex items-center gap-1 justify-end">
+                      <div className="text-right shrink-0 flex flex-col items-end gap-2">
+                        <div>
+                          <p className="text-lg font-black text-neon-green">
+                            {formatCurrency(c.wagerAmount.toString())}
+                          </p>
+                          <p className="text-xs text-text-muted">wager</p>
+                          <span className="text-xs text-neon-purple font-medium flex items-center gap-1 justify-end mt-1">
                             <Trophy size={10} />
                             {formatCurrency((Number(c.wagerAmount) * 2).toString())} prize
                           </span>
                         </div>
+                        {/* Only show Accept button for users who are not the host */}
+                        {userId !== c.hostId && (
+                          <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-neon-purple text-white text-xs font-semibold">
+                            Accept <ArrowRight size={11} />
+                          </span>
+                        )}
                       </div>
                     </div>
                   </CardContent>

@@ -71,9 +71,10 @@ export function AcceptChallengePanel({
     return (
       <div className="border border-neon-purple/30 bg-neon-purple/5 rounded-xl p-5 space-y-4">
         <div>
+          <p className="text-xs text-text-muted font-medium mb-0.5">Step 2 of 2</p>
           <p className="text-sm font-semibold text-neon-purple flex items-center gap-2">
             <Swords size={14} />
-            Pay wager to accept challenge
+            Pay wager to confirm your spot
           </p>
           <p className="text-xs text-text-muted mt-1">
             {formatLabel} · Wager: <span className="text-neon-green font-semibold">{formatCurrency(wagerAmount)}</span>
@@ -100,22 +101,33 @@ export function AcceptChallengePanel({
 
   // ── Step 1: Squad upload ────────────────────────────────────────────────
   return (
-    <div className="border border-neon-purple/30 bg-neon-purple/5 rounded-xl p-5 space-y-4">
+    <div className="border-2 border-neon-purple/40 bg-neon-purple/5 rounded-xl p-5 space-y-4">
+      {/* Header */}
       <div>
-        <p className="text-sm font-semibold text-neon-purple flex items-center gap-2">
-          <Swords size={14} />
+        <p className="text-xs text-text-muted font-medium mb-0.5">Step 1 of 2</p>
+        <p className="text-base font-bold text-neon-purple flex items-center gap-2">
+          <Swords size={16} />
           Accept this Challenge
         </p>
         <p className="text-xs text-text-muted mt-1">
-          {formatLabel} · Wager: <span className="text-neon-green font-semibold">{formatCurrency(wagerAmount)}</span>
+          {formatLabel} · Match wager: <span className="text-neon-green font-semibold">{formatCurrency(wagerAmount)}</span>
         </p>
+      </div>
+
+      {/* Instructions */}
+      <div className="bg-bg-elevated rounded-lg px-4 py-3 space-y-1.5">
+        <p className="text-xs font-semibold text-text-primary">How to join:</p>
+        <p className="text-xs text-text-muted">① Upload a screenshot of your eFootball squad</p>
+        <p className="text-xs text-text-muted">② Pay the wager via M-Pesa to confirm your spot</p>
+        <p className="text-xs text-text-muted">③ The match begins — chat with your opponent in the challenge room</p>
       </div>
 
       {/* Squad upload */}
       <div>
         <p className="text-xs font-medium text-text-primary mb-2">
           <Camera size={11} className="inline mr-1" />
-          Upload your squad screenshot <span className="text-neon-red">*</span>
+          Your squad screenshot <span className="text-neon-red">*</span>
+          <span className="text-text-muted font-normal ml-1">— so your opponent can verify your team</span>
         </p>
         <input ref={fileInputRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={handleFile} />
         {squadUpload ? (
@@ -134,9 +146,11 @@ export function AcceptChallengePanel({
             type="button"
             onClick={() => fileInputRef.current?.click()}
             disabled={uploading}
-            className="w-48 h-24 rounded-lg border-2 border-dashed border-neon-purple/30 hover:border-neon-purple flex flex-col items-center justify-center gap-1.5 text-neon-purple/60 hover:text-neon-purple transition-colors"
+            className="w-full h-24 rounded-lg border-2 border-dashed border-neon-purple/30 hover:border-neon-purple flex flex-col items-center justify-center gap-1.5 text-neon-purple/60 hover:text-neon-purple transition-colors"
           >
-            {uploading ? <Loader2 size={16} className="animate-spin" /> : <><Upload size={16} /><span className="text-xs">Upload squad</span></>}
+            {uploading
+              ? <><Loader2 size={16} className="animate-spin" /><span className="text-xs">Uploading…</span></>
+              : <><Upload size={18} /><span className="text-xs font-medium">Tap to upload squad screenshot</span></>}
           </button>
         )}
       </div>
@@ -148,11 +162,14 @@ export function AcceptChallengePanel({
       <Button
         variant="primary"
         className="w-full"
-        onClick={() => { if (!squadUpload) { setError("Upload your squad screenshot first"); return; } setError(""); setShowPayment(true); }}
-        disabled={!squadUpload}
+        onClick={() => {
+          if (!squadUpload) { setError("Upload your squad screenshot first"); return; }
+          setError("");
+          setShowPayment(true);
+        }}
       >
         <Swords size={14} />
-        Continue to Payment
+        {squadUpload ? "Continue to Payment →" : "Upload Squad to Continue"}
       </Button>
     </div>
   );
