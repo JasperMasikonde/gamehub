@@ -31,7 +31,7 @@ export async function POST(req: NextRequest) {
   }
 
   // Build a short reference (NCBA max 20 chars)
-  const accountRef = `GH-${purpose.slice(0, 4).toUpperCase()}-${entityId.slice(-8)}`;
+  const accountRef = `GH${purpose.slice(0, 4).toUpperCase()}${entityId.slice(-8)}`;
 
   try {
     const stkRes = await initiateSTKPush(normPhone, amountNum, accountRef);
