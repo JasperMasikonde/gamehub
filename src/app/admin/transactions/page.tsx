@@ -6,7 +6,7 @@ import { TransactionStatusPill } from "@/components/ui/StatusPill";
 import { formatCurrency, formatDate } from "@/lib/utils/format";
 import Link from "next/link";
 import { cn } from "@/lib/utils/cn";
-import { Banknote } from "lucide-react";
+import { Banknote, Phone } from "lucide-react";
 
 const STATUSES = ["ALL", "PENDING_PAYMENT", "IN_ESCROW", "DELIVERED", "COMPLETED", "DISPUTED", "REFUNDED", "CANCELLED"];
 
@@ -28,6 +28,16 @@ export default async function AdminTransactionsPage({
     },
   });
 
+  // Fetch the M-Pesa phone the seller used to pay into escrow (that's the number we send payout to)
+  const txIds = transactions.map((tx) => tx.id);
+  const escrowPayments = txIds.length > 0
+    ? await prisma.payment.findMany({
+        where: { purpose: "escrow", entityId: { in: txIds }, status: "COMPLETED" },
+        select: { entityId: true, phone: true },
+      })
+    : [];
+  const phoneByTxId = new Map(escrowPayments.map((p) => [p.entityId, p.phone]));
+
   const completedTotal = filterStatus === "COMPLETED"
     ? transactions.reduce((s, tx) => s + Number(tx.sellerReceives), 0)
     : null;
@@ -36,7 +46,7 @@ export default async function AdminTransactionsPage({
     <div className="flex flex-col gap-4">
       <div>
         <h1 className="text-xl font-bold">Transactions</h1>
-        <p className="text-sm text-text-muted">{transactions.length} {filterStatus ? filterStatus.toLowerCase().replace("_", " ") : "total"}</p>
+        <p className="text-sm text-text-muted">{transactions.length} {filterStatus ? filterStatus.toLowerCase().replace(/_/g, " ") : "total"}</p>
       </div>
 
       {/* Status filter tabs */}
@@ -60,7 +70,7 @@ export default async function AdminTransactionsPage({
         })}
       </div>
 
-      {/* Payout summary banner for COMPLETED filter */}
+      {/* Payout summary banner */}
       {filterStatus === "COMPLETED" && completedTotal !== null && transactions.length > 0 && (
         <div className="flex items-center gap-3 p-4 rounded-xl bg-neon-green/5 border border-neon-green/30">
           <Banknote size={18} className="text-neon-green shrink-0" />
@@ -80,56 +90,62 @@ export default async function AdminTransactionsPage({
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-bg-border">
-                {["Listing", "Buyer", "Seller", "Amount", filterStatus === "COMPLETED" ? "To Send" : "Seller Gets", "Status", "Date"].map((h) => (
-                  <th
-                    key={h}
-                    className="text-left px-4 py-3 text-xs font-medium text-text-muted"
-                  >
+                {["Listing", "Seller", "Payout Number", "Amount Paid", "To Send", "Status", "Date"].map((h) => (
+                  <th key={h} className="text-left px-4 py-3 text-xs font-medium text-text-muted">
                     {h}
                   </th>
                 ))}
               </tr>
             </thead>
             <tbody className="divide-y divide-bg-border">
-              {transactions.map((tx) => (
-                <tr
-                  key={tx.id}
-                  className={cn(
-                    "hover:bg-bg-elevated/50 transition-colors",
-                    tx.status === "COMPLETED" && "bg-neon-green/[0.03]"
-                  )}
-                >
-                  <td className="px-4 py-3">
-                    <p className="text-xs font-medium text-text-primary max-w-[180px] truncate">
-                      {tx.listing.title}
-                    </p>
-                  </td>
-                  <td className="px-4 py-3 text-xs text-text-muted">
-                    {tx.buyer.username}
-                  </td>
-                  <td className="px-4 py-3 text-xs text-text-muted">
-                    {tx.seller.username}
-                  </td>
-                  <td className="px-4 py-3 text-xs font-medium text-neon-green">
-                    {formatCurrency(tx.amount.toString())}
-                  </td>
-                  <td className="px-4 py-3 text-xs font-semibold text-neon-yellow">
-                    {formatCurrency(tx.sellerReceives.toString())}
-                  </td>
-                  <td className="px-4 py-3">
-                    <TransactionStatusPill status={tx.status} />
-                  </td>
-                  <td className="px-4 py-3 text-xs text-text-muted">
-                    {formatDate(tx.createdAt)}
-                  </td>
-                </tr>
-              ))}
+              {transactions.map((tx) => {
+                const payoutPhone = phoneByTxId.get(tx.id);
+                return (
+                  <tr
+                    key={tx.id}
+                    className={cn(
+                      "hover:bg-bg-elevated/50 transition-colors",
+                      tx.status === "COMPLETED" && "bg-neon-green/[0.03]"
+                    )}
+                  >
+                    <td className="px-4 py-3">
+                      <p className="text-xs font-medium text-text-primary max-w-[160px] truncate">
+                        {tx.listing.title}
+                      </p>
+                      <p className="text-[10px] text-text-muted mt-0.5">{tx.buyer.username} (buyer)</p>
+                    </td>
+                    <td className="px-4 py-3 text-xs text-text-muted">
+                      {tx.seller.username}
+                    </td>
+                    <td className="px-4 py-3">
+                      {payoutPhone ? (
+                        <div className="flex items-center gap-1.5">
+                          <Phone size={11} className="text-neon-green shrink-0" />
+                          <span className="text-xs font-mono font-semibold text-neon-green">{payoutPhone}</span>
+                        </div>
+                      ) : (
+                        <span className="text-xs text-text-muted italic">—</span>
+                      )}
+                    </td>
+                    <td className="px-4 py-3 text-xs font-medium text-text-primary">
+                      {formatCurrency(tx.amount.toString())}
+                    </td>
+                    <td className="px-4 py-3 text-xs font-bold text-neon-yellow">
+                      {formatCurrency(tx.sellerReceives.toString())}
+                    </td>
+                    <td className="px-4 py-3">
+                      <TransactionStatusPill status={tx.status} />
+                    </td>
+                    <td className="px-4 py-3 text-xs text-text-muted">
+                      {formatDate(tx.createdAt)}
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
           {transactions.length === 0 && (
-            <p className="text-center text-sm text-text-muted py-8">
-              No transactions
-            </p>
+            <p className="text-center text-sm text-text-muted py-8">No transactions</p>
           )}
         </div>
       </Card>
