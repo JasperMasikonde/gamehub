@@ -1,32 +1,39 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { Smartphone, QrCode, Loader2, CheckCircle, XCircle, ChevronDown, ChevronUp } from "lucide-react";
+import { Smartphone, QrCode, Loader2, CheckCircle, XCircle, ChevronDown, ChevronUp, RefreshCw, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { formatCurrency } from "@/lib/utils/format";
 
-const CONFIRM_PHASE_AFTER_S = 20; // switch message after PIN entry window
+const POLL_INTERVAL_MS = 3000;
+const MAX_POLLS = 40; // ~2 minutes before we give up polling
+const SHOW_MANUAL_CHECK_AFTER_S = 15; // show "I've paid" button after this many seconds
 
 interface Props {
-  /** Payment purpose: "escrow" | "challenge" | "tournament" | "shop" */
   purpose: string;
-  /** The entity being paid for (transactionId / challengeId / tournamentId / orderId) */
   entityId: string;
-  /** Amount in KES */
   amount: number;
   currency?: string;
-  /** Extra metadata passed to the server (e.g. challengerSquadUrl) */
   metadata?: Record<string, unknown>;
-  /** Called when payment is confirmed */
+  /** Called when payment is confirmed COMPLETED */
   onSuccess: () => void;
+  /** Optional link shown when confirmation times out so user can navigate back */
+  returnUrl?: string;
+  returnLabel?: string;
 }
 
-type State = "idle" | "initiating" | "polling" | "success" | "failed";
+type State = "idle" | "initiating" | "polling" | "success" | "failed" | "timed_out";
 
-const POLL_INTERVAL_MS = 3000;
-const MAX_POLLS = 40; // ~2 minutes
-
-export function PaymentPanel({ purpose, entityId, amount, currency = "KES", metadata, onSuccess }: Props) {
+export function PaymentPanel({
+  purpose,
+  entityId,
+  amount,
+  currency = "KES",
+  metadata,
+  onSuccess,
+  returnUrl,
+  returnLabel = "Go back",
+}: Props) {
   const [phone, setPhone] = useState("");
   const [state, setState] = useState<State>("idle");
   const [errorMsg, setErrorMsg] = useState("");
@@ -35,13 +42,14 @@ export function PaymentPanel({ purpose, entityId, amount, currency = "KES", meta
   const [showQR, setShowQR] = useState(false);
   const [qrCode, setQrCode] = useState<string | null>(null);
   const [qrLoading, setQrLoading] = useState(false);
-
   const [elapsed, setElapsed] = useState(0);
+  const [checking, setChecking] = useState(false);
+
   const pollCount = useRef(0);
   const pollTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const elapsedTimer = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  // Elapsed timer — runs only while polling
+  // Elapsed counter — only ticks while polling
   useEffect(() => {
     if (state === "polling") {
       setElapsed(0);
@@ -52,7 +60,7 @@ export function PaymentPanel({ purpose, entityId, amount, currency = "KES", meta
     return () => { if (elapsedTimer.current) clearInterval(elapsedTimer.current); };
   }, [state]);
 
-  // Clean up on unmount
+  // Clean up timers on unmount
   useEffect(() => {
     return () => {
       if (pollTimer.current) clearTimeout(pollTimer.current);
@@ -90,13 +98,16 @@ export function PaymentPanel({ purpose, entityId, amount, currency = "KES", meta
     pollTimer.current = setTimeout(() => poll(pid), POLL_INTERVAL_MS);
   }
 
-  async function poll(pid: string) {
-    if (pollCount.current >= MAX_POLLS) {
-      setState("failed");
-      setFailureReason("Payment timed out. Please try again.");
+  async function poll(pid: string, manual = false) {
+    if (!manual && pollCount.current >= MAX_POLLS) {
+      // We timed out — but this is NOT a payment failure.
+      // The payment may have gone through on M-Pesa; we just haven't received NCBA confirmation yet.
+      setState("timed_out");
       return;
     }
-    pollCount.current++;
+    if (!manual) pollCount.current++;
+
+    if (manual) setChecking(true);
 
     try {
       const res = await fetch(`/api/payments/${pid}/status`);
@@ -109,14 +120,15 @@ export function PaymentPanel({ purpose, entityId, amount, currency = "KES", meta
       }
       if (data.status === "FAILED") {
         setState("failed");
-        setFailureReason(data.reason ?? "Payment was declined.");
+        setFailureReason(data.reason ?? "Payment was declined by M-Pesa.");
         return;
       }
-      // Still pending — keep polling
-      schedulePoll(pid);
+      // Still pending
+      if (!manual) schedulePoll(pid);
     } catch {
-      // Network glitch — retry
-      schedulePoll(pid);
+      if (!manual) schedulePoll(pid);
+    } finally {
+      if (manual) setChecking(false);
     }
   }
 
@@ -140,7 +152,15 @@ export function PaymentPanel({ purpose, entityId, amount, currency = "KES", meta
     if (next && !qrCode) loadQR();
   }
 
-  // ── Success state ──────────────────────────────────────────────────────────
+  function reset() {
+    if (pollTimer.current) clearTimeout(pollTimer.current);
+    setState("idle");
+    setErrorMsg("");
+    setPaymentId(null);
+    pollCount.current = 0;
+  }
+
+  // ── Success ────────────────────────────────────────────────────────────────
   if (state === "success") {
     return (
       <div className="flex flex-col items-center gap-3 py-6 px-4 text-center">
@@ -151,34 +171,74 @@ export function PaymentPanel({ purpose, entityId, amount, currency = "KES", meta
     );
   }
 
-  // ── Failed state ───────────────────────────────────────────────────────────
+  // ── Explicitly failed (M-Pesa declined / wrong PIN / cancelled) ────────────
   if (state === "failed") {
     return (
       <div className="space-y-4">
         <div className="flex flex-col items-center gap-3 py-4 text-center">
           <XCircle size={36} className="text-neon-red" />
-          <p className="font-semibold text-neon-red">Payment failed</p>
+          <p className="font-semibold text-neon-red">Payment declined</p>
           <p className="text-xs text-text-muted">{failureReason}</p>
         </div>
-        <Button variant="outline" className="w-full" onClick={() => { setState("idle"); setErrorMsg(""); setPaymentId(null); }}>
+        <Button variant="outline" className="w-full" onClick={reset}>
           Try again
         </Button>
       </div>
     );
   }
 
-  // ── Polling state ──────────────────────────────────────────────────────────
+  // ── Timed out waiting for NCBA confirmation ────────────────────────────────
+  if (state === "timed_out") {
+    return (
+      <div className="space-y-4">
+        <div className="flex flex-col items-center gap-3 py-4 text-center">
+          <Loader2 size={36} className="text-neon-yellow" />
+          <p className="font-semibold text-neon-yellow">Waiting for confirmation</p>
+          <p className="text-xs text-text-muted leading-relaxed">
+            Your M-Pesa payment went through but we haven&apos;t received confirmation from NCBA yet.
+            This page will update automatically — you don&apos;t need to stay here.
+          </p>
+        </div>
+        <div className="flex flex-col gap-2">
+          {paymentId && (
+            <Button
+              variant="outline"
+              className="w-full"
+              disabled={checking}
+              onClick={() => poll(paymentId, true)}
+            >
+              {checking
+                ? <><Loader2 size={14} className="animate-spin" /> Checking…</>
+                : <><RefreshCw size={14} /> Check again</>}
+            </Button>
+          )}
+          {returnUrl && (
+            <a href={returnUrl} className="w-full">
+              <Button variant="primary" className="w-full">
+                {returnLabel} <ArrowRight size={14} />
+              </Button>
+            </a>
+          )}
+          <Button variant="ghost" className="w-full text-text-muted" onClick={reset}>
+            Start a new payment
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Polling ────────────────────────────────────────────────────────────────
   if (state === "polling") {
-    const confirming = elapsed >= CONFIRM_PHASE_AFTER_S;
+    const enteredPin = elapsed >= SHOW_MANUAL_CHECK_AFTER_S;
     return (
       <div className="flex flex-col items-center gap-4 py-6 text-center">
         <Loader2 size={36} className="animate-spin text-neon-green" />
         <div>
-          {confirming ? (
+          {enteredPin ? (
             <>
               <p className="font-semibold text-text-primary">Confirming your payment…</p>
               <p className="text-xs text-text-muted mt-1">
-                We&apos;re waiting for NCBA to confirm the transaction. This can take a few seconds.
+                Waiting for NCBA to confirm your transaction.
               </p>
             </>
           ) : (
@@ -192,7 +252,19 @@ export function PaymentPanel({ purpose, entityId, amount, currency = "KES", meta
             </>
           )}
         </div>
-        <p className="text-xs text-text-muted tabular-nums">{elapsed}s elapsed</p>
+        <p className="text-xs text-text-muted tabular-nums">{elapsed}s</p>
+        {enteredPin && paymentId && (
+          <Button
+            variant="outline"
+            className="text-xs px-4 py-1.5 h-auto"
+            disabled={checking}
+            onClick={() => poll(paymentId, true)}
+          >
+            {checking
+              ? <><Loader2 size={12} className="animate-spin" /> Checking…</>
+              : <><RefreshCw size={12} /> I&apos;ve paid — check now</>}
+          </Button>
+        )}
       </div>
     );
   }
@@ -200,13 +272,11 @@ export function PaymentPanel({ purpose, entityId, amount, currency = "KES", meta
   // ── Idle / initiating ──────────────────────────────────────────────────────
   return (
     <div className="space-y-5">
-      {/* Amount display */}
       <div className="bg-neon-green/5 border border-neon-green/20 rounded-xl p-4 text-center">
         <p className="text-xs text-text-muted mb-1">Amount</p>
         <p className="text-3xl font-black text-neon-green">{formatCurrency(String(amount), currency)}</p>
       </div>
 
-      {/* STK Push section */}
       <div className="space-y-3">
         <div className="flex items-center gap-2">
           <Smartphone size={14} className="text-neon-green" />
@@ -231,13 +301,13 @@ export function PaymentPanel({ purpose, entityId, amount, currency = "KES", meta
         >
           {state === "initiating"
             ? <><Loader2 size={15} className="animate-spin" /> Sending prompt…</>
-            : <><Smartphone size={15} /> Send M-Pesa Prompt</>
-          }
+            : <><Smartphone size={15} /> Send M-Pesa Prompt</>}
         </Button>
-        <p className="text-xs text-text-muted text-center">You&apos;ll receive a pop-up on your phone. Enter your M-Pesa PIN to confirm.</p>
+        <p className="text-xs text-text-muted text-center">
+          You&apos;ll receive a pop-up on your phone. Enter your M-Pesa PIN to confirm.
+        </p>
       </div>
 
-      {/* QR Code accordion */}
       <div className="border border-bg-border rounded-xl overflow-hidden">
         <button
           onClick={toggleQR}

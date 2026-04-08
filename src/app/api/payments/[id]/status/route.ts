@@ -86,6 +86,15 @@ async function fulfillPayment(
     return;
   }
 
+  if (purpose === "challenge_host") {
+    await prisma.challenge.update({
+      where: { id: entityId },
+      data: { status: "OPEN" },
+    });
+    emitChallengeUpdate(userId, null, entityId);
+    return;
+  }
+
   if (purpose === "challenge") {
     const { challengerSquadUrl, hostId } = metadata as { challengerSquadUrl: string; hostId: string };
 

@@ -68,6 +68,17 @@ export default async function ChallengeDetailPage({
     ? await prisma.user.findFirst({ where: { role: "ADMIN" }, select: { id: true } })
     : null;
 
+  // Self-heal: if host has a completed payment but challenge wasn't activated, fix it now
+  if (challenge.status === "PENDING_HOST_PAYMENT" && isHost) {
+    const completedPayment = await prisma.payment.findFirst({
+      where: { purpose: "challenge_host", entityId: id, status: "COMPLETED" },
+    });
+    if (completedPayment) {
+      await prisma.challenge.update({ where: { id }, data: { status: "OPEN" } });
+      redirect(`/challenges/${id}`);
+    }
+  }
+
   // Non-parties can view OPEN challenges; pending/in-progress challenges are private
   if (!isParty && !isAdmin && challenge.status !== "OPEN") redirect("/challenges");
 

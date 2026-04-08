@@ -36,6 +36,8 @@ export function HostPaymentBanner({
         entityId={challengeId}
         amount={Number(wagerAmount)}
         onSuccess={() => router.refresh()}
+        returnUrl={`/challenges/${challengeId}`}
+        returnLabel="Back to challenge"
       />
     </div>
   );
