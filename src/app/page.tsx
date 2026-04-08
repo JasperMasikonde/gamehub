@@ -1,4 +1,25 @@
 export const dynamic = "force-dynamic";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Buy & Sell eFootball Accounts in Kenya | Eshabiki",
+  description:
+    "Buy or sell eFootball accounts safely in Kenya. Escrow-protected payments via M-Pesa. Verified sellers, instant delivery, full refund guarantee. Kenya's #1 eFootball marketplace.",
+  keywords: [
+    "buy eFootball account Kenya",
+    "sell eFootball account Kenya",
+    "eFootball account marketplace",
+    "eFootball accounts for sale Kenya",
+    "sell eFootball account",
+    "buy eFootball account",
+    "eFootball marketplace Kenya",
+  ],
+  openGraph: {
+    title: "Buy & Sell eFootball Accounts in Kenya | Eshabiki",
+    description:
+      "Kenya's safest eFootball account marketplace. Escrow payments, verified sellers, M-Pesa. Buy or sell in minutes.",
+  },
+};
 
 import Link from "next/link";
 import { Button } from "@/components/ui/Button";
@@ -57,15 +78,15 @@ export default async function HomePage() {
           </div>
 
           <h1 className="text-5xl sm:text-7xl font-black leading-[1.05] tracking-tight mb-6">
-            Trade eFootball{" "}
-            <span className="gradient-text text-glow-green">Accounts</span>
+            Buy &amp; Sell{" "}
+            <span className="gradient-text text-glow-green">eFootball Accounts</span>
             <br />
-            <span className="text-text-subtle">with Zero Risk</span>
+            <span className="text-text-subtle">in Kenya, Safely</span>
           </h1>
 
           <p className="text-text-subtle text-xl mb-10 max-w-2xl mx-auto leading-relaxed">
-            Every transaction is escrow-protected. Your funds are held safely until
-            you confirm the account — or we refund you. No exceptions.
+            Kenya&apos;s #1 eFootball account marketplace. Every transaction is escrow-protected via M-Pesa —
+            your money is held safely until you confirm the account works, or we refund you. No exceptions.
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center mb-16">
@@ -206,6 +227,48 @@ export default async function HomePage() {
         </div>
       </section>
 
+      {/* ── FAQ ── */}
+      <section className="max-w-3xl mx-auto w-full px-4 sm:px-6 py-16">
+        <h2 className="text-2xl font-bold text-center mb-8">
+          Frequently Asked Questions
+        </h2>
+        <div className="flex flex-col gap-3">
+          {[
+            {
+              q: "How do I buy an eFootball account in Kenya?",
+              a: "Browse listings on Eshabiki, choose an account, and pay via M-Pesa. Your payment goes into escrow — the seller delivers the account credentials, you verify it works, then confirm. Funds release to the seller only after you're satisfied.",
+            },
+            {
+              q: "How do I sell my eFootball account in Kenya?",
+              a: "Create a free Eshabiki account, click 'Sell Account', upload screenshots of your squad, set your price, and publish. When a buyer pays, you deliver the credentials through the platform. You receive your M-Pesa payout once the buyer confirms.",
+            },
+            {
+              q: "Is it safe to buy and sell eFootball accounts?",
+              a: "Yes — Eshabiki uses an escrow system. Money is never sent directly to the seller. It's held on the platform until the buyer confirms the account. If there's a dispute, our admin team reviews and resolves it fairly.",
+            },
+            {
+              q: "What payment method is used?",
+              a: "All payments are made via M-Pesa (NCBA STK Push). You receive a prompt on your phone, enter your PIN, and the transaction is complete. No cards or bank transfers needed.",
+            },
+            {
+              q: "Can I challenge other players to eFootball matches?",
+              a: "Yes — Eshabiki has a challenges section where you can post or accept wager-based 1v1 eFootball matches. Both players pay the wager, the winner takes the prize pot.",
+            },
+          ].map(({ q, a }) => (
+            <details
+              key={q}
+              className="group bg-bg-elevated border border-bg-border rounded-xl overflow-hidden"
+            >
+              <summary className="flex items-center justify-between gap-3 px-5 py-4 cursor-pointer list-none font-semibold text-sm text-text-primary hover:text-neon-green transition-colors">
+                {q}
+                <ChevronRight size={15} className="shrink-0 text-text-muted group-open:rotate-90 transition-transform" />
+              </summary>
+              <p className="px-5 pb-4 text-sm text-text-muted leading-relaxed">{a}</p>
+            </details>
+          ))}
+        </div>
+      </section>
+
       {/* ── CTA ── */}
       <section className="max-w-5xl mx-auto w-full px-4 sm:px-6 py-16">
         <div className="neon-border rounded-2xl bg-bg-elevated p-10 text-center relative overflow-hidden">
@@ -234,6 +297,74 @@ export default async function HomePage() {
           </div>
         </div>
       </section>
+
+      {/* ── JSON-LD structured data ── */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify([
+            {
+              "@context": "https://schema.org",
+              "@type": "WebSite",
+              name: "Eshabiki",
+              url: "https://eshabiki.com",
+              description: "Kenya's #1 platform to buy and sell eFootball accounts safely.",
+              potentialAction: {
+                "@type": "SearchAction",
+                target: "https://eshabiki.com/listings?q={search_term_string}",
+                "query-input": "required name=search_term_string",
+              },
+            },
+            {
+              "@context": "https://schema.org",
+              "@type": "Organization",
+              name: "Eshabiki",
+              url: "https://eshabiki.com",
+              logo: "https://eshabiki.com/logo.svg",
+              description: "Kenya's safest eFootball account marketplace with M-Pesa escrow payments.",
+              areaServed: "KE",
+            },
+            {
+              "@context": "https://schema.org",
+              "@type": "FAQPage",
+              mainEntity: [
+                {
+                  "@type": "Question",
+                  name: "How do I buy an eFootball account in Kenya?",
+                  acceptedAnswer: {
+                    "@type": "Answer",
+                    text: "Browse listings on Eshabiki, choose an account, and pay via M-Pesa. Your payment goes into escrow — the seller delivers the account credentials, you verify it works, then confirm. Funds release to the seller only after you're satisfied.",
+                  },
+                },
+                {
+                  "@type": "Question",
+                  name: "How do I sell my eFootball account in Kenya?",
+                  acceptedAnswer: {
+                    "@type": "Answer",
+                    text: "Create a free Eshabiki account, click Sell Account, upload screenshots of your squad, set your price, and publish. When a buyer pays, you deliver the credentials through the platform. You receive your M-Pesa payout once the buyer confirms.",
+                  },
+                },
+                {
+                  "@type": "Question",
+                  name: "Is it safe to buy and sell eFootball accounts?",
+                  acceptedAnswer: {
+                    "@type": "Answer",
+                    text: "Yes — Eshabiki uses an escrow system. Money is never sent directly to the seller. It's held on the platform until the buyer confirms the account. If there's a dispute, our admin team reviews and resolves it fairly.",
+                  },
+                },
+                {
+                  "@type": "Question",
+                  name: "What payment method is used?",
+                  acceptedAnswer: {
+                    "@type": "Answer",
+                    text: "All payments are made via M-Pesa (NCBA STK Push). You receive a prompt on your phone, enter your PIN, and the transaction is complete.",
+                  },
+                },
+              ],
+            },
+          ]),
+        }}
+      />
 
       <Footer />
     </div>
