@@ -79,6 +79,21 @@ export default async function ChallengeDetailPage({
     }
   }
 
+  // Self-heal: if challenger paid but fulfillPayment didn't run, activate now
+  if (challenge.status === "OPEN" && !isHost && session.user) {
+    const completedAccept = await prisma.payment.findFirst({
+      where: { purpose: "challenge", entityId: id, userId: session.user.id, status: "COMPLETED" },
+    });
+    if (completedAccept) {
+      const meta = completedAccept.metadata ? JSON.parse(completedAccept.metadata as string) : {};
+      await prisma.challenge.update({
+        where: { id },
+        data: { challengerId: session.user.id, challengerSquadUrl: meta.challengerSquadUrl, status: "ACTIVE" },
+      });
+      redirect(`/challenges/${id}`);
+    }
+  }
+
   // Non-parties can view OPEN challenges; pending/in-progress challenges are private
   if (!isParty && !isAdmin && challenge.status !== "OPEN") redirect("/challenges");
 
@@ -258,6 +273,7 @@ export default async function ChallengeDetailPage({
           wagerAmount={challenge.wagerAmount.toString()}
           format={challenge.format}
           hostId={challenge.hostId}
+          isLoggedIn={!!session?.user}
         />
       )}
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Swords, Camera, Upload, Loader2, X } from "lucide-react";
 import { Button } from "@/components/ui/Button";
@@ -13,11 +13,13 @@ export function AcceptChallengePanel({
   wagerAmount,
   format,
   hostId,
+  isLoggedIn,
 }: {
   challengeId: string;
   wagerAmount: string;
   format: string;
   hostId: string;
+  isLoggedIn: boolean;
 }) {
   const router = useRouter();
   const [squadUpload, setSquadUpload] = useState<{ url: string; previewUrl: string } | null>(null);
@@ -25,6 +27,15 @@ export function AcceptChallengePanel({
   const [error, setError] = useState("");
   const [showPayment, setShowPayment] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Redirect to login if not authenticated
+  useEffect(() => {
+    if (!isLoggedIn) {
+      router.push(`/login?next=/challenges/${challengeId}`);
+    }
+  }, [isLoggedIn, challengeId, router]);
+
+  if (!isLoggedIn) return null;
 
   const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -73,7 +84,9 @@ export function AcceptChallengePanel({
           entityId={challengeId}
           amount={Number(wagerAmount)}
           metadata={{ challengerSquadUrl: squadUpload.url, hostId }}
-          onSuccess={() => router.refresh()}
+          onSuccess={() => router.push(`/challenges/${challengeId}`)}
+          returnUrl={`/challenges/${challengeId}`}
+          returnLabel="Back to challenge"
         />
         <button
           onClick={() => setShowPayment(false)}

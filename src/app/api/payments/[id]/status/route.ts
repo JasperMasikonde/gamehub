@@ -89,16 +89,11 @@ async function fulfillPayment(
 
   if (purpose === "challenge") {
     const { challengerSquadUrl, hostId } = metadata as { challengerSquadUrl: string; hostId: string };
-
-    const updated = await prisma.challenge.update({
-      where: { id: entityId },
-      data: {
-        challengerId: userId,
-        challengerSquadUrl,
-        status: "ACTIVE",
-      },
+    const result = await prisma.challenge.updateMany({
+      where: { id: entityId, status: "OPEN" },
+      data: { challengerId: userId, challengerSquadUrl, status: "ACTIVE" },
     });
-
+    if (result.count === 0) return;
     if (hostId) {
       await createNotification(hostId, "CHALLENGE_ACCEPTED", {
         title: "Challenge accepted!",
@@ -115,6 +110,7 @@ async function fulfillPayment(
       });
       emitChallengeUpdate(hostId, userId, entityId);
     }
+    emitChallengeUpdate(userId, hostId ?? null, entityId);
     return;
   }
 
