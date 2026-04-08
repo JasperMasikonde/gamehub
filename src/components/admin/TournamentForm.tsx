@@ -2,14 +2,14 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
-import { Loader2 } from "lucide-react";
+import { Loader2, ToggleLeft, ToggleRight } from "lucide-react";
 
 interface Props {
   tournamentId?: string;
   defaultValues?: {
     name?: string; slug?: string; game?: string; type?: string;
-    maxParticipants?: number; entryFee?: string; prizePool?: string;
-    currency?: string; description?: string; rules?: string;
+    maxParticipants?: number; requiresPayment?: boolean; entryFee?: string;
+    prizePool?: string; currency?: string; description?: string; rules?: string;
     startDate?: string; endDate?: string;
   };
 }
@@ -22,6 +22,7 @@ export function TournamentForm({ tournamentId, defaultValues = {} }: Props) {
   const [game, setGame] = useState(defaultValues.game ?? "");
   const [type, setType] = useState(defaultValues.type ?? "KNOCKOUT");
   const [maxParticipants, setMaxParticipants] = useState(String(defaultValues.maxParticipants ?? 16));
+  const [requiresPayment, setRequiresPayment] = useState(defaultValues.requiresPayment ?? false);
   const [entryFee, setEntryFee] = useState(defaultValues.entryFee ?? "0");
   const [prizePool, setPrizePool] = useState(defaultValues.prizePool ?? "0");
   const [description, setDescription] = useState(defaultValues.description ?? "");
@@ -44,15 +45,21 @@ export function TournamentForm({ tournamentId, defaultValues = {} }: Props) {
       const res = await fetch(url, {
         method,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, slug, game, type, maxParticipants: Number(maxParticipants), entryFee: Number(entryFee), prizePool: Number(prizePool), description: description || null, rules: rules || null, startDate: startDate || null, endDate: endDate || null }),
+        body: JSON.stringify({
+          name, slug, game, type,
+          maxParticipants: Number(maxParticipants),
+          requiresPayment,
+          entryFee: requiresPayment ? Number(entryFee) : 0,
+          prizePool: Number(prizePool),
+          description: description || null,
+          rules: rules || null,
+          startDate: startDate || null,
+          endDate: endDate || null,
+        }),
       });
       const data = await res.json();
       if (!res.ok) { setError(data.error ?? "Something went wrong"); return; }
-      if (isEdit) {
-        router.push(`/admin/tournaments/${tournamentId}`);
-      } else {
-        router.push("/admin/tournaments");
-      }
+      router.push(isEdit ? `/admin/tournaments/${tournamentId}` : "/admin/tournaments");
       router.refresh();
     } catch { setError("Network error."); }
     finally { setLoading(false); }
@@ -87,10 +94,6 @@ export function TournamentForm({ tournamentId, defaultValues = {} }: Props) {
           <input type="number" min="2" value={maxParticipants} onChange={e => setMaxParticipants(e.target.value)} className={cls} />
         </div>
         <div>
-          <label className="block text-xs text-text-muted mb-1">Entry Fee (KES)</label>
-          <input type="number" min="0" step="0.01" value={entryFee} onChange={e => setEntryFee(e.target.value)} className={cls} />
-        </div>
-        <div>
           <label className="block text-xs text-text-muted mb-1">Prize Pool (KES)</label>
           <input type="number" min="0" step="0.01" value={prizePool} onChange={e => setPrizePool(e.target.value)} className={cls} />
         </div>
@@ -103,6 +106,47 @@ export function TournamentForm({ tournamentId, defaultValues = {} }: Props) {
           <input type="datetime-local" value={endDate} onChange={e => setEndDate(e.target.value)} className={cls} />
         </div>
       </div>
+
+      {/* Entry fee toggle */}
+      <div className="rounded-xl border border-bg-border bg-bg-elevated p-4 space-y-3">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-sm font-semibold text-text-primary">Paid Entry</p>
+            <p className="text-xs text-text-muted mt-0.5">
+              {requiresPayment ? "Players must pay to enrol" : "Free entry — anyone can join"}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setRequiresPayment(p => !p)}
+            className="flex items-center gap-1.5 transition-colors"
+          >
+            {requiresPayment
+              ? <ToggleRight size={32} className="text-neon-green" />
+              : <ToggleLeft size={32} className="text-text-muted" />}
+          </button>
+        </div>
+
+        {requiresPayment && (
+          <div>
+            <label className="block text-xs text-text-muted mb-1">Entry Fee (KES) *</label>
+            <input
+              type="number"
+              min="1"
+              step="0.01"
+              value={entryFee}
+              onChange={e => setEntryFee(e.target.value)}
+              required={requiresPayment}
+              className={cls}
+              placeholder="e.g. 200"
+            />
+            <p className="text-xs text-text-muted mt-1.5">
+              Players will be prompted to pay via M-Pesa when enrolling.
+            </p>
+          </div>
+        )}
+      </div>
+
       <div>
         <label className="block text-xs text-text-muted mb-1">Description</label>
         <textarea value={description} onChange={e => setDescription(e.target.value)} rows={3} className={cls + " resize-none"} placeholder="About this tournament…" />
@@ -111,6 +155,7 @@ export function TournamentForm({ tournamentId, defaultValues = {} }: Props) {
         <label className="block text-xs text-text-muted mb-1">Rules</label>
         <textarea value={rules} onChange={e => setRules(e.target.value)} rows={4} className={cls + " resize-none"} placeholder="Tournament rules and format…" />
       </div>
+
       {error && <p className="text-sm text-neon-red">{error}</p>}
       <div className="flex gap-3">
         <Button type="submit" variant="primary" disabled={loading}>

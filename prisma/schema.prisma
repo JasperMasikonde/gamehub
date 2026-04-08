@@ -603,7 +603,8 @@ model ShopOrderItem {
 
 model SiteConfig {
   id               String   @id @default("singleton")
-  platformFeeRate  Decimal  @default(0.050) @db.Decimal(4, 3)
+  platformFeeRate  Decimal  @default(0.050) @db.Decimal(4, 3)  // escrow/marketplace %
+  challengeFeeRate Decimal  @default(0.000) @db.Decimal(4, 3)  // unused — challenge uses PlatformFeeRule tiers
   buyerWindowDays  Int      @default(3)
   sellerWindowDays Int      @default(2)
   maintenanceMode  Boolean  @default(false)
@@ -639,6 +640,7 @@ model Tournament {
   type            TournamentType
   status          TournamentStatus        @default(DRAFT)
   maxParticipants Int
+  requiresPayment Boolean                 @default(false)
   entryFee        Decimal                 @default(0) @db.Decimal(10, 2)
   prizePool       Decimal                 @default(0) @db.Decimal(10, 2)
   currency        String                  @default("KES")

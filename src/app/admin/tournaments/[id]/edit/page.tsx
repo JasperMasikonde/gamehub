@@ -19,6 +19,7 @@ export default async function EditTournamentPage({ params }: { params: Promise<{
     game: tournament.game,
     type: tournament.type,
     maxParticipants: tournament.maxParticipants,
+    requiresPayment: tournament.requiresPayment,
     entryFee: String(tournament.entryFee),
     prizePool: String(tournament.prizePool),
     description: tournament.description ?? "",
