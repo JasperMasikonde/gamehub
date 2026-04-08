@@ -39,6 +39,11 @@ export async function GET(
   }
 
   // NCBA query response: { status: "SUCCESS" | "FAILED", description: string }
+  // NOTE: Do NOT treat FAILED as a definitive decline — NCBA's query returns
+  // FAILED for Fuliza (overdraft) payments even when money is successfully
+  // debited, because it only tracks direct M-Pesa balance.
+  // Only mark COMPLETED from the query; rely on the push notification callback
+  // for confirmed failures.
   if (queryResult.status === "SUCCESS") {
     await prisma.payment.update({
       where: { id },
@@ -54,16 +59,8 @@ export async function GET(
     return NextResponse.json({ status: "COMPLETED" });
   }
 
-  if (queryResult.status === "FAILED") {
-    const reason = queryResult.description ?? "Payment declined";
-    await prisma.payment.update({
-      where: { id },
-      data: { status: "FAILED", failureReason: reason },
-    });
-    return NextResponse.json({ status: "FAILED", reason });
-  }
-
-  // Unknown / still pending
+  // FAILED from query or unknown — keep as PENDING and let the push
+  // notification callback confirm the real outcome
   await prisma.payment.update({ where: { id }, data: { status: "PROCESSING" } });
   return NextResponse.json({ status: "PENDING" });
 }

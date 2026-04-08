@@ -78,7 +78,7 @@ export async function initiateSTKPush(
       TelephoneNo: normalisePhone(phone),
       Amount: String(Math.round(amount)),
       PayBillNo: process.env.NCBA_PAYBILL_NO,
-      AccountNo: accountRef,
+      AccountNo: process.env.NCBA_ACC_NUMBER ?? accountRef,
       Network: "Safaricom",
       TransactionType: "CustomerPayBillOnline",
     }),
