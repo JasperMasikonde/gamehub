@@ -148,6 +148,19 @@ export default async function ChallengeDetailPage({
         <p className="text-xs text-text-muted mt-0.5">Posted {formatDate(challenge.createdAt)}</p>
       </div>
 
+      {/* Accept panel — shown immediately after header so challengers see it first */}
+      {challenge.status === "OPEN" && !isParty && !isAdmin && (
+        <div id="accept">
+          <AcceptChallengePanel
+            challengeId={id}
+            wagerAmount={challenge.wagerAmount.toString()}
+            format={challenge.format}
+            hostId={challenge.hostId}
+            isLoggedIn={!!session?.user}
+          />
+        </div>
+      )}
+
       {/* Wager info */}
       <Card>
         <CardContent>
@@ -263,17 +276,6 @@ export default async function ChallengeDetailPage({
           challengeId={id}
           wagerAmount={challenge.wagerAmount.toString()}
           format={challenge.format}
-        />
-      )}
-
-      {/* Accept panel — shown to non-parties when OPEN */}
-      {challenge.status === "OPEN" && !isParty && !isAdmin && (
-        <AcceptChallengePanel
-          challengeId={id}
-          wagerAmount={challenge.wagerAmount.toString()}
-          format={challenge.format}
-          hostId={challenge.hostId}
-          isLoggedIn={!!session?.user}
         />
       )}
 
