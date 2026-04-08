@@ -4,7 +4,6 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import { Loader2, Package } from "lucide-react";
-import { PaymentPanel } from "@/components/payments/PaymentPanel";
 
 interface CheckoutFormProps {
   total: number;
@@ -15,7 +14,6 @@ export function CheckoutForm({ total, currency }: CheckoutFormProps) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [orderId, setOrderId] = useState<string | null>(null);
   const [form, setForm] = useState({
     shippingName: "",
     shippingLine1: "",
@@ -40,7 +38,7 @@ export function CheckoutForm({ total, currency }: CheckoutFormProps) {
       });
       const data = await res.json();
       if (!res.ok) { setError(data.error || "Something went wrong"); return; }
-      setOrderId(data.order.id);
+      router.push(`/shop/orders/${data.order.id}`);
     } catch {
       setError("Network error. Please try again.");
     } finally {
@@ -60,22 +58,6 @@ export function CheckoutForm({ total, currency }: CheckoutFormProps) {
       />
     </div>
   );
-
-  // Step 2: show payment panel once order is created
-  if (orderId) {
-    return (
-      <div className="bg-bg-surface border border-bg-border rounded-2xl p-5 space-y-4">
-        <h3 className="font-semibold text-sm">Pay for your order</h3>
-        <PaymentPanel
-          purpose="shop"
-          entityId={orderId}
-          amount={total}
-          currency={currency}
-          onSuccess={() => router.push(`/shop/orders/${orderId}?success=1`)}
-        />
-      </div>
-    );
-  }
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">

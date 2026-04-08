@@ -5,6 +5,8 @@ import { Smartphone, QrCode, Loader2, CheckCircle, XCircle, ChevronDown, Chevron
 import { Button } from "@/components/ui/Button";
 import { formatCurrency } from "@/lib/utils/format";
 
+const CONFIRM_PHASE_AFTER_S = 20; // switch message after PIN entry window
+
 interface Props {
   /** Payment purpose: "escrow" | "challenge" | "tournament" | "shop" */
   purpose: string;
@@ -34,12 +36,28 @@ export function PaymentPanel({ purpose, entityId, amount, currency = "KES", meta
   const [qrCode, setQrCode] = useState<string | null>(null);
   const [qrLoading, setQrLoading] = useState(false);
 
+  const [elapsed, setElapsed] = useState(0);
   const pollCount = useRef(0);
   const pollTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const elapsedTimer = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // Elapsed timer — runs only while polling
+  useEffect(() => {
+    if (state === "polling") {
+      setElapsed(0);
+      elapsedTimer.current = setInterval(() => setElapsed((s) => s + 1), 1000);
+    } else {
+      if (elapsedTimer.current) { clearInterval(elapsedTimer.current); elapsedTimer.current = null; }
+    }
+    return () => { if (elapsedTimer.current) clearInterval(elapsedTimer.current); };
+  }, [state]);
 
   // Clean up on unmount
   useEffect(() => {
-    return () => { if (pollTimer.current) clearTimeout(pollTimer.current); };
+    return () => {
+      if (pollTimer.current) clearTimeout(pollTimer.current);
+      if (elapsedTimer.current) clearInterval(elapsedTimer.current);
+    };
   }, []);
 
   async function initiatePayment() {
@@ -151,14 +169,30 @@ export function PaymentPanel({ purpose, entityId, amount, currency = "KES", meta
 
   // ── Polling state ──────────────────────────────────────────────────────────
   if (state === "polling") {
+    const confirming = elapsed >= CONFIRM_PHASE_AFTER_S;
     return (
       <div className="flex flex-col items-center gap-4 py-6 text-center">
         <Loader2 size={36} className="animate-spin text-neon-green" />
         <div>
-          <p className="font-semibold text-text-primary">Check your phone</p>
-          <p className="text-xs text-text-muted mt-1">An M-Pesa prompt has been sent to <span className="font-medium text-text-primary">{phone}</span>. Enter your PIN to complete payment.</p>
+          {confirming ? (
+            <>
+              <p className="font-semibold text-text-primary">Confirming your payment…</p>
+              <p className="text-xs text-text-muted mt-1">
+                We&apos;re waiting for NCBA to confirm the transaction. This can take a few seconds.
+              </p>
+            </>
+          ) : (
+            <>
+              <p className="font-semibold text-text-primary">Check your phone</p>
+              <p className="text-xs text-text-muted mt-1">
+                An M-Pesa prompt has been sent to{" "}
+                <span className="font-medium text-text-primary">{phone}</span>.
+                Enter your PIN to complete payment.
+              </p>
+            </>
+          )}
         </div>
-        <p className="text-xs text-text-muted">Waiting for confirmation…</p>
+        <p className="text-xs text-text-muted tabular-nums">{elapsed}s elapsed</p>
       </div>
     );
   }

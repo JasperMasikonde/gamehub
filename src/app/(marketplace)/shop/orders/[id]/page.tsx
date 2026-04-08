@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { redirect, notFound } from "next/navigation";
 import { getPublicUrl } from "@/lib/gcs";
 import { ShopOrderStatusPill } from "@/components/shop/ShopOrderStatusPill";
+import { OrderPaymentSection } from "@/components/shop/OrderPaymentSection";
 import Link from "next/link";
 import { ArrowLeft, CheckCircle, MapPin } from "lucide-react";
 
@@ -50,6 +51,15 @@ export default async function OrderDetailPage({
           <p className="text-text-muted text-xs font-mono mt-0.5">{order.id}</p>
         </div>
       </div>
+
+      {/* Payment — shown when order awaits payment */}
+      {order.status === "PENDING_PAYMENT" && (
+        <OrderPaymentSection
+          orderId={order.id}
+          amount={Number(order.total)}
+          currency={order.currency}
+        />
+      )}
 
       {/* Items */}
       <div className="bg-bg-surface border border-bg-border rounded-2xl overflow-hidden">
