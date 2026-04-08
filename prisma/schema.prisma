@@ -603,8 +603,7 @@ model ShopOrderItem {
 
 model SiteConfig {
   id               String   @id @default("singleton")
-  platformFeeRate  Decimal  @default(0.050) @db.Decimal(4, 3)  // escrow/marketplace %
-  challengeFeeRate Decimal  @default(0.000) @db.Decimal(4, 3)  // unused — challenge uses PlatformFeeRule tiers
+  platformFeeRate  Decimal  @default(0.050) @db.Decimal(4, 3)
   buyerWindowDays  Int      @default(3)
   sellerWindowDays Int      @default(2)
   maintenanceMode  Boolean  @default(false)
