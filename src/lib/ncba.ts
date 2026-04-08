@@ -77,7 +77,7 @@ export async function initiateSTKPush(
       TelephoneNo: normalisePhone(phone),
       Amount: String(Math.round(amount)),
       PayBillNo: process.env.NCBA_PAYBILL_NO,
-      AccountNo: accountRef.slice(0, 20), // NCBA max 20 chars
+      AccountNo: "349244", // TODO: restore dynamic ref once NCBA confirms format
       Network: "Safaricom",
       TransactionType: "CustomerPayBillOnline",
     }),
