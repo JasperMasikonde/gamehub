@@ -325,7 +325,7 @@ export function PaymentPanel({
               <div className="flex justify-center py-6"><Loader2 size={24} className="animate-spin text-text-muted" /></div>
             ) : qrCode ? (
               <img
-                src={`data:image/png;base64,${qrCode}`}
+                src={qrCode}
                 alt="M-Pesa QR Code"
                 className="mx-auto max-w-[200px] rounded-xl border border-bg-border"
               />

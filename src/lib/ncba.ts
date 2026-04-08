@@ -1,6 +1,7 @@
 /**
  * NCBA Bank C2B API client
- * Docs: NCBA C2B API (STK Push + QR Code)
+ * Docs: NCBA Till STK Push & Dynamic QR Code API (2024)
+ * BASE_URL: https://c2bapis.ncbagroup.com
  */
 
 const BASE_URL = "https://c2bapis.ncbagroup.com";
@@ -21,9 +22,7 @@ async function getToken(): Promise<string> {
 
   const res = await fetch(`${BASE_URL}/payments/api/v1/auth/token`, {
     method: "GET",
-    headers: {
-      Authorization: `Basic ${credentials}`,
-    },
+    headers: { Authorization: `Basic ${credentials}` },
   });
 
   if (!res.ok) {
@@ -43,7 +42,6 @@ async function getToken(): Promise<string> {
 }
 
 // ── Phone normalisation ───────────────────────────────────────────────────────
-// Accepts: 07XXXXXXXX, 7XXXXXXXX, +2547XXXXXXXX, 2547XXXXXXXX
 export function normalisePhone(raw: string): string {
   const digits = raw.replace(/\D/g, "");
   if (digits.startsWith("254") && digits.length === 12) return digits;
@@ -52,11 +50,14 @@ export function normalisePhone(raw: string): string {
   throw new Error("Invalid Kenyan phone number. Use 07XXXXXXXX format.");
 }
 
-// ── STK Push ─────────────────────────────────────────────────────────────────
+// ── STK Push initiate ────────────────────────────────────────────────────────
+// Success response: { TransactionID, StatusCode, StatusDescription, ReferenceID }
+// Failure response: { TransactionID: null, StatusCode: "1", StatusDescription: "reason" }
 export interface STKResponse {
-  TransactionID?: string;
-  ResponseCode?: string;
-  ResponseDesc?: string;
+  TransactionID?: string | null;
+  StatusCode?: string;
+  StatusDescription?: string;
+  ReferenceID?: string | null;
   [key: string]: unknown;
 }
 
@@ -77,23 +78,24 @@ export async function initiateSTKPush(
       TelephoneNo: normalisePhone(phone),
       Amount: String(Math.round(amount)),
       PayBillNo: process.env.NCBA_PAYBILL_NO,
-      AccountNo: "349244", // TODO: restore dynamic ref once NCBA confirms format
+      AccountNo: accountRef,
       Network: "Safaricom",
       TransactionType: "CustomerPayBillOnline",
     }),
   });
 
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.ResponseDesc ?? `STK push failed: ${res.status}`);
+  const data: STKResponse = await res.json();
+  if (!res.ok) throw new Error(data.StatusDescription ?? `STK push failed: ${res.status}`);
   return data;
 }
 
-// ── STK Query ────────────────────────────────────────────────────────────────
+// ── STK Push query ───────────────────────────────────────────────────────────
+// Docs: POST /payments/api/v1/stk-push/query
+// Request:  { TransactionID }
+// Response: { status: "SUCCESS" | "FAILED", description: string }
 export interface STKQueryResponse {
-  ResultCode?: string;
-  ResultDesc?: string;
-  TransactionID?: string;
-  Amount?: string;
+  status?: "SUCCESS" | "FAILED" | string;
+  description?: string;
   [key: string]: unknown;
 }
 
@@ -106,11 +108,7 @@ export async function querySTKPush(ncbaTransactionId: string): Promise<STKQueryR
       Authorization: `Bearer ${token}`,
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({
-      TransactionID: ncbaTransactionId,
-      PayBillNo: process.env.NCBA_PAYBILL_NO,
-      Network: "Safaricom",
-    }),
+    body: JSON.stringify({ TransactionID: ncbaTransactionId }),
   });
 
   const data = await res.json();
@@ -118,8 +116,13 @@ export async function querySTKPush(ncbaTransactionId: string): Promise<STKQueryR
 }
 
 // ── QR Code ──────────────────────────────────────────────────────────────────
+// Docs: POST /payments/api/v1/qr/generate
+// Request:  { till: "<tillNo>" | "<tillNo>#narration", amount?: number }
+// Response: { StatusDescription, Base64QrCode: "data:image/png;base64,...", StatusCode }
 export interface QRResponse {
-  QRCode?: string; // base64 PNG
+  Base64QrCode?: string; // full data URI, already includes "data:image/png;base64," prefix
+  StatusCode?: string;
+  StatusDescription?: string;
   [key: string]: unknown;
 }
 
@@ -130,6 +133,8 @@ export async function generateQR(
 ): Promise<QRResponse> {
   const token = await getToken();
 
+  const tillParam = narration ? `${till}#${narration}` : till;
+
   const res = await fetch(`${BASE_URL}/payments/api/v1/qr/generate`, {
     method: "POST",
     headers: {
@@ -137,15 +142,14 @@ export async function generateQR(
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      MerchantName: "Eshabiki",
-      RefNo: narration ?? "Eshabiki Payment",
-      Amount: amount != null ? String(Math.round(amount)) : undefined,
-      TrxCode: "BG", // Buy Goods
-      CPI: till,
+      till: tillParam,
+      ...(amount != null ? { amount: Math.round(amount) } : {}),
     }),
   });
 
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.ResponseDesc ?? `QR generation failed: ${res.status}`);
+  const data: QRResponse = await res.json();
+  if (!res.ok || data.StatusCode === "2") {
+    throw new Error(data.StatusDescription ?? `QR generation failed: ${res.status}`);
+  }
   return data;
 }

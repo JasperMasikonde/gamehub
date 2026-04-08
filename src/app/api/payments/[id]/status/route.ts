@@ -38,17 +38,13 @@ export async function GET(
     return NextResponse.json({ status: "PENDING" });
   }
 
-  const resultCode = queryResult.ResultCode;
-
-  // Codes: "0" = success, "1032" = still pending, anything else = failed
-  if (resultCode === "0") {
-    // Mark payment completed
+  // NCBA query response: { status: "SUCCESS" | "FAILED", description: string }
+  if (queryResult.status === "SUCCESS") {
     await prisma.payment.update({
       where: { id },
       data: { status: "COMPLETED" },
     });
 
-    // Run business logic
     try {
       await fulfillPayment(payment.purpose, payment.entityId, session.user.id, payment.metadata ?? null);
     } catch (err) {
@@ -58,19 +54,18 @@ export async function GET(
     return NextResponse.json({ status: "COMPLETED" });
   }
 
-  if (resultCode === "1032" || resultCode == null) {
-    // Still pending
-    await prisma.payment.update({ where: { id }, data: { status: "PROCESSING" } });
-    return NextResponse.json({ status: "PENDING" });
+  if (queryResult.status === "FAILED") {
+    const reason = queryResult.description ?? "Payment declined";
+    await prisma.payment.update({
+      where: { id },
+      data: { status: "FAILED", failureReason: reason },
+    });
+    return NextResponse.json({ status: "FAILED", reason });
   }
 
-  // Any other code = failed
-  const reason = queryResult.ResultDesc ?? "Payment declined";
-  await prisma.payment.update({
-    where: { id },
-    data: { status: "FAILED", failureReason: reason },
-  });
-  return NextResponse.json({ status: "FAILED", reason });
+  // Unknown / still pending
+  await prisma.payment.update({ where: { id }, data: { status: "PROCESSING" } });
+  return NextResponse.json({ status: "PENDING" });
 }
 
 async function fulfillPayment(

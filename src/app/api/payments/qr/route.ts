@@ -13,7 +13,8 @@ export async function POST(req: NextRequest) {
 
   try {
     const result = await generateQR(till, amount ? Number(amount) : undefined, narration);
-    return NextResponse.json({ qrCode: result.QRCode });
+    // Base64QrCode is already a full data URI ("data:image/png;base64,...")
+    return NextResponse.json({ qrCode: result.Base64QrCode });
   } catch (err) {
     console.error("[payments/qr]", err);
     return NextResponse.json(
