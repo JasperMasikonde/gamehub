@@ -45,7 +45,7 @@ export default async function DashboardPage({
     }),
     prisma.user.findUnique({
       where: { id: session.user.id },
-      select: { totalSales: true, totalPurchases: true, rating: true, displayName: true, username: true, emailVerified: true },
+      select: { totalSales: true, totalPurchases: true, rating: true, displayName: true, username: true, emailVerified: true, isSuperAdmin: true },
     }),
   ]);
 
@@ -76,7 +76,7 @@ export default async function DashboardPage({
       </div>
 
       {/* Email verification banner */}
-      {!user?.emailVerified && (
+      {!user?.emailVerified && !user?.isSuperAdmin && (
         <VerificationBanner justVerified={false} />
       )}
       {verified === "1" && (

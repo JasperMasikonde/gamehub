@@ -116,3 +116,10 @@ export function emitOrderUpdate(userId: string, orderId: string): void {
   if (!io) return;
   io.to(`user:${userId}`).emit("order_update", { orderId });
 }
+
+/** Tell a user's connected browser(s) that their email has just been verified — triggers a session refresh. */
+export function emitEmailVerified(userId: string): void {
+  const io = getIO();
+  if (!io) return;
+  io.to(`user:${userId}`).emit("email_verified");
+}

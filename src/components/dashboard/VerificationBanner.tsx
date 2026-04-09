@@ -1,12 +1,21 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { MailWarning, Loader2, CheckCircle } from "lucide-react";
+
+const COOLDOWN = 60;
 
 export function VerificationBanner({ justVerified }: { justVerified: boolean }) {
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
   const [error, setError] = useState("");
+  const [countdown, setCountdown] = useState(0);
+
+  useEffect(() => {
+    if (countdown <= 0) return;
+    const timer = setTimeout(() => setCountdown((c) => c - 1), 1000);
+    return () => clearTimeout(timer);
+  }, [countdown]);
 
   if (justVerified) return null;
 
@@ -18,12 +27,15 @@ export function VerificationBanner({ justVerified }: { justVerified: boolean }) 
       const data = await res.json();
       if (!res.ok) { setError(data.error ?? "Failed to send"); return; }
       setSent(true);
+      setCountdown(COOLDOWN);
     } catch {
       setError("Network error. Please try again.");
     } finally {
       setLoading(false);
     }
   }
+
+  const isDisabled = loading || countdown > 0;
 
   return (
     <div className="flex flex-col sm:flex-row sm:items-center gap-3 bg-neon-yellow/5 border border-neon-yellow/30 rounded-xl px-4 py-3">
@@ -38,7 +50,7 @@ export function VerificationBanner({ justVerified }: { justVerified: boolean }) 
         </p>
         {error && <p className="text-xs text-neon-red mt-1">{error}</p>}
       </div>
-      {sent ? (
+      {sent && countdown === 0 ? (
         <div className="flex items-center gap-1.5 text-neon-green text-xs font-medium shrink-0">
           <CheckCircle size={14} />
           Email sent!
@@ -46,11 +58,11 @@ export function VerificationBanner({ justVerified }: { justVerified: boolean }) 
       ) : (
         <button
           onClick={resend}
-          disabled={loading}
+          disabled={isDisabled}
           className="shrink-0 flex items-center gap-1.5 text-xs font-semibold text-neon-yellow border border-neon-yellow/40 px-3 py-1.5 rounded-lg hover:bg-neon-yellow/10 disabled:opacity-50 transition-colors"
         >
           {loading && <Loader2 size={12} className="animate-spin" />}
-          Resend verification email
+          {countdown > 0 ? `Resend in ${countdown}s` : "Resend verification email"}
         </button>
       )}
     </div>

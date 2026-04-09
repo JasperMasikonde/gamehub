@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { verifyEmailToken } from "@/lib/email-verification";
+import { emitEmailVerified } from "@/lib/socket-server";
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL ?? "https://eshabiki.com";
 
@@ -28,6 +29,7 @@ export async function GET(req: NextRequest) {
       where: { id: user.id },
       data: { emailVerified: new Date() },
     });
+    emitEmailVerified(user.id);
   }
 
   return redirect("/dashboard?verified=1");

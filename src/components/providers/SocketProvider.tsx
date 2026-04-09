@@ -9,6 +9,7 @@ import {
   useState,
 } from "react";
 import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 import { io, Socket } from "socket.io-client";
 import { ToastContainer } from "@/components/ui/Toast";
 import type { ToastPayload, NewMessagePayload } from "@/types/socket";
@@ -30,7 +31,8 @@ export function useSocket() {
 }
 
 export function SocketProvider({ children }: { children: React.ReactNode }) {
-  const { data: session } = useSession();
+  const { data: session, update: updateSession } = useSession();
+  const router = useRouter();
   const socketRef = useRef<Socket | null>(null);
   const [toasts, setToasts] = useState<ToastPayload[]>([]);
   const [unreadMessages, setUnreadMessages] = useState(0);
@@ -77,6 +79,11 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
     // Tournament list updates — any page using RealtimeRefresh with this event will auto-refresh
     socket.on("tournaments_list_update", () => {
       // Handled by RealtimeRefresh components on individual pages
+    });
+
+    socket.on("email_verified", async () => {
+      await updateSession();
+      router.refresh();
     });
 
     // Load initial unread count
