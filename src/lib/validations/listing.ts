@@ -2,19 +2,19 @@ import { z } from "zod";
 import { Platform } from "@prisma/client";
 
 export const createListingSchema = z.object({
-  title: z.string().min(5).max(100),
-  description: z.string().min(20).max(2000),
-  price: z.number().positive().max(99999),
+  title: z.string().min(5, "Title must be at least 5 characters").max(100, "Title can't exceed 100 characters"),
+  description: z.string().min(20, "Description must be at least 20 characters").max(2000, "Description can't exceed 2000 characters"),
+  price: z.number({ error: "Enter a valid price" }).positive("Price must be greater than 0").max(99999, "Price can't exceed 99,999"),
   currency: z.string().default("USD"),
-  platform: z.nativeEnum(Platform),
+  platform: z.nativeEnum(Platform, { error: "Select a platform" }),
   region: z.string().optional(),
   division: z.string().optional(),
-  accountLevel: z.number().int().positive().optional(),
-  coins: z.number().int().min(0).optional(),
-  gpAmount: z.number().int().min(0).optional(),
-  featuredPlayers: z.array(z.string()).max(20).default([]),
-  overallRating: z.number().int().min(1).max(99).optional(),
-  imageKeys: z.array(z.string()).min(1, "At least one image is required").max(8),
+  accountLevel: z.number({ error: "Enter a valid account level" }).int().positive("Account level must be a positive number").optional(),
+  coins: z.number({ error: "Enter a valid coin amount" }).int().min(0, "Coins can't be negative").optional(),
+  gpAmount: z.number({ error: "Enter a valid GP amount" }).int().min(0, "GP can't be negative").optional(),
+  featuredPlayers: z.array(z.string()).max(20, "You can list up to 20 featured players").default([]),
+  overallRating: z.number({ error: "Enter a valid rating" }).int().min(1, "Rating must be at least 1").max(99, "Rating can't exceed 99").optional(),
+  imageKeys: z.array(z.string()).min(1, "At least one image is required").max(8, "You can upload up to 8 images"),
 });
 
 export type CreateListingInput = z.infer<typeof createListingSchema>;
