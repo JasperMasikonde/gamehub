@@ -1,6 +1,7 @@
 "use client";
 import { useRef, useState } from "react";
 import { Camera, Loader2, CheckCircle, AlertCircle } from "lucide-react";
+import { compressImage } from "@/lib/utils/compress-image";
 
 const BUCKET = process.env.NEXT_PUBLIC_GCS_BUCKET_NAME ?? "";
 function imgUrl(key: string) {
@@ -21,10 +22,11 @@ export function SquadScreenshotUpload({ slug, currentKey, currentTeamName }: Pro
   const [submitted, setSubmitted] = useState(!!currentKey);
   const [error, setError] = useState("");
 
-  async function handleFile(file: File) {
+  async function handleFile(raw: File) {
     if (!teamName.trim()) { setError("Please enter your team name first."); return; }
     setError(""); setUploading(true);
     try {
+      const file = await compressImage(raw);
       const sigRes = await fetch("/api/uploads", {
         method: "POST",
         headers: { "Content-Type": "application/json" },

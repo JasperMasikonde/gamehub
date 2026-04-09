@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
 import { ArrowLeft, Send, User, ShieldCheck, ImagePlus, X } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
+import { compressImage } from "@/lib/utils/compress-image";
 import { useSocket } from "@/components/providers/SocketProvider";
 import type { NewMessagePayload } from "@/types/socket";
 
@@ -73,14 +74,15 @@ export function ConversationView({
   }, [socket, otherUser.id, refreshUnread]);
 
   const handleImageSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+    const raw = e.target.files?.[0];
+    if (!raw) return;
 
-    // Show preview immediately
-    const localUrl = URL.createObjectURL(file);
+    // Show preview immediately using the original file
+    const localUrl = URL.createObjectURL(raw);
     setPendingImage({ url: localUrl, uploading: true });
 
     try {
+      const file = await compressImage(raw);
       const uploadRes = await fetch("/api/uploads", {
         method: "POST",
         headers: { "Content-Type": "application/json" },

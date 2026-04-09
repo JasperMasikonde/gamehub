@@ -1,6 +1,7 @@
 "use client";
 import { useRef, useState } from "react";
 import { Upload, Loader2, CheckCircle, RefreshCw } from "lucide-react";
+import { compressImage } from "@/lib/utils/compress-image";
 
 const BUCKET = process.env.NEXT_PUBLIC_GCS_BUCKET_NAME ?? "";
 function imgUrl(key: string) {
@@ -19,9 +20,10 @@ export function ResultScreenshotUpload({ slug, matchId, currentKey }: Props) {
   const [preview, setPreview] = useState<string | null>(currentKey ? imgUrl(currentKey) : null);
   const [error, setError] = useState("");
 
-  async function handleFile(file: File) {
+  async function handleFile(raw: File) {
     setError(""); setUploading(true);
     try {
+      const file = await compressImage(raw);
       const sigRes = await fetch("/api/uploads", {
         method: "POST",
         headers: { "Content-Type": "application/json" },

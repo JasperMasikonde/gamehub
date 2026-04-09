@@ -3,6 +3,7 @@
 import { useState, useRef } from "react";
 import { Upload, X, ImageIcon } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
+import { compressImage } from "@/lib/utils/compress-image";
 
 interface UploadedImage {
   gcsKey: string;
@@ -30,15 +31,17 @@ export function ImageUploader({ onChange, maxImages = 8 }: ImageUploaderProps) {
     setError("");
 
     const uploaded: UploadedImage[] = [];
-    for (const file of toUpload) {
-      if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
+    for (const raw of toUpload) {
+      if (!["image/jpeg", "image/png", "image/webp"].includes(raw.type)) {
         setError("Only JPEG, PNG, and WebP images are allowed");
         continue;
       }
-      if (file.size > 10 * 1024 * 1024) {
+      if (raw.size > 10 * 1024 * 1024) {
         setError("Each image must be under 10 MB");
         continue;
       }
+
+      const file = await compressImage(raw);
 
       const res = await fetch("/api/uploads", {
         method: "POST",
