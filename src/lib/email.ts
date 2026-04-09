@@ -438,3 +438,76 @@ export async function sendVerificationEmail({
     html: emailLayout(body),
   });
 }
+
+// ---------------------------------------------------------------------------
+// Listing approved
+// ---------------------------------------------------------------------------
+export async function sendListingApprovedEmail({
+  toEmail,
+  toName,
+  listingTitle,
+  listingId,
+}: {
+  toEmail: string;
+  toName: string;
+  listingTitle: string;
+  listingId: string;
+}) {
+  const listingUrl = `${BASE_URL}/listings/${listingId}`;
+  const body = `
+    ${greeting(toName)}
+    <p style="color:#374151;font-size:15px;line-height:1.6;margin:0 0 16px;">
+      Great news! Your listing has been reviewed and is now <strong style="color:#00ff87;">live on the marketplace</strong>.
+    </p>
+    <div style="background:#f0fdf4;border-left:4px solid #00ff87;padding:14px 18px;border-radius:4px;margin:0 0 16px;">
+      <p style="margin:0;color:#374151;font-size:14px;font-weight:600;">${listingTitle}</p>
+    </div>
+    <p style="color:#374151;font-size:14px;line-height:1.6;margin:0 0 16px;">
+      Buyers can now find and purchase your account. You'll receive a notification the moment someone places an order.
+    </p>
+    ${btn("View Your Listing", listingUrl)}
+    ${footer("You received this because you submitted a listing on Eshabiki.")}
+  `;
+  await sendMail({
+    to: `"${toName}" <${toEmail}>`,
+    subject: "Your listing is now live on Eshabiki!",
+    html: emailLayout(body),
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Listing removed / rejected
+// ---------------------------------------------------------------------------
+export async function sendListingRemovedEmail({
+  toEmail,
+  toName,
+  listingTitle,
+  reason,
+}: {
+  toEmail: string;
+  toName: string;
+  listingTitle: string;
+  reason?: string;
+}) {
+  const body = `
+    ${greeting(toName)}
+    <p style="color:#374151;font-size:15px;line-height:1.6;margin:0 0 16px;">
+      Unfortunately, your listing could not be approved and has been removed from the marketplace.
+    </p>
+    <div style="background:#fef2f2;border-left:4px solid #ef4444;padding:14px 18px;border-radius:4px;margin:0 0 16px;">
+      <p style="margin:0 0 6px;color:#374151;font-size:14px;font-weight:600;">${listingTitle}</p>
+      ${reason ? `<p style="margin:0;color:#6b7280;font-size:13px;line-height:1.5;"><strong>Reason:</strong> ${reason}</p>` : ""}
+    </div>
+    <p style="color:#374151;font-size:14px;line-height:1.6;margin:0 0 16px;">
+      Please review our listing guidelines and feel free to submit a new listing that meets our requirements.
+      If you believe this was a mistake, contact our support team.
+    </p>
+    ${btn("Create a New Listing", `${BASE_URL}/listings/create`)}
+    ${footer("You received this because you submitted a listing on Eshabiki.")}
+  `;
+  await sendMail({
+    to: `"${toName}" <${toEmail}>`,
+    subject: "Update on your Eshabiki listing",
+    html: emailLayout(body),
+  });
+}
