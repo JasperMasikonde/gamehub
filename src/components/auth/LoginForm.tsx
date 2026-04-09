@@ -7,7 +7,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { loginSchema, type LoginInput } from "@/lib/validations/user";
-import { CheckCircle } from "lucide-react";
+import { CheckCircle, Eye, EyeOff } from "lucide-react";
 import Link from "next/link";
 import { loginAction } from "@/app/actions/auth";
 
@@ -23,6 +23,7 @@ export function LoginForm() {
   const [serverError, setServerError] = useState(
     urlError ? "Invalid email or password" : ""
   );
+  const [showPassword, setShowPassword] = useState(false);
 
   const {
     register,
@@ -75,9 +76,14 @@ export function LoginForm() {
       />
       <Input
         label="Password"
-        type="password"
+        type={showPassword ? "text" : "password"}
         placeholder="Your password"
         error={errors.password?.message}
+        rightElement={
+          <button type="button" onClick={() => setShowPassword((v) => !v)} className="text-text-muted hover:text-text-primary transition-colors" tabIndex={-1}>
+            {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
+          </button>
+        }
         {...register("password")}
       />
 

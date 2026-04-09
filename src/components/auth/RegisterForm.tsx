@@ -7,9 +7,12 @@ import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { registerSchema, type RegisterInput } from "@/lib/validations/user";
 import Link from "next/link";
+import { Eye, EyeOff } from "lucide-react";
 
 export function RegisterForm() {
   const [serverError, setServerError] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
 
   const {
     register,
@@ -68,16 +71,26 @@ export function RegisterForm() {
       />
       <Input
         label="Password"
-        type="password"
+        type={showPassword ? "text" : "password"}
         placeholder="Min. 8 characters"
         error={errors.password?.message}
+        rightElement={
+          <button type="button" onClick={() => setShowPassword((v) => !v)} className="text-text-muted hover:text-text-primary transition-colors" tabIndex={-1}>
+            {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
+          </button>
+        }
         {...register("password")}
       />
       <Input
         label="Confirm Password"
-        type="password"
+        type={showConfirm ? "text" : "password"}
         placeholder="Repeat your password"
         error={errors.confirmPassword?.message}
+        rightElement={
+          <button type="button" onClick={() => setShowConfirm((v) => !v)} className="text-text-muted hover:text-text-primary transition-colors" tabIndex={-1}>
+            {showConfirm ? <EyeOff size={15} /> : <Eye size={15} />}
+          </button>
+        }
         {...register("confirmPassword")}
       />
 

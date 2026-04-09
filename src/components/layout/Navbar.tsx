@@ -121,13 +121,22 @@ export function Navbar() {
             )}
           </div>
 
-          {/* Mobile right: icons + hamburger */}
+          {/* Mobile right: icons + auth buttons + hamburger */}
           <div className="md:hidden flex items-center gap-1">
-            {session?.user && (
+            {session?.user ? (
               <>
                 <CartIcon />
                 <MessagesIcon />
                 <NotificationBell />
+              </>
+            ) : (
+              <>
+                <Link href="/login">
+                  <Button variant="ghost" size="sm">Sign In</Button>
+                </Link>
+                <Link href="/register">
+                  <Button variant="primary" size="sm">Get Started</Button>
+                </Link>
               </>
             )}
             <button
@@ -159,7 +168,7 @@ export function Navbar() {
           <Link href="/rank-push" className="text-sm text-text-subtle hover:text-text-primary flex items-center gap-1" onClick={() => setMobileOpen(false)}>
             <TrendingUp size={13} /> Rank Push
           </Link>
-          {session?.user ? (
+          {session?.user && (
             <>
               <Link
                 href="/dashboard"
@@ -176,19 +185,6 @@ export function Navbar() {
               >
                 <LogOut size={15} /> Sign Out
               </Button>
-            </>
-          ) : (
-            <>
-              <Link href="/login" onClick={() => setMobileOpen(false)}>
-                <Button variant="ghost" size="sm" className="w-full">
-                  Sign In
-                </Button>
-              </Link>
-              <Link href="/register" onClick={() => setMobileOpen(false)}>
-                <Button variant="primary" size="sm" className="w-full">
-                  Get Started
-                </Button>
-              </Link>
             </>
           )}
         </div>
