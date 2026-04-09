@@ -73,6 +73,17 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  const dbUser = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: { emailVerified: true },
+  });
+  if (!dbUser?.emailVerified) {
+    return NextResponse.json(
+      { error: "Please verify your email address before creating a listing." },
+      { status: 403 }
+    );
+  }
+
   const body = await req.json();
   const parsed = createListingSchema.safeParse(body);
   if (!parsed.success) {

@@ -2,7 +2,8 @@ import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { registerSchema } from "@/lib/validations/user";
-import { sendWelcomeEmail } from "@/lib/email";
+import { sendWelcomeEmail, sendVerificationEmail } from "@/lib/email";
+import { generateVerificationToken } from "@/lib/email-verification";
 
 export async function POST(req: Request) {
   try {
@@ -47,8 +48,11 @@ export async function POST(req: Request) {
       update: {},
     });
 
-    // Fire-and-forget welcome email — don't block the response
+    // Fire-and-forget emails — don't block the response
     sendWelcomeEmail({ toEmail: email, toName: username }).catch(() => null);
+    generateVerificationToken(user.id, email).then((token) =>
+      sendVerificationEmail({ toEmail: email, toName: username, token })
+    ).catch(() => null);
 
     return NextResponse.json({ user }, { status: 201 });
   } catch {

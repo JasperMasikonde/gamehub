@@ -115,5 +115,6 @@ export const config = {
     "/api/transactions/:path*",
     "/api/disputes/:path*",
     "/api/uploads",
+    "/api/auth/resend-verification",
   ],
 };

@@ -7,6 +7,17 @@ export async function POST(req: NextRequest) {
   const session = await resolveSession();
   if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
+  const dbUser = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: { emailVerified: true },
+  });
+  if (!dbUser?.emailVerified) {
+    return NextResponse.json(
+      { error: "Please verify your email address before making a payment." },
+      { status: 403 }
+    );
+  }
+
   const body = await req.json();
   const { phone, amount, purpose, entityId, metadata } = body;
 

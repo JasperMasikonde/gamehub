@@ -413,3 +413,35 @@ export async function sendOrderConfirmationEmail({
     html: emailLayout(body),
   });
 }
+
+// ---------------------------------------------------------------------------
+// Email verification
+// ---------------------------------------------------------------------------
+export async function sendVerificationEmail({
+  toEmail,
+  toName,
+  token,
+}: {
+  toEmail: string;
+  toName: string;
+  token: string;
+}) {
+  const verifyUrl = `${BASE_URL}/api/auth/verify-email?token=${token}`;
+  const body = `
+    ${greeting(toName)}
+    <p style="color:#374151;font-size:15px;line-height:1.6;margin:0 0 16px;">
+      Thanks for joining Eshabiki! Please verify your email address to unlock all features — creating listings, buying accounts, and joining challenges.
+    </p>
+    <div style="background:#f0fdf4;border-left:4px solid #00ff87;padding:14px 18px;border-radius:4px;margin:0 0 16px;">
+      <p style="margin:0;color:#374151;font-size:13px;">This link expires in <strong>24 hours</strong>. If you didn't create an account, you can ignore this email.</p>
+    </div>
+    ${btn("Verify Email Address", verifyUrl)}
+    ${footer("You received this because you signed up for Eshabiki.")}
+  `;
+  await transporter.sendMail({
+    from: `"Eshabiki" <${process.env.SMTP_USER}>`,
+    to: `"${toName}" <${toEmail}>`,
+    subject: "Verify your Eshabiki email address",
+    html: emailLayout(body),
+  });
+}

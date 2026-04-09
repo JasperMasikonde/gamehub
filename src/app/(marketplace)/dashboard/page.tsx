@@ -7,13 +7,19 @@ import { formatCurrency, formatDate } from "@/lib/utils/format";
 import Link from "next/link";
 import {
   ShoppingCart, Tag, Bell, TrendingUp, ArrowRight,
-  Plus, AlertTriangle, ChevronRight,
+  Plus, AlertTriangle, ChevronRight, MailWarning,
 } from "lucide-react";
+import { VerificationBanner } from "@/components/dashboard/VerificationBanner";
 import { Button } from "@/components/ui/Button";
 
-export default async function DashboardPage() {
+export default async function DashboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ verified?: string }>;
+}) {
   const session = await auth();
   if (!session?.user) redirect("/login");
+  const { verified } = await searchParams;
 
   const [purchases, sales, unread, activeListings, openDisputes, user] = await Promise.all([
     prisma.transaction.findMany({
@@ -39,7 +45,7 @@ export default async function DashboardPage() {
     }),
     prisma.user.findUnique({
       where: { id: session.user.id },
-      select: { totalSales: true, totalPurchases: true, rating: true, displayName: true, username: true },
+      select: { totalSales: true, totalPurchases: true, rating: true, displayName: true, username: true, emailVerified: true },
     }),
   ]);
 
@@ -68,6 +74,27 @@ export default async function DashboardPage() {
           </Button>
         </Link>
       </div>
+
+      {/* Email verification banner */}
+      {!user?.emailVerified && (
+        <VerificationBanner justVerified={false} />
+      )}
+      {verified === "1" && (
+        <div className="flex items-center gap-3 bg-neon-green/5 border border-neon-green/30 rounded-xl px-4 py-3">
+          <MailWarning size={16} className="text-neon-green shrink-0" />
+          <p className="text-sm text-neon-green font-medium">
+            Your email has been verified. You now have full access to Eshabiki.
+          </p>
+        </div>
+      )}
+      {verified === "invalid" && (
+        <div className="flex items-center gap-3 bg-neon-red/5 border border-neon-red/30 rounded-xl px-4 py-3">
+          <AlertTriangle size={16} className="text-neon-red shrink-0" />
+          <p className="text-sm text-neon-red font-medium">
+            Verification link is invalid or expired. Please request a new one below.
+          </p>
+        </div>
+      )}
 
       {/* Alert banner for open disputes */}
       {openDisputes > 0 && (
