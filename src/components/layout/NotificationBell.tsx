@@ -24,6 +24,7 @@ export function NotificationBell() {
       body: JSON.stringify({ ids: "all" }),
     });
     mutate();
+    setOpen(false);
   };
 
   return (
