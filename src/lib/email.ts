@@ -1,15 +1,12 @@
-import nodemailer from "nodemailer";
+import { Resend } from "resend";
 
-const smtpPort = Number(process.env.SMTP_PORT ?? 587);
-const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST ?? "mail.privateemail.com",
-  port: smtpPort,
-  secure: smtpPort === 465, // true for 465 (SSL), false for 587 (STARTTLS)
-  auth: {
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASSWORD,
-  },
-});
+const resend = new Resend(process.env.RESEND_API_KEY);
+const FROM = process.env.RESEND_FROM ?? "Eshabiki <support@eshabiki.com>";
+
+async function sendMail({ to, subject, html }: { to: string; subject: string; html: string }) {
+  const { error } = await resend.emails.send({ from: FROM, to, subject, html });
+  if (error) throw new Error(error.message);
+}
 
 export async function sendSupportReply({
   toEmail,
@@ -95,8 +92,7 @@ export async function sendSupportReply({
 </body>
 </html>`;
 
-  await transporter.sendMail({
-    from: `"Eshabiki Support" <${process.env.SMTP_USER}>`,
+  await sendMail({
     to: `"${toName}" <${toEmail}>`,
     subject: "Re: Your Eshabiki Support Request",
     html,
@@ -170,8 +166,7 @@ export async function sendWelcomeEmail({
     ${btn("Go to Marketplace", `${BASE_URL}/listings`)}
     ${footer("You received this because you just created an Eshabiki account.")}
   `;
-  await transporter.sendMail({
-    from: `"Eshabiki" <${process.env.SMTP_USER}>`,
+  await sendMail({
     to: `"${toName}" <${toEmail}>`,
     subject: "Welcome to Eshabiki!",
     html: emailLayout(body),
@@ -215,8 +210,7 @@ export async function sendEscrowFundedEmail({
     ${btn("Deliver Credentials", link)}
     ${footer("You received this because you have a pending sale on Eshabiki.")}
   `;
-  await transporter.sendMail({
-    from: `"Eshabiki" <${process.env.SMTP_USER}>`,
+  await sendMail({
     to: `"${toName}" <${toEmail}>`,
     subject: "Payment received — please deliver the account",
     html: emailLayout(body),
@@ -258,8 +252,7 @@ export async function sendCredentialsDeliveredEmail({
     ${btn("View Credentials", link)}
     ${footer("You received this because you have a purchase awaiting confirmation on Eshabiki.")}
   `;
-  await transporter.sendMail({
-    from: `"Eshabiki" <${process.env.SMTP_USER}>`,
+  await sendMail({
     to: `"${toName}" <${toEmail}>`,
     subject: "Account credentials delivered — please confirm",
     html: emailLayout(body),
@@ -292,8 +285,7 @@ export async function sendTransactionCompletedEmail({
     ${btn("View Transaction", link)}
     ${footer("You received this because a sale was completed on your Eshabiki account.")}
   `;
-  await transporter.sendMail({
-    from: `"Eshabiki" <${process.env.SMTP_USER}>`,
+  await sendMail({
     to: `"${toName}" <${toEmail}>`,
     subject: "Funds released — sale complete!",
     html: emailLayout(body),
@@ -326,8 +318,7 @@ export async function sendDisputeRaisedEmail({
     ${btn("View Dispute", link)}
     ${footer("You received this because a dispute was raised on your Eshabiki transaction.")}
   `;
-  await transporter.sendMail({
-    from: `"Eshabiki" <${process.env.SMTP_USER}>`,
+  await sendMail({
     to: `"${toName}" <${toEmail}>`,
     subject: "Dispute raised on your transaction",
     html: emailLayout(body),
@@ -357,8 +348,7 @@ export async function sendRefundEmail({
     ${btn("View Transaction", link)}
     ${footer("You received this because a dispute was resolved on your Eshabiki transaction.")}
   `;
-  await transporter.sendMail({
-    from: `"Eshabiki" <${process.env.SMTP_USER}>`,
+  await sendMail({
     to: `"${toName}" <${toEmail}>`,
     subject: "Refund approved — dispute resolved",
     html: emailLayout(body),
@@ -407,8 +397,7 @@ export async function sendOrderConfirmationEmail({
     ${btn("Pay Now", link)}
     ${footer("You received this because you placed an order on Eshabiki.")}
   `;
-  await transporter.sendMail({
-    from: `"Eshabiki" <${process.env.SMTP_USER}>`,
+  await sendMail({
     to: `"${toName}" <${toEmail}>`,
     subject: `Order confirmed — #${orderId.slice(-12).toUpperCase()}`,
     html: emailLayout(body),
@@ -439,8 +428,7 @@ export async function sendVerificationEmail({
     ${btn("Verify Email Address", verifyUrl)}
     ${footer("You received this because you signed up for Eshabiki.")}
   `;
-  await transporter.sendMail({
-    from: `"Eshabiki" <${process.env.SMTP_USER}>`,
+  await sendMail({
     to: `"${toName}" <${toEmail}>`,
     subject: "Verify your Eshabiki email address",
     html: emailLayout(body),

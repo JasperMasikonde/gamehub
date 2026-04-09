@@ -1,42 +1,31 @@
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/auth";
-import nodemailer from "nodemailer";
+import { Resend } from "resend";
 
 export async function POST() {
   await requireAdmin();
 
-  const { SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASSWORD } = process.env;
+  const apiKey = process.env.RESEND_API_KEY;
+  const from = process.env.RESEND_FROM ?? "Eshabiki <support@eshabiki.com>";
 
-  // Report config (no password)
-  const config = {
-    host: SMTP_HOST ?? "(not set)",
-    port: SMTP_PORT ?? "(not set)",
-    user: SMTP_USER ?? "(not set)",
-    passwordSet: !!SMTP_PASSWORD,
-  };
-
-  if (!SMTP_HOST || !SMTP_USER || !SMTP_PASSWORD) {
-    return NextResponse.json({ ok: false, config, error: "SMTP env vars missing" }, { status: 500 });
+  if (!apiKey) {
+    return NextResponse.json({ ok: false, error: "RESEND_API_KEY not set" }, { status: 500 });
   }
 
-  const transporter = nodemailer.createTransport({
-    host: SMTP_HOST,
-    port: Number(SMTP_PORT ?? 465),
-    secure: Number(SMTP_PORT ?? 465) === 465,
-    auth: { user: SMTP_USER, pass: SMTP_PASSWORD },
-  });
+  const resend = new Resend(apiKey);
 
   try {
-    await transporter.verify();
-    await transporter.sendMail({
-      from: `"Eshabiki" <${SMTP_USER}>`,
-      to: SMTP_USER,
-      subject: "Eshabiki SMTP test",
-      text: "SMTP is working correctly. This is a test email from your admin panel.",
+    const { data, error } = await resend.emails.send({
+      from,
+      to: "support@eshabiki.com",
+      subject: "Eshabiki email test",
+      text: "Email is working correctly via Resend.",
     });
-    return NextResponse.json({ ok: true, config, message: `Test email sent to ${SMTP_USER}` });
+
+    if (error) throw new Error(error.message);
+    return NextResponse.json({ ok: true, id: data?.id, message: "Test email sent to support@eshabiki.com" });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : String(err);
-    return NextResponse.json({ ok: false, config, error: message }, { status: 500 });
+    return NextResponse.json({ ok: false, error: message }, { status: 500 });
   }
 }

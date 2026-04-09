@@ -102,7 +102,8 @@
       "Bash(~/.npm-global/bin/svgexport public/logo.svg logo-800.png 2x)",
       "Bash(~/.npm-global/bin/svgexport public/logo-icon.svg logo-icon-1024.png 1024:1024)",
       "Bash(~/.npm-global/bin/svgexport public/logo-icon.svg logo-icon-256.png 256:256)",
-      "Bash(~/.npm-global/bin/svgexport public/logo.svg logo-1500x300.png 1500:300)"
+      "Bash(~/.npm-global/bin/svgexport public/logo.svg logo-1500x300.png 1500:300)",
+      "Bash(jq)"
     ]
   }
 }
