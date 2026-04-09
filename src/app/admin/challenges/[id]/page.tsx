@@ -45,7 +45,10 @@ export default async function AdminChallengeDetailPage({
 
   if (!challenge) notFound();
 
-  const prize = Number(challenge.wagerAmount) * 2;
+  const wager = Number(challenge.wagerAmount);
+  const prize = wager * 2;
+  const fee = challenge.platformFee != null ? Number(challenge.platformFee) : null;
+  const winnerPayout = fee != null ? prize - fee : prize;
   const formatLabel = challenge.format === "BEST_OF_3" ? "Best of 3" : "Best of 5";
 
   return (
@@ -63,19 +66,24 @@ export default async function AdminChallengeDetailPage({
         <p className="text-xs text-text-muted">{formatDate(challenge.createdAt)}</p>
       </div>
 
-      {/* Wager */}
+      {/* Wager / payout breakdown */}
       <Card>
         <CardContent>
-          <div className="grid grid-cols-3 gap-4 text-center">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-center">
             <div>
               <p className="text-xs text-text-muted">Wager (each)</p>
               <p className="text-lg font-black text-neon-green">{formatCurrency(challenge.wagerAmount.toString())}</p>
             </div>
             <div>
-              <p className="text-xs text-text-muted">Total Prize</p>
+              <p className="text-xs text-text-muted">Total Pool</p>
               <p className="text-lg font-black text-neon-yellow flex items-center justify-center gap-1">
-                <Trophy size={14} />
                 {formatCurrency(prize.toString())}
+              </p>
+            </div>
+            <div>
+              <p className="text-xs text-text-muted">Platform Fee</p>
+              <p className="text-lg font-black text-neon-red">
+                {fee != null ? `− ${formatCurrency(fee.toString())}` : "—"}
               </p>
             </div>
             <div>
@@ -85,6 +93,31 @@ export default async function AdminChallengeDetailPage({
           </div>
         </CardContent>
       </Card>
+
+      {/* Send to winner */}
+      <div className="flex items-center justify-between gap-4 p-4 rounded-xl bg-neon-green/10 border-2 border-neon-green/40">
+        <div className="flex items-center gap-3">
+          <Trophy size={22} className="text-neon-green shrink-0" />
+          <div>
+            <p className="text-xs text-text-muted font-medium">
+              {challenge.status === "COMPLETED" && challenge.winner
+                ? `Send to ${challenge.winner.displayName ?? challenge.winner.username}`
+                : "Winner payout (send via M-Pesa)"}
+            </p>
+            <p className="text-2xl font-black text-neon-green">{formatCurrency(winnerPayout.toString())}</p>
+            {fee != null && (
+              <p className="text-[11px] text-text-muted mt-0.5">
+                Pool {formatCurrency(prize.toString())} − fee {formatCurrency(fee.toString())}
+              </p>
+            )}
+          </div>
+        </div>
+        {challenge.status === "COMPLETED" && challenge.winner && (
+          <span className="shrink-0 text-xs font-semibold bg-neon-green/20 text-neon-green border border-neon-green/30 px-3 py-1.5 rounded-lg">
+            Awaiting payout
+          </span>
+        )}
+      </div>
 
       {/* Parties */}
       <Card>

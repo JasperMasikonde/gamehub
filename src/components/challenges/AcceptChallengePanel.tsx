@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Swords, Camera, Upload, Loader2, X } from "lucide-react";
+import { Swords, Camera, Upload, Loader2, X, Trophy } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { PaymentPanel } from "@/components/payments/PaymentPanel";
 import { formatCurrency } from "@/lib/utils/format";
@@ -26,6 +26,7 @@ export function AcceptChallengePanel({
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
   const [showPayment, setShowPayment] = useState(false);
+  const [feeInfo, setFeeInfo] = useState<{ fee: number | null } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Redirect to login if not authenticated
@@ -34,6 +35,16 @@ export function AcceptChallengePanel({
       router.push(`/login?next=/challenges/${challengeId}`);
     }
   }, [isLoggedIn, challengeId, router]);
+
+  // Fetch fee breakdown once on mount
+  useEffect(() => {
+    const w = parseFloat(wagerAmount);
+    if (!w || w <= 0) return;
+    fetch(`/api/challenges/fee?wager=${w}`)
+      .then((r) => r.ok ? r.json() : null)
+      .then((d) => d && setFeeInfo(d))
+      .catch(() => {});
+  }, [wagerAmount]);
 
   if (!isLoggedIn) return null;
 
@@ -120,6 +131,30 @@ export function AcceptChallengePanel({
         <p className="text-xs text-text-muted">① Upload a screenshot of your eFootball squad</p>
         <p className="text-xs text-text-muted">② Pay the wager via M-Pesa to confirm your spot</p>
         <p className="text-xs text-text-muted">③ The match begins — chat with your opponent in the challenge room</p>
+      </div>
+
+      {/* Payout breakdown */}
+      <div className="rounded-xl border border-neon-green/20 bg-neon-green/5 px-4 py-3 space-y-1.5">
+        <div className="flex justify-between text-xs text-text-muted">
+          <span>Each player pays</span>
+          <span className="font-medium text-text-primary">{formatCurrency(wagerAmount)}</span>
+        </div>
+        <div className="flex justify-between text-xs text-text-muted">
+          <span>Total prize pool</span>
+          <span className="font-medium text-text-primary">{formatCurrency((parseFloat(wagerAmount) * 2).toString())}</span>
+        </div>
+        {feeInfo?.fee != null && (
+          <div className="flex justify-between text-xs text-text-muted">
+            <span>Platform fee</span>
+            <span className="font-medium text-neon-red">− {formatCurrency(feeInfo.fee.toString())}</span>
+          </div>
+        )}
+        <div className="flex justify-between text-sm font-bold border-t border-neon-green/20 pt-1.5">
+          <span className="flex items-center gap-1 text-neon-green"><Trophy size={12} /> You receive if you win</span>
+          <span className="text-neon-green">
+            {formatCurrency(((parseFloat(wagerAmount) * 2) - (feeInfo?.fee ?? 0)).toString())}
+          </span>
+        </div>
       </div>
 
       {/* Squad upload */}

@@ -1,12 +1,13 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Swords, Banknote, Camera, Upload, Loader2, X, ArrowRight, FileText } from "lucide-react";
+import { Swords, Banknote, Camera, Upload, Loader2, X, ArrowRight, FileText, Trophy } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Textarea } from "@/components/ui/Textarea";
 import { cn } from "@/lib/utils/cn";
+import { formatCurrency } from "@/lib/utils/format";
 
 export function CreateChallengeForm() {
   const router = useRouter();
@@ -17,7 +18,22 @@ export function CreateChallengeForm() {
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [feeInfo, setFeeInfo] = useState<{ fee: number | null } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const feeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    const w = parseFloat(wager);
+    if (!w || w <= 0) { setFeeInfo(null); return; }
+    if (feeTimerRef.current) clearTimeout(feeTimerRef.current);
+    feeTimerRef.current = setTimeout(async () => {
+      try {
+        const res = await fetch(`/api/challenges/fee?wager=${w}`);
+        if (res.ok) setFeeInfo(await res.json());
+      } catch { /* ignore */ }
+    }, 400);
+    return () => { if (feeTimerRef.current) clearTimeout(feeTimerRef.current); };
+  }, [wager]);
 
   const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -149,6 +165,31 @@ export function CreateChallengeForm() {
           />
         </div>
         <p className="text-xs text-text-muted mt-1">Your opponent must match this amount to accept.</p>
+
+        {feeInfo && parseFloat(wager) > 0 && (
+          <div className="mt-3 rounded-xl border border-neon-green/20 bg-neon-green/5 px-4 py-3 space-y-1.5">
+            <div className="flex justify-between text-xs text-text-muted">
+              <span>Each player pays</span>
+              <span className="font-medium text-text-primary">{formatCurrency(wager)}</span>
+            </div>
+            <div className="flex justify-between text-xs text-text-muted">
+              <span>Total prize pool</span>
+              <span className="font-medium text-text-primary">{formatCurrency((parseFloat(wager) * 2).toString())}</span>
+            </div>
+            {feeInfo.fee != null && (
+              <div className="flex justify-between text-xs text-text-muted">
+                <span>Platform fee</span>
+                <span className="font-medium text-neon-red">− {formatCurrency(feeInfo.fee.toString())}</span>
+              </div>
+            )}
+            <div className="flex justify-between text-sm font-bold border-t border-neon-green/20 pt-1.5">
+              <span className="flex items-center gap-1 text-neon-green"><Trophy size={12} /> Winner receives</span>
+              <span className="text-neon-green">
+                {formatCurrency(((parseFloat(wager) * 2) - (feeInfo.fee ?? 0)).toString())}
+              </span>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Description */}

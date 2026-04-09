@@ -41,6 +41,12 @@ export async function POST(req: NextRequest) {
 
   const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
 
+  // Look up the applicable fee rule so we can store it with the challenge
+  const feeRule = await prisma.platformFeeRule.findFirst({
+    where: { isActive: true, minWager: { lte: wagerAmount }, maxWager: { gte: wagerAmount } },
+    orderBy: { minWager: "asc" },
+  });
+
   const challenge = await prisma.challenge.create({
     data: {
       hostId: session.user.id,
@@ -51,6 +57,7 @@ export async function POST(req: NextRequest) {
       hostSquadUrl,
       expiresAt,
       status: "PENDING_HOST_PAYMENT",
+      platformFee: feeRule ? feeRule.fee : null,
     },
   });
 

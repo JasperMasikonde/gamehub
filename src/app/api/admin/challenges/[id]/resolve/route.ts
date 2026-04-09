@@ -50,7 +50,9 @@ export async function POST(
   });
 
   const loserId = winnerId === challenge.hostId ? challenge.challengerId! : challenge.hostId;
-  const prize = (Number(challenge.wagerAmount) * 2).toFixed(2);
+  const pool = Number(challenge.wagerAmount) * 2;
+  const fee = challenge.platformFee != null ? Number(challenge.platformFee) : 0;
+  const prize = (pool - fee).toFixed(2);
 
   await Promise.all([
     createNotification(winnerId, "CHALLENGE_WON", {
