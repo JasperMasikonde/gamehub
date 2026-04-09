@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { signIn } from "next-auth/react";
 import { useForm } from "react-hook-form";
 import { useSearchParams } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -10,6 +9,7 @@ import { Button } from "@/components/ui/Button";
 import { loginSchema, type LoginInput } from "@/lib/validations/user";
 import { CheckCircle } from "lucide-react";
 import Link from "next/link";
+import { loginAction } from "@/app/actions/auth";
 
 export function LoginForm() {
   const searchParams = useSearchParams();
@@ -18,7 +18,7 @@ export function LoginForm() {
   // Only allow relative paths to prevent open redirect
   const redirectTo = next?.startsWith("/") ? next : "/dashboard";
 
-  // NextAuth v5 sometimes redirects back with ?error= instead of returning the error object
+  // Fallback: NextAuth may redirect back with ?error= if something bypasses the action
   const urlError = searchParams.get("error");
   const [serverError, setServerError] = useState(
     urlError ? "Invalid email or password" : ""
@@ -34,18 +34,10 @@ export function LoginForm() {
 
   const onSubmit = async (data: LoginInput) => {
     setServerError("");
-    const result = await signIn("credentials", {
-      email: data.email,
-      password: data.password,
-      redirect: false,
-    });
+    const result = await loginAction(data.email, data.password);
 
-    if (!result?.ok) {
-      setServerError(
-        result?.error === "CredentialsSignin"
-          ? "Invalid email or password"
-          : (result?.error ?? "Sign in failed — please try again")
-      );
+    if (result.error) {
+      setServerError(result.error);
       return;
     }
 
