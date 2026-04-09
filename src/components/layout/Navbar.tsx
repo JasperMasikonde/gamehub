@@ -24,35 +24,35 @@ export function Navbar() {
           </Link>
 
           {/* Desktop Nav */}
-          <div className="hidden md:flex items-center gap-6">
-            <Link href="/listings" className="text-sm text-text-subtle hover:text-text-primary transition-colors">
+          <div className="hidden md:flex items-center gap-4">
+            <Link href="/listings" className="text-sm text-text-subtle hover:text-text-primary transition-colors whitespace-nowrap">
               Marketplace
             </Link>
-            <Link href="/challenges" className="text-sm text-text-subtle hover:text-text-primary transition-colors flex items-center gap-1">
+            <Link href="/challenges" className="text-sm text-text-subtle hover:text-text-primary transition-colors flex items-center gap-1 whitespace-nowrap">
               <Swords size={13} />
               Challenges
             </Link>
-            <Link href="/shop" className="text-sm text-text-subtle hover:text-text-primary transition-colors flex items-center gap-1">
+            <Link href="/shop" className="text-sm text-text-subtle hover:text-text-primary transition-colors flex items-center gap-1 whitespace-nowrap">
               <ShoppingBag size={13} />
               Shop
             </Link>
-            <Link href="/tournaments" className="text-sm text-text-subtle hover:text-text-primary transition-colors flex items-center gap-1">
+            <Link href="/tournaments" className="text-sm text-text-subtle hover:text-text-primary transition-colors flex items-center gap-1 whitespace-nowrap">
               <Trophy size={13} />
               Tournaments
             </Link>
-            <Link href="/rank-push" className="text-sm text-text-subtle hover:text-text-primary transition-colors flex items-center gap-1">
+            <Link href="/rank-push" className="text-sm text-text-subtle hover:text-text-primary transition-colors flex items-center gap-1 whitespace-nowrap">
               <TrendingUp size={13} />
               Rank Push
             </Link>
             {session?.user && (
-              <Link href="/dashboard" className="text-sm text-text-subtle hover:text-text-primary transition-colors">
+              <Link href="/dashboard" className="text-sm text-text-subtle hover:text-text-primary transition-colors whitespace-nowrap">
                 Dashboard
               </Link>
             )}
           </div>
 
           {/* Right side */}
-          <div className="hidden md:flex items-center gap-3">
+          <div className="hidden md:flex items-center gap-2">
             {session?.user ? (
               <>
                 {session.user.role === "ADMIN" && (
