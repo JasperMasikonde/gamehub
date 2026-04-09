@@ -48,11 +48,15 @@ export async function POST(req: Request) {
       update: {},
     });
 
-    // Fire-and-forget emails — don't block the response
-    sendWelcomeEmail({ toEmail: email, toName: username }).catch(() => null);
+    // Send emails — log errors so we can see SMTP failures in server logs
+    sendWelcomeEmail({ toEmail: email, toName: username }).catch((err) =>
+      console.error("[email] welcome failed:", err.message)
+    );
     generateVerificationToken(user.id, email).then((token) =>
       sendVerificationEmail({ toEmail: email, toName: username, token })
-    ).catch(() => null);
+    ).catch((err) =>
+      console.error("[email] verification failed:", err.message)
+    );
 
     return NextResponse.json({ user }, { status: 201 });
   } catch {

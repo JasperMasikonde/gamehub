@@ -43,7 +43,9 @@ export async function POST() {
     toEmail: user.email,
     toName: user.displayName ?? user.username,
     token,
-  }).catch(() => null);
+  }).catch((err) =>
+    console.error("[email] resend-verification failed:", err.message)
+  );
 
   return NextResponse.json({ success: true });
 }
