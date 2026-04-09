@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { resolveSession } from "@/lib/auth";
+import { requireSuperAdmin } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
 const SHOP_PAID = ["PAID", "PROCESSING", "SHIPPED", "DELIVERED"] as const;
@@ -16,10 +16,7 @@ export interface LedgerEntry {
 }
 
 export async function GET(req: NextRequest) {
-  const session = await resolveSession();
-  if (!session?.user?.isSuperAdmin) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
+  try { await requireSuperAdmin(); } catch { return NextResponse.json({ error: "Forbidden" }, { status: 403 }); }
 
   const { searchParams } = new URL(req.url);
   const page = Math.max(1, parseInt(searchParams.get("page") ?? "1"));

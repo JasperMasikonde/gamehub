@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
-import { resolveSession } from "@/lib/auth";
+import { auth } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
 import { Card } from "@/components/ui/Card";
 import { LedgerTable } from "@/components/accounting/LedgerTable";
 import { BookOpen } from "lucide-react";
@@ -8,8 +9,10 @@ import Link from "next/link";
 export const dynamic = "force-dynamic";
 
 export default async function LedgerPage() {
-  const session = await resolveSession();
-  if (!session?.user?.isSuperAdmin) redirect("/admin");
+  const session = await auth();
+  if (!session?.user) redirect("/login");
+  const dbUser = await prisma.user.findUnique({ where: { id: session.user.id }, select: { isSuperAdmin: true } });
+  if (!dbUser?.isSuperAdmin) redirect("/admin");
 
   return (
     <div className="flex flex-col gap-6">

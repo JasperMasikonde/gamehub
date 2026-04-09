@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { resolveSession } from "@/lib/auth";
+import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { Card, CardContent, CardHeader } from "@/components/ui/Card";
 import { AccountingYearSelector } from "@/components/accounting/AccountingYearSelector";
@@ -83,8 +83,10 @@ export default async function AccountingPage({
 }: {
   searchParams: Promise<{ year?: string }>;
 }) {
-  const session = await resolveSession();
-  if (!session?.user?.isSuperAdmin) redirect("/admin");
+  const session = await auth();
+  if (!session?.user) redirect("/login");
+  const dbUser = await prisma.user.findUnique({ where: { id: session.user.id }, select: { isSuperAdmin: true } });
+  if (!dbUser?.isSuperAdmin) redirect("/admin");
 
   const { year: yearParam } = await searchParams;
   const year = parseInt(yearParam ?? String(new Date().getFullYear()));
