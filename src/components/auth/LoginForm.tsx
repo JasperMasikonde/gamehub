@@ -12,12 +12,17 @@ import { CheckCircle } from "lucide-react";
 import Link from "next/link";
 
 export function LoginForm() {
-  const [serverError, setServerError] = useState("");
   const searchParams = useSearchParams();
   const justRegistered = searchParams.get("registered") === "1";
   const next = searchParams.get("next");
   // Only allow relative paths to prevent open redirect
   const redirectTo = next?.startsWith("/") ? next : "/dashboard";
+
+  // NextAuth v5 sometimes redirects back with ?error= instead of returning the error object
+  const urlError = searchParams.get("error");
+  const [serverError, setServerError] = useState(
+    urlError ? "Invalid email or password" : ""
+  );
 
   const {
     register,
@@ -50,7 +55,6 @@ export function LoginForm() {
 
   return (
     <form
-      method="post"
       onSubmit={(e) => {
         e.preventDefault();
         void handleSubmit(onSubmit)(e);
