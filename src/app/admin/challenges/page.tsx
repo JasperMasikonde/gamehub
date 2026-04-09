@@ -176,7 +176,7 @@ export default async function AdminChallengesPage({
 
       <Card>
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="w-full text-sm min-w-[640px]">
             <thead>
               <tr className="border-b border-bg-border">
                 {["Host", "Challenger", "Format", "Wager", "Prize", "Winner", "Status", "Date"].map((h) => (

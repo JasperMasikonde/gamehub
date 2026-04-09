@@ -35,8 +35,13 @@ export default async function CheckoutPage() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Order summary */}
-        <div className="bg-bg-surface border border-bg-border rounded-2xl p-5 space-y-3 h-fit">
+        {/* Form — first on mobile, second column on desktop */}
+        <div className="order-first md:order-last">
+          <CheckoutForm total={total} currency={currency} />
+        </div>
+
+        {/* Order summary — second on mobile, first column on desktop */}
+        <div className="order-last md:order-first bg-bg-surface border border-bg-border rounded-2xl p-5 space-y-3 h-fit">
           <h2 className="font-semibold text-sm">Your Items</h2>
           {cart.items.map((item) => (
             <div key={item.id} className="flex justify-between text-sm">
@@ -49,9 +54,6 @@ export default async function CheckoutPage() {
             <span className="text-neon-green">{currency} {total.toLocaleString()}</span>
           </div>
         </div>
-
-        {/* Form */}
-        <CheckoutForm total={total} currency={currency} />
       </div>
     </div>
   );

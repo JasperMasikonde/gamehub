@@ -10,7 +10,7 @@ export default function LoginPage() {
           <Link href="/" className="inline-flex items-center mb-6">
             <img src="/logo.svg" alt="Eshabiki" className="h-10 w-auto" />
           </Link>
-          <h1 className="text-xl font-semibold text-text-primary">Welcome back</h1>
+          <h1 className="text-xl sm:text-2xl font-semibold text-text-primary">Welcome back</h1>
           <p className="text-sm text-text-muted mt-1">Sign in to your account</p>
         </div>
 

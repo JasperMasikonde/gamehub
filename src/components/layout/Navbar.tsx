@@ -121,13 +121,23 @@ export function Navbar() {
             )}
           </div>
 
-          {/* Mobile menu toggle */}
-          <button
-            className="md:hidden text-text-muted hover:text-text-primary"
-            onClick={() => setMobileOpen(!mobileOpen)}
-          >
-            {mobileOpen ? <X size={22} /> : <Menu size={22} />}
-          </button>
+          {/* Mobile right: icons + hamburger */}
+          <div className="md:hidden flex items-center gap-1">
+            {session?.user && (
+              <>
+                <CartIcon />
+                <MessagesIcon />
+                <NotificationBell />
+              </>
+            )}
+            <button
+              className="p-2 text-text-muted hover:text-text-primary transition-colors"
+              onClick={() => setMobileOpen(!mobileOpen)}
+              aria-label="Toggle menu"
+            >
+              {mobileOpen ? <X size={22} /> : <Menu size={22} />}
+            </button>
+          </div>
         </div>
       </div>
 

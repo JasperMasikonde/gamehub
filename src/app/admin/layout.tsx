@@ -28,7 +28,7 @@ export default async function AdminLayout({
         isSuperAdmin={isSuperAdmin}
         adminPermissions={adminPermissions}
       />
-      <main className="flex-1 p-4 md:p-6 overflow-y-auto pt-18 md:pt-6">{children}</main>
+      <main className="flex-1 p-4 md:p-6 overflow-y-auto pt-16 md:pt-6 pb-8">{children}</main>
     </div>
   );
 }

@@ -87,7 +87,7 @@ export default async function AdminTransactionsPage({
 
       <Card>
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="w-full text-sm min-w-[640px]">
             <thead>
               <tr className="border-b border-bg-border">
                 {["Listing", "Seller", "Payout Number", "Amount Paid", "To Send", "Status", "Date"].map((h) => (

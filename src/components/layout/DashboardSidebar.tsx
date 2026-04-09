@@ -82,7 +82,7 @@ export function DashboardSidebar() {
               key={href}
               href={href}
               className={cn(
-                "flex flex-col items-center gap-0.5 flex-1 py-2 text-[10px] transition-colors",
+                "flex flex-col items-center gap-0.5 flex-1 py-2 text-xs transition-colors",
                 active ? "text-neon-green" : "text-text-muted"
               )}
             >
@@ -93,7 +93,7 @@ export function DashboardSidebar() {
         })}
         <Link
           href="/listings/create"
-          className="flex flex-col items-center gap-0.5 flex-1 py-2 text-[10px] text-text-muted"
+          className="flex flex-col items-center gap-0.5 flex-1 py-2 text-xs text-text-muted"
         >
           <span className="flex items-center justify-center w-9 h-9 rounded-full bg-neon-green text-bg-primary shadow-md -mt-5 mb-0.5">
             <Plus size={18} strokeWidth={2.5} />

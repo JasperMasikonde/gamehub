@@ -63,24 +63,24 @@ export function CartLineItem({ itemId, name, price, quantity, imageUrl, currency
         <button
           onClick={() => updateQty(qty - 1)}
           disabled={loading || qty <= 1}
-          className="w-7 h-7 rounded-lg border border-bg-border flex items-center justify-center text-text-muted hover:text-text-primary hover:border-bg-elevated disabled:opacity-40 transition-colors"
+          className="w-10 h-10 rounded-lg border border-bg-border flex items-center justify-center text-text-muted hover:text-text-primary hover:border-bg-elevated disabled:opacity-40 transition-colors"
         >
-          <Minus size={13} />
+          <Minus size={15} />
         </button>
         <span className="text-sm font-semibold w-6 text-center">{qty}</span>
         <button
           onClick={() => updateQty(qty + 1)}
           disabled={loading}
-          className="w-7 h-7 rounded-lg border border-bg-border flex items-center justify-center text-text-muted hover:text-text-primary hover:border-bg-elevated disabled:opacity-40 transition-colors"
+          className="w-10 h-10 rounded-lg border border-bg-border flex items-center justify-center text-text-muted hover:text-text-primary hover:border-bg-elevated disabled:opacity-40 transition-colors"
         >
-          <Plus size={13} />
+          <Plus size={15} />
         </button>
         <button
           onClick={remove}
           disabled={loading}
-          className="w-7 h-7 rounded-lg flex items-center justify-center text-text-muted hover:text-neon-red transition-colors ml-1 disabled:opacity-40"
+          className="w-10 h-10 rounded-lg flex items-center justify-center text-text-muted hover:text-neon-red transition-colors ml-1 disabled:opacity-40"
         >
-          <Trash2 size={14} />
+          <Trash2 size={16} />
         </button>
       </div>
     </div>

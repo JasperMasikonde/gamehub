@@ -34,7 +34,7 @@ export default async function AdminProductsPage() {
 
       <div className="bg-bg-surface border border-bg-border rounded-2xl overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="w-full text-sm min-w-[640px]">
             <thead>
               <tr className="border-b border-bg-border">
                 <th className="text-left p-4 text-text-muted font-medium">Product</th>

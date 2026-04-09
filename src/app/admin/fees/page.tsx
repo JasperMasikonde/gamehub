@@ -50,7 +50,7 @@ export default async function AdminFeesPage() {
         <FeeRuleForm />
 
         <div className="bg-bg-surface border border-bg-border rounded-2xl overflow-hidden">
-          <table className="w-full text-sm">
+          <table className="w-full text-sm min-w-[640px]">
             <thead>
               <tr className="border-b border-bg-border">
                 <th className="text-left p-4 text-text-muted font-medium">Label</th>

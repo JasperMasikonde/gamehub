@@ -31,7 +31,7 @@ export function Modal({ isOpen, onClose, title, children, className }: ModalProp
       />
       <div
         className={cn(
-          "relative bg-bg-elevated border border-bg-border rounded-2xl shadow-2xl w-full max-w-lg",
+          "relative bg-bg-elevated border border-bg-border rounded-2xl shadow-2xl w-full max-w-lg mx-4 sm:mx-0",
           className
         )}
       >
