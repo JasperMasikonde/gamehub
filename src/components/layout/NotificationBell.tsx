@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import useSWR from "swr";
 import { Bell } from "lucide-react";
 import { formatRelativeTime } from "@/lib/utils/format";
@@ -10,9 +10,21 @@ const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
 export function NotificationBell() {
   const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
   const { data, mutate } = useSWR("/api/notifications?unread=true", fetcher, {
     refreshInterval: 30000,
   });
+
+  useEffect(() => {
+    if (!open) return;
+    const handleClick = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [open]);
 
   const notifications = data?.notifications ?? [];
   const count = notifications.length;
@@ -28,7 +40,7 @@ export function NotificationBell() {
   };
 
   return (
-    <div className="relative">
+    <div className="relative" ref={ref}>
       <button
         className="relative text-text-muted hover:text-text-primary transition-colors p-1"
         onClick={() => setOpen(!open)}
@@ -42,12 +54,7 @@ export function NotificationBell() {
       </button>
 
       {open && (
-        <>
-          <div
-            className="fixed inset-0 z-30"
-            onClick={() => setOpen(false)}
-          />
-          <div className="absolute right-0 mt-2 w-80 bg-bg-elevated border border-bg-border rounded-xl shadow-2xl z-40 overflow-hidden">
+        <div className="absolute right-0 mt-2 w-80 bg-bg-elevated border border-bg-border rounded-xl shadow-2xl z-40 overflow-hidden">
             <div className="flex items-center justify-between px-4 py-3 border-b border-bg-border">
               <span className="text-sm font-semibold">Notifications</span>
               {count > 0 && (
@@ -98,8 +105,7 @@ export function NotificationBell() {
                 )
               )}
             </div>
-          </div>
-        </>
+        </div>
       )}
     </div>
   );
