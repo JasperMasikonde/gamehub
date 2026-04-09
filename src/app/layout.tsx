@@ -35,21 +35,12 @@ export const metadata: Metadata = {
     title: "Eshabiki — eFootball Account Marketplace Kenya",
     description:
       "Buy and sell eFootball accounts safely in Kenya. Escrow payments, match challenges, and tournaments.",
-    images: [
-      {
-        url: "/og-image.png",
-        width: 1200,
-        height: 630,
-        alt: "Eshabiki — eFootball Marketplace",
-      },
-    ],
   },
   twitter: {
     card: "summary_large_image",
     title: "Eshabiki — eFootball Account Marketplace Kenya",
     description:
       "Buy and sell eFootball accounts safely in Kenya. Escrow payments, match challenges, and tournaments.",
-    images: ["/og-image.png"],
   },
   robots: {
     index: true,

@@ -2,6 +2,13 @@ import { TransactionStatus, type Transaction } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { createNotification } from "@/lib/notifications";
 import { emitToast, emitToAdmins, emitTransactionUpdate } from "@/lib/socket-server";
+import {
+  sendEscrowFundedEmail,
+  sendCredentialsDeliveredEmail,
+  sendTransactionCompletedEmail,
+  sendDisputeRaisedEmail,
+  sendRefundEmail,
+} from "@/lib/email";
 
 // Valid state transitions for the escrow state machine
 const VALID_TRANSITIONS: Record<TransactionStatus, TransactionStatus[]> = {
@@ -90,6 +97,14 @@ async function notifyOnTransition(
 ) {
   const escrowLink = `/dashboard/escrow/${tx.id}`;
 
+  // Fetch user emails + listing title for transactional emails
+  const [buyer, seller, listing] = await Promise.all([
+    prisma.user.findUnique({ where: { id: tx.buyerId }, select: { email: true, displayName: true, username: true } }),
+    prisma.user.findUnique({ where: { id: tx.sellerId }, select: { email: true, displayName: true, username: true } }),
+    prisma.listing.findUnique({ where: { id: tx.listingId }, select: { title: true } }),
+  ]);
+  const listingTitle = listing?.title ?? "eFootball Account";
+
   switch (newStatus) {
     case TransactionStatus.IN_ESCROW:
       await createNotification(tx.sellerId, "ESCROW_FUNDED", {
@@ -105,6 +120,15 @@ async function notifyOnTransition(
         linkLabel: "View escrow",
         duration: 8000,
       });
+      if (seller && tx.deliveryDeadline) {
+        sendEscrowFundedEmail({
+          toEmail: seller.email,
+          toName: seller.displayName ?? seller.username,
+          transactionId: tx.id,
+          listingTitle,
+          deliveryDeadline: tx.deliveryDeadline,
+        }).catch(() => null);
+      }
       break;
 
     case TransactionStatus.DELIVERED:
@@ -121,6 +145,15 @@ async function notifyOnTransition(
         linkLabel: "Confirm now",
         duration: 10000,
       });
+      if (buyer && tx.confirmationDeadline) {
+        sendCredentialsDeliveredEmail({
+          toEmail: buyer.email,
+          toName: buyer.displayName ?? buyer.username,
+          transactionId: tx.id,
+          listingTitle,
+          confirmationDeadline: tx.confirmationDeadline,
+        }).catch(() => null);
+      }
       break;
 
     case TransactionStatus.COMPLETED:
@@ -137,6 +170,14 @@ async function notifyOnTransition(
         linkLabel: "View transaction",
         duration: 8000,
       });
+      if (seller) {
+        sendTransactionCompletedEmail({
+          toEmail: seller.email,
+          toName: seller.displayName ?? seller.username,
+          transactionId: tx.id,
+          listingTitle,
+        }).catch(() => null);
+      }
       break;
 
     case TransactionStatus.DISPUTED: {
@@ -177,6 +218,14 @@ async function notifyOnTransition(
         linkLabel: "Review →",
         duration: 0,
       });
+      if (seller) {
+        sendDisputeRaisedEmail({
+          toEmail: seller.email,
+          toName: seller.displayName ?? seller.username,
+          transactionId: tx.id,
+          listingTitle,
+        }).catch(() => null);
+      }
       break;
     }
 
@@ -194,6 +243,14 @@ async function notifyOnTransition(
         linkLabel: "View transaction",
         duration: 8000,
       });
+      if (buyer) {
+        sendRefundEmail({
+          toEmail: buyer.email,
+          toName: buyer.displayName ?? buyer.username,
+          transactionId: tx.id,
+          listingTitle,
+        }).catch(() => null);
+      }
       break;
   }
 }

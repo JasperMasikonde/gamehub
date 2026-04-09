@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { registerSchema } from "@/lib/validations/user";
+import { sendWelcomeEmail } from "@/lib/email";
 
 export async function POST(req: Request) {
   try {
@@ -45,6 +46,9 @@ export async function POST(req: Request) {
       create: { id: "singleton", updatedAt: new Date() },
       update: {},
     });
+
+    // Fire-and-forget welcome email — don't block the response
+    sendWelcomeEmail({ toEmail: email, toName: username }).catch(() => null);
 
     return NextResponse.json({ user }, { status: 201 });
   } catch {

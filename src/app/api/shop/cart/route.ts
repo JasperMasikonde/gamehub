@@ -25,6 +25,8 @@ export async function POST(req: NextRequest) {
 
   const { productId, quantity = 1 } = await req.json();
   if (!productId) return NextResponse.json({ error: "productId required" }, { status: 400 });
+  if (!Number.isInteger(quantity) || quantity < 1 || quantity > 100)
+    return NextResponse.json({ error: "quantity must be an integer between 1 and 100" }, { status: 400 });
 
   const product = await prisma.product.findUnique({ where: { id: productId } });
   if (!product || product.status !== "ACTIVE")

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { resolveSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { sendOrderConfirmationEmail } from "@/lib/email";
 
 export async function GET() {
   const session = await resolveSession();
@@ -75,6 +76,21 @@ export async function POST(req: NextRequest) {
     await tx.cartItem.deleteMany({ where: { cartId: cart.id } });
     return newOrder;
   });
+
+  // Fire-and-forget order confirmation email
+  const user = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: { email: true, displayName: true, username: true },
+  });
+  if (user) {
+    sendOrderConfirmationEmail({
+      toEmail: user.email,
+      toName: user.displayName ?? user.username,
+      orderId: order.id,
+      total: Number(total),
+      itemCount: cart.items.length,
+    }).catch(() => null);
+  }
 
   return NextResponse.json({ order }, { status: 201 });
 }
