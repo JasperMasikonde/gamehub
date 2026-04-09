@@ -23,6 +23,8 @@ import {
   X,
   ShieldCheck,
   TrendingUp,
+  BookOpen,
+  Receipt,
 } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 import type { AdminPermission } from "@prisma/client";
@@ -65,6 +67,11 @@ const rankPushLinks: NavLink[] = [
   { href: "/admin/rank-push/categories", label: "Categories", icon: Tag },
   { href: "/admin/rank-push/providers", label: "Providers", icon: Users },
   { href: "/admin/rank-push/orders", label: "Orders", icon: ClipboardList },
+];
+
+const accountingLinks: NavLink[] = [
+  { href: "/admin/accounting", label: "Overview", icon: BookOpen, exact: true, superAdminOnly: true },
+  { href: "/admin/accounting/ledger", label: "Ledger", icon: Receipt, superAdminOnly: true },
 ];
 
 function canSee(link: NavLink, isSuperAdmin: boolean, adminPermissions: AdminPermission[]) {
@@ -118,6 +125,7 @@ function SidebarContent({
   const shopVisible = shopLinks.some((l) => canSee(l, isSuperAdmin, adminPermissions));
   const tournamentVisible = tournamentLinks.some((l) => canSee(l, isSuperAdmin, adminPermissions));
   const rankPushVisible = rankPushLinks.some((l) => canSee(l, isSuperAdmin, adminPermissions));
+  const accountingVisible = accountingLinks.some((l) => canSee(l, isSuperAdmin, adminPermissions));
 
   return (
     <aside className="w-56 shrink-0 border-r border-bg-border bg-bg-surface flex flex-col h-full">
@@ -181,6 +189,23 @@ function SidebarContent({
                 key={link.href}
                 link={link}
                 activeColor="bg-neon-purple/10 text-neon-purple border border-neon-purple/20"
+                onNavigate={onNavigate}
+                isSuperAdmin={isSuperAdmin}
+                adminPermissions={adminPermissions}
+              />
+            ))}
+          </>
+        )}
+
+        {accountingVisible && (
+          <>
+            <div className="mx-3 my-2 border-t border-bg-border" />
+            <p className="px-3 text-[10px] font-semibold text-text-muted uppercase tracking-widest mb-1">Accounting</p>
+            {accountingLinks.map((link) => (
+              <NavItem
+                key={link.href}
+                link={link}
+                activeColor="bg-neon-green/10 text-neon-green border border-neon-green/20"
                 onNavigate={onNavigate}
                 isSuperAdmin={isSuperAdmin}
                 adminPermissions={adminPermissions}
