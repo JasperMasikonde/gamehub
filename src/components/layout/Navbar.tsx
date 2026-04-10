@@ -121,24 +121,15 @@ export function Navbar() {
             )}
           </div>
 
-          {/* Mobile right: icons + auth buttons + hamburger */}
+          {/* Mobile right: icons + hamburger */}
           <div className="md:hidden flex items-center gap-1">
-            {session?.user ? (
+            {session?.user && (
               <>
                 <CartIcon />
                 <MessagesIcon />
                 <NotificationBell />
               </>
-            ) : status === "unauthenticated" ? (
-              <>
-                <Link href="/login">
-                  <Button variant="ghost" size="sm">Sign In</Button>
-                </Link>
-                <Link href="/register">
-                  <Button variant="primary" size="sm">Get Started</Button>
-                </Link>
-              </>
-            ) : null}
+            )}
             <button
               className="p-2 text-text-muted hover:text-text-primary transition-colors"
               onClick={() => setMobileOpen(!mobileOpen)}
@@ -150,43 +141,76 @@ export function Navbar() {
         </div>
       </div>
 
-      {/* Mobile menu */}
-      {mobileOpen && (
-        <div className="md:hidden border-t border-bg-border bg-bg-surface px-4 py-4 flex flex-col gap-3">
-          <Link href="/listings" className="text-sm text-text-subtle hover:text-text-primary" onClick={() => setMobileOpen(false)}>
+      {/* Mobile scrollable nav strip — always visible */}
+      <div className="md:hidden border-t border-bg-border bg-bg-surface/90 overflow-x-auto scrollbar-none">
+        <div className="flex items-center gap-1 px-3 py-2 w-max">
+          <Link href="/listings" className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium text-text-muted hover:text-text-primary hover:bg-bg-elevated transition-colors whitespace-nowrap">
             Marketplace
           </Link>
-          <Link href="/challenges" className="text-sm text-text-subtle hover:text-text-primary flex items-center gap-1" onClick={() => setMobileOpen(false)}>
-            <Swords size={13} /> Challenges
+          <Link href="/challenges" className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium text-text-muted hover:text-text-primary hover:bg-bg-elevated transition-colors whitespace-nowrap">
+            <Swords size={12} /> Challenges
           </Link>
-          <Link href="/shop" className="text-sm text-text-subtle hover:text-text-primary flex items-center gap-1" onClick={() => setMobileOpen(false)}>
-            <ShoppingBag size={13} /> Shop
+          <Link href="/shop" className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium text-text-muted hover:text-text-primary hover:bg-bg-elevated transition-colors whitespace-nowrap">
+            <ShoppingBag size={12} /> Shop
           </Link>
-          <Link href="/tournaments" className="text-sm text-text-subtle hover:text-text-primary flex items-center gap-1" onClick={() => setMobileOpen(false)}>
-            <Trophy size={13} /> Tournaments
+          <Link href="/tournaments" className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium text-text-muted hover:text-text-primary hover:bg-bg-elevated transition-colors whitespace-nowrap">
+            <Trophy size={12} /> Tournaments
           </Link>
-          <Link href="/rank-push" className="text-sm text-text-subtle hover:text-text-primary flex items-center gap-1" onClick={() => setMobileOpen(false)}>
-            <TrendingUp size={13} /> Rank Push
+          <Link href="/rank-push" className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium text-text-muted hover:text-text-primary hover:bg-bg-elevated transition-colors whitespace-nowrap">
+            <TrendingUp size={12} /> Rank Push
           </Link>
-          {session?.user && (
+        </div>
+      </div>
+
+      {/* Mobile hamburger menu */}
+      {mobileOpen && (
+        <div className="md:hidden border-t border-bg-border bg-bg-surface px-4 py-4 flex flex-col gap-3">
+          {session?.user ? (
             <>
               <Link
                 href="/dashboard"
-                className="text-sm text-text-subtle hover:text-text-primary"
+                className="flex items-center gap-2 text-sm text-text-subtle hover:text-text-primary transition-colors"
                 onClick={() => setMobileOpen(false)}
               >
-                Dashboard
+                <User size={15} /> Dashboard
               </Link>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="w-full justify-start text-neon-red"
-                onClick={() => signOut({ callbackUrl: "/" })}
+              {session.user.role === "ADMIN" && (
+                <Link
+                  href="/admin"
+                  className="flex items-center gap-2 text-sm text-text-subtle hover:text-text-primary transition-colors"
+                  onClick={() => setMobileOpen(false)}
+                >
+                  <ShieldCheck size={15} /> Admin Panel
+                </Link>
+              )}
+              <Link
+                href="/listings/create"
+                className="flex items-center gap-2 text-sm text-text-subtle hover:text-text-primary transition-colors"
+                onClick={() => setMobileOpen(false)}
               >
-                <LogOut size={15} /> Sign Out
-              </Button>
+                <Plus size={15} /> Sell Account
+              </Link>
+              <div className="border-t border-bg-border pt-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="w-full justify-start text-neon-red"
+                  onClick={() => signOut({ callbackUrl: "/" })}
+                >
+                  <LogOut size={15} /> Sign Out
+                </Button>
+              </div>
             </>
-          )}
+          ) : status === "unauthenticated" ? (
+            <div className="flex flex-col gap-2">
+              <Link href="/login" onClick={() => setMobileOpen(false)}>
+                <Button variant="outline" size="sm" className="w-full">Sign In</Button>
+              </Link>
+              <Link href="/register" onClick={() => setMobileOpen(false)}>
+                <Button variant="primary" size="sm" className="w-full">Get Started — It&apos;s Free</Button>
+              </Link>
+            </div>
+          ) : null}
         </div>
       )}
     </nav>

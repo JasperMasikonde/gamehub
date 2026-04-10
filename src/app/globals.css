@@ -93,6 +93,9 @@ body {
 ::-webkit-scrollbar-thumb { background: var(--bg-border); border-radius: 3px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
 
+.scrollbar-none { scrollbar-width: none; }
+.scrollbar-none::-webkit-scrollbar { display: none; }
+
 /* Card hover effect */
 .card-hover { transition: transform 0.2s ease, box-shadow 0.2s ease; }
 .card-hover:hover {
