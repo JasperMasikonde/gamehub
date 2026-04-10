@@ -10,7 +10,7 @@ import { MessagesIcon } from "@/components/layout/MessagesIcon";
 import { CartIcon } from "@/components/shop/CartIcon";
 
 export function Navbar() {
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
@@ -129,7 +129,7 @@ export function Navbar() {
                 <MessagesIcon />
                 <NotificationBell />
               </>
-            ) : (
+            ) : status === "unauthenticated" ? (
               <>
                 <Link href="/login">
                   <Button variant="ghost" size="sm">Sign In</Button>
@@ -138,7 +138,7 @@ export function Navbar() {
                   <Button variant="primary" size="sm">Get Started</Button>
                 </Link>
               </>
-            )}
+            ) : null}
             <button
               className="p-2 text-text-muted hover:text-text-primary transition-colors"
               onClick={() => setMobileOpen(!mobileOpen)}
