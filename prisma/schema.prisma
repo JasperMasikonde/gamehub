@@ -452,6 +452,9 @@ model Challenge {
   platformFee Decimal? @db.Decimal(10, 2)
   adminNote   String?  @db.Text
 
+  scheduledAt      DateTime?
+  resultDeadlineAt DateTime?
+
   expiresAt   DateTime
   completedAt DateTime?
 
@@ -613,6 +616,7 @@ model SiteConfig {
   buyerWindowDays  Int      @default(3)
   sellerWindowDays Int      @default(2)
   maintenanceMode  Boolean  @default(false)
+  challengeResultWindowMinutes Int @default(60)
   updatedAt        DateTime @updatedAt
 }
 

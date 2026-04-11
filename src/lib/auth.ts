@@ -34,6 +34,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             isSuperAdmin: true,
             adminPermissions: true,
             isRankPusher: true,
+            emailVerified: true,
           },
         });
 
@@ -45,6 +46,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           user.passwordHash
         );
         if (!valid) return null;
+
+        if (!user.emailVerified) return null;
 
         return {
           id: user.id,

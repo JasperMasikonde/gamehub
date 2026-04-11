@@ -32,5 +32,5 @@ export async function GET(req: NextRequest) {
     emitEmailVerified(user.id);
   }
 
-  return redirect("/dashboard?verified=1");
+  return redirect("/login?verified=1");
 }

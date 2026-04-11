@@ -36,8 +36,9 @@ export function RegisterForm() {
       return;
     }
 
-    // Hard redirect to login so the user signs in fresh with their new credentials
-    window.location.href = "/login?registered=1";
+    // Redirect to verify-email page — user must verify before signing in
+    const encodedEmail = encodeURIComponent(data.email);
+    window.location.href = `/verify-email?email=${encodedEmail}`;
   };
 
   return (

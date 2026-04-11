@@ -27,6 +27,14 @@ export async function POST(
   if (challenge.status !== "ACTIVE" && challenge.status !== "SUBMITTED")
     return NextResponse.json({ error: "Challenge is not in progress" }, { status: 400 });
 
+  // Enforce result submission deadline if a match time was set
+  if (challenge.resultDeadlineAt && new Date() > challenge.resultDeadlineAt) {
+    return NextResponse.json(
+      { error: "The result submission window for this match has closed. Contact an admin." },
+      { status: 400 }
+    );
+  }
+
   const body = await req.json();
   const parsed = schema.safeParse(body);
   if (!parsed.success) {

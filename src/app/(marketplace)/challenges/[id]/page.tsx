@@ -6,6 +6,7 @@ import { formatCurrency, formatDate } from "@/lib/utils/format";
 import { AcceptChallengePanel } from "@/components/challenges/AcceptChallengePanel";
 import { HostPaymentBanner } from "@/components/challenges/HostPaymentBanner";
 import { SubmitResultPanel } from "@/components/challenges/SubmitResultPanel";
+import { ScheduleMatchPanel } from "@/components/challenges/ScheduleMatchPanel";
 import { ChallengeChat } from "@/components/challenges/ChallengeChat";
 import { RealtimeRefresh } from "@/components/escrow/RealtimeRefresh";
 import { RefreshUnreadOnMount } from "@/components/messages/RefreshUnreadOnMount";
@@ -115,6 +116,11 @@ export default async function ChallengeDetailPage({
 
   const formatLabel = challenge.format === "BEST_OF_3" ? "Best of 3" : "Best of 5";
   const prize = Number(challenge.wagerAmount) * 2;
+
+  const siteConfig = isParty && (challenge.status === "ACTIVE" || challenge.status === "SUBMITTED")
+    ? await prisma.siteConfig.findUnique({ where: { id: "singleton" } })
+    : null;
+  const resultWindowMinutes = siteConfig?.challengeResultWindowMinutes ?? 60;
 
   // Serialize messages for client component
   const serializedMessages = challenge.messages.map((m) => ({
@@ -276,6 +282,16 @@ export default async function ChallengeDetailPage({
           challengeId={id}
           wagerAmount={challenge.wagerAmount.toString()}
           format={challenge.format}
+        />
+      )}
+
+      {/* Schedule match time — shown to parties when ACTIVE or SUBMITTED */}
+      {isParty && (challenge.status === "ACTIVE" || challenge.status === "SUBMITTED") && (
+        <ScheduleMatchPanel
+          challengeId={id}
+          scheduledAt={challenge.scheduledAt?.toISOString() ?? null}
+          resultDeadlineAt={challenge.resultDeadlineAt?.toISOString() ?? null}
+          resultWindowMinutes={resultWindowMinutes}
         />
       )}
 

@@ -4,6 +4,7 @@ import { Card } from "@/components/ui/Card";
 import Link from "next/link";
 import { Swords, AlertTriangle, Phone, Banknote } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
+import { ChallengeWindowSettings } from "@/components/admin/ChallengeWindowSettings";
 
 export const dynamic = "force-dynamic";
 
@@ -60,6 +61,9 @@ export default async function AdminChallengesPage({
     phoneMap.set(p.entityId, entry);
   }
 
+  const config = await prisma.siteConfig.findUnique({ where: { id: "singleton" } });
+  const resultWindowMinutes = config?.challengeResultWindowMinutes ?? 60;
+
   const STATUSES = ["ALL", "OPEN", "ACTIVE", "SUBMITTED", "COMPLETED", "DISPUTED", "CANCELLED"];
 
   return (
@@ -72,6 +76,9 @@ export default async function AdminChallengesPage({
           {challenges.length} {filterStatus ? filterStatus.toLowerCase() : "total"} · {disputed.length} disputed
         </p>
       </div>
+
+      {/* Result submission window setting */}
+      <ChallengeWindowSettings currentMinutes={resultWindowMinutes} />
 
       {/* Status filter tabs */}
       <div className="flex flex-wrap gap-1.5">

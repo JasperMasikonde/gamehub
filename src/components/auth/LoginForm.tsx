@@ -7,22 +7,24 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { loginSchema, type LoginInput } from "@/lib/validations/user";
-import { CheckCircle, Eye, EyeOff } from "lucide-react";
+import { CheckCircle, Eye, EyeOff, Mail } from "lucide-react";
 import Link from "next/link";
 import { loginAction } from "@/app/actions/auth";
 
 export function LoginForm() {
   const searchParams = useSearchParams();
   const justRegistered = searchParams.get("registered") === "1";
+  const justVerified = searchParams.get("verified") === "1";
   const next = searchParams.get("next");
-  // Only allow relative paths to prevent open redirect
   const redirectTo = next?.startsWith("/") ? next : "/dashboard";
 
-  // Fallback: NextAuth may redirect back with ?error= if something bypasses the action
   const urlError = searchParams.get("error");
   const [serverError, setServerError] = useState(
     urlError ? "Invalid email or password" : ""
   );
+  const [needsVerification, setNeedsVerification] = useState(false);
+  const [verificationEmail, setVerificationEmail] = useState("");
+  const [resendState, setResendState] = useState<"idle" | "sending" | "sent" | "error">("idle");
   const [showPassword, setShowPassword] = useState(false);
 
   const {
@@ -35,15 +37,39 @@ export function LoginForm() {
 
   const onSubmit = async (data: LoginInput) => {
     setServerError("");
+    setNeedsVerification(false);
+    setResendState("idle");
+
     const result = await loginAction(data.email, data.password);
+
+    if (result.needsVerification) {
+      setNeedsVerification(true);
+      setVerificationEmail(data.email);
+      return;
+    }
 
     if (result.error) {
       setServerError(result.error);
       return;
     }
 
-    // Hard redirect forces a full session reload — avoids stale session in production
     window.location.href = redirectTo;
+  };
+
+  const handleResend = async () => {
+    setResendState("sending");
+    const res = await fetch("/api/auth/resend-verification", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: verificationEmail }),
+    });
+    if (res.ok) {
+      setResendState("sent");
+    } else {
+      const json = await res.json().catch(() => ({})) as { error?: string };
+      setServerError(json.error ?? "Failed to resend. Please try again.");
+      setResendState("error");
+    }
   };
 
   return (
@@ -54,14 +80,40 @@ export function LoginForm() {
       }}
       className="flex flex-col gap-4"
     >
-      {justRegistered && (
+      {(justRegistered || justVerified) && (
         <div className="flex items-center gap-2 bg-neon-green/10 border border-neon-green/30 rounded-lg px-4 py-2 text-sm text-neon-green">
           <CheckCircle size={14} />
-          Account created! Sign in below.
+          {justVerified ? "Email verified! Sign in below." : "Account created! Sign in below."}
         </div>
       )}
 
-      {serverError && (
+      {needsVerification && (
+        <div className="bg-neon-yellow/10 border border-neon-yellow/30 rounded-lg px-4 py-3 flex flex-col gap-2">
+          <div className="flex items-center gap-2 text-sm text-neon-yellow">
+            <Mail size={14} />
+            <span className="font-medium">Email not verified</span>
+          </div>
+          <p className="text-xs text-text-muted">
+            Check your inbox at <span className="text-text-primary">{verificationEmail}</span> and click the verification link.
+          </p>
+          {resendState === "sent" ? (
+            <p className="text-xs text-neon-green flex items-center gap-1">
+              <CheckCircle size={11} /> Verification email resent!
+            </p>
+          ) : (
+            <button
+              type="button"
+              onClick={() => void handleResend()}
+              disabled={resendState === "sending"}
+              className="text-xs text-neon-blue hover:underline disabled:opacity-50 text-left w-fit"
+            >
+              {resendState === "sending" ? "Sending..." : "Resend verification email"}
+            </button>
+          )}
+        </div>
+      )}
+
+      {serverError && !needsVerification && (
         <div className="bg-neon-red/10 border border-neon-red/30 rounded-lg px-4 py-2 text-sm text-neon-red">
           {serverError}
         </div>
