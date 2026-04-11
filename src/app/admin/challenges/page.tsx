@@ -5,6 +5,8 @@ import Link from "next/link";
 import { Swords, AlertTriangle, Phone, Banknote } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 import { ChallengeWindowSettings } from "@/components/admin/ChallengeWindowSettings";
+import { MatchCodePatternForm } from "@/components/admin/MatchCodePatternForm";
+import { Code } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
@@ -63,6 +65,8 @@ export default async function AdminChallengesPage({
 
   const config = await prisma.siteConfig.findUnique({ where: { id: "singleton" } });
   const resultWindowMinutes = config?.challengeResultWindowMinutes ?? 60;
+  const matchCodePattern = config?.matchCodePattern ?? "^\\d{4}-?\\d{4}$";
+  const matchCodeHint = config?.matchCodeHint ?? "8 digits, e.g. 12345678 or 1234-5678";
 
   const STATUSES = ["ALL", "OPEN", "ACTIVE", "SUBMITTED", "COMPLETED", "DISPUTED", "CANCELLED"];
 
@@ -79,6 +83,20 @@ export default async function AdminChallengesPage({
 
       {/* Result submission window setting */}
       <ChallengeWindowSettings currentMinutes={resultWindowMinutes} />
+
+      {/* Match code format */}
+      <section className="space-y-3">
+        <div className="flex items-center gap-2">
+          <Code size={16} className="text-neon-purple" />
+          <h2 className="text-base font-semibold">Match Code Format</h2>
+        </div>
+        <p className="text-xs text-text-muted">
+          Controls what codes players can submit when sharing a match code. Uses a JavaScript regex tested against the full code string.
+        </p>
+        <MatchCodePatternForm currentPattern={matchCodePattern} currentHint={matchCodeHint} />
+      </section>
+
+      <hr className="border-bg-border" />
 
       {/* Status filter tabs */}
       <div className="flex flex-wrap gap-1.5">

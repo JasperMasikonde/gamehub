@@ -646,6 +646,9 @@ model SiteConfig {
   challengeResultWindowMinutes Int @default(60)
   minWagerAmount   Decimal  @default(0)   @db.Decimal(10, 2)
   maxWagerAmount   Decimal? @db.Decimal(10, 2)
+  // Match code format — regex used to validate codes players share in chat
+  matchCodePattern String   @default("^\\d{4}-?\\d{4}$")
+  matchCodeHint    String   @default("8 digits, e.g. 12345678 or 1234-5678")
   updatedAt        DateTime @updatedAt
 }
 

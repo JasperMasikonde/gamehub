@@ -6,7 +6,7 @@ import { emitChallengeMessage, emitToast, emitNewMessage } from "@/lib/socket-se
 
 const sendSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("MATCH_CODE_REQUEST") }),
-  z.object({ type: z.literal("MATCH_CODE"), code: z.string().min(1).max(200) }),
+  z.object({ type: z.literal("MATCH_CODE"), code: z.string().min(1).max(200).trim() }),
 ]);
 
 const LOCKED_STATUSES = ["COMPLETED", "DISPUTED", "CANCELLED"];
@@ -78,7 +78,24 @@ export async function POST(
   }
 
   const messageType = parsed.data.type;
-  const content = messageType === "MATCH_CODE" ? parsed.data.code : "";
+  let content = messageType === "MATCH_CODE" ? parsed.data.code : "";
+
+  // Validate match code format against the admin-configured pattern
+  if (messageType === "MATCH_CODE") {
+    const config = await prisma.siteConfig.findUnique({ where: { id: "singleton" } });
+    const pattern = config?.matchCodePattern ?? "^\\d{4}-?\\d{4}$";
+    const hint = config?.matchCodeHint ?? "8 digits, e.g. 12345678 or 1234-5678";
+    try {
+      if (!new RegExp(pattern).test(content)) {
+        return NextResponse.json(
+          { error: `Invalid match code format. Expected: ${hint}` },
+          { status: 400 }
+        );
+      }
+    } catch {
+      // If the stored regex is somehow broken, skip validation
+    }
+  }
   const recipientId = isHost ? challenge.challengerId! : challenge.hostId;
   const senderName = session.user.username;
 

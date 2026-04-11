@@ -72,7 +72,20 @@ export function ChallengeChat({
   const [codeInput, setCodeInput] = useState("");
   const [showCodeInput, setShowCodeInput] = useState(false);
   const [sending, setSending] = useState(false);
+  const [codeError, setCodeError] = useState("");
+  const [codePattern, setCodePattern] = useState<{ pattern: string; hint: string }>({
+    pattern: "^\\d{4}-?\\d{4}$",
+    hint: "8 digits, e.g. 12345678 or 1234-5678",
+  });
   const bottomRef = useRef<HTMLDivElement>(null);
+
+  // Fetch the admin-configured match code pattern
+  useEffect(() => {
+    fetch("/api/config/match-code-pattern")
+      .then((r) => r.ok ? r.json() : null)
+      .then((d) => d && setCodePattern(d))
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     if (!socket) return;
@@ -94,8 +107,22 @@ export function ChallengeChat({
 
   const isLocked = LOCKED_STATUSES.includes(status);
 
+  const validateCode = (value: string): boolean => {
+    try {
+      if (!new RegExp(codePattern.pattern).test(value)) {
+        setCodeError(`Invalid format — ${codePattern.hint}`);
+        return false;
+      }
+    } catch {
+      // If pattern is broken, skip client-side validation; server will catch it
+    }
+    setCodeError("");
+    return true;
+  };
+
   const send = async (type: "MATCH_CODE_REQUEST" | "MATCH_CODE", code?: string) => {
     if (sending || isLocked) return;
+    if (type === "MATCH_CODE" && code !== undefined && !validateCode(code)) return;
     setSending(true);
     try {
       const res = await fetch(`/api/challenges/${challengeId}/messages`, {
@@ -108,7 +135,11 @@ export function ChallengeChat({
         if (type === "MATCH_CODE") {
           setCodeInput("");
           setShowCodeInput(false);
+          setCodeError("");
         }
+      } else {
+        const data = await res.json().catch(() => ({}));
+        if (type === "MATCH_CODE") setCodeError(data.error ?? "Failed to send code");
       }
     } finally {
       setSending(false);
@@ -206,33 +237,48 @@ export function ChallengeChat({
       ) : (
         <div className="border-t border-border p-3 flex flex-col gap-2">
           {showCodeInput ? (
-            <div className="flex gap-2 items-center">
-              <input
-                type="text"
-                value={codeInput}
-                onChange={(e) => setCodeInput(e.target.value)}
-                placeholder="Paste your match code here…"
-                maxLength={200}
-                autoFocus
-                className="flex-1 bg-bg-elevated border border-border rounded-xl px-3 py-2 text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:border-neon-green font-mono"
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && codeInput.trim()) void send("MATCH_CODE", codeInput.trim());
-                  if (e.key === "Escape") { setShowCodeInput(false); setCodeInput(""); }
-                }}
-              />
-              <button
-                onClick={() => { if (codeInput.trim()) void send("MATCH_CODE", codeInput.trim()); }}
-                disabled={!codeInput.trim() || sending}
-                className="w-9 h-9 rounded-xl bg-neon-green flex items-center justify-center text-white disabled:opacity-40 transition-opacity hover:opacity-90 shrink-0"
-              >
-                <Send size={14} />
-              </button>
-              <button
-                onClick={() => { setShowCodeInput(false); setCodeInput(""); }}
-                className="text-xs text-text-muted hover:text-text-primary underline shrink-0"
-              >
-                Cancel
-              </button>
+            <div className="flex flex-col gap-1.5">
+              <div className="flex gap-2 items-center">
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  value={codeInput}
+                  onChange={(e) => {
+                    // Only allow digits and hyphens
+                    const val = e.target.value.replace(/[^\d-]/g, "");
+                    setCodeInput(val);
+                    setCodeError("");
+                  }}
+                  placeholder={codePattern.hint}
+                  maxLength={20}
+                  autoFocus
+                  className={cn(
+                    "flex-1 bg-bg-elevated border rounded-xl px-3 py-2 text-sm text-text-primary placeholder:text-text-muted focus:outline-none font-mono",
+                    codeError ? "border-neon-red focus:border-neon-red" : "border-border focus:border-neon-green"
+                  )}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && codeInput.trim()) void send("MATCH_CODE", codeInput.trim());
+                    if (e.key === "Escape") { setShowCodeInput(false); setCodeInput(""); setCodeError(""); }
+                  }}
+                />
+                <button
+                  onClick={() => { if (codeInput.trim()) void send("MATCH_CODE", codeInput.trim()); }}
+                  disabled={!codeInput.trim() || sending}
+                  className="w-9 h-9 rounded-xl bg-neon-green flex items-center justify-center text-white disabled:opacity-40 transition-opacity hover:opacity-90 shrink-0"
+                >
+                  <Send size={14} />
+                </button>
+                <button
+                  onClick={() => { setShowCodeInput(false); setCodeInput(""); setCodeError(""); }}
+                  className="text-xs text-text-muted hover:text-text-primary underline shrink-0"
+                >
+                  Cancel
+                </button>
+              </div>
+              {codeError
+                ? <p className="text-xs text-neon-red">{codeError}</p>
+                : <p className="text-xs text-text-muted">{codePattern.hint}</p>
+              }
             </div>
           ) : (
             <div className="flex gap-2">
