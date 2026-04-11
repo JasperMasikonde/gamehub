@@ -126,7 +126,8 @@ export async function POST(
   emitChallengeMessage(id, {
     id: message.id,
     senderId: message.senderId,
-    senderUsername: message.sender.username,
+    senderUsername: message.sender.displayName ?? message.sender.username,
+    messageType: message.messageType,
     content: message.content,
     createdAt: message.createdAt.toISOString(),
   });

@@ -64,7 +64,7 @@ export function emitTransactionUpdate(
 /** Broadcast a new challenge message to everyone in the challenge room. */
 export function emitChallengeMessage(
   challengeId: string,
-  payload: { id: string; senderId: string; senderUsername: string; content: string; createdAt: string }
+  payload: { id: string; senderId: string; senderUsername: string; messageType: string; content: string; createdAt: string }
 ): void {
   const io = getIO();
   if (!io) return;
