@@ -84,13 +84,22 @@ ENCRYPTION_KEY      # 64 hex chars (openssl rand -hex 32)
 POSTGRES_USER/PASSWORD/DB  # used by docker-compose
 ```
 
-## Docker
+## Deployment
+
+**Production is hosted on Railway.** Pushes to `main` trigger automatic redeploys.
+
+- Code changes only take effect in production after `git push origin main`
+- Schema changes require a migration to run on the Railway PostgreSQL instance
+- When debugging UI bugs, check the Railway deployment — the local dev server is a separate environment
+- Environment variables (DATABASE_URL, AUTH_SECRET, ENCRYPTION_KEY, etc.) are set in the Railway project dashboard, not in `.env`
+
+## Docker (local dev only)
 
 ```bash
 # Dev: only the DB runs in Docker, app runs locally
 docker compose -f docker-compose.dev.yml up -d
 
-# Production: full stack
+# Production: full stack (not used — Railway handles prod)
 docker compose up -d
 ```
 
