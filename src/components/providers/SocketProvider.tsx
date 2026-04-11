@@ -86,6 +86,11 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
       router.refresh();
     });
 
+    socket.on("role_updated", async () => {
+      await updateSession();
+      router.refresh();
+    });
+
     // Load initial unread count
     refreshUnread();
 

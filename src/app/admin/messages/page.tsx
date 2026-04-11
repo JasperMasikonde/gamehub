@@ -76,7 +76,7 @@ export default async function AdminMessagesPage() {
           {conversations.map(({ partner, latestMessage, unreadCount }) => (
             <Link
               key={partner.id}
-              href={`/messages/${partner.id}`}
+              href={`/admin/messages/${partner.id}`}
               className="flex items-center gap-4 px-4 py-3 rounded-xl border border-bg-border bg-bg-elevated hover:bg-bg-surface hover:border-neon-blue/20 transition-colors group"
             >
               <div className="w-10 h-10 rounded-full bg-bg-surface border border-bg-border flex items-center justify-center shrink-0 overflow-hidden">

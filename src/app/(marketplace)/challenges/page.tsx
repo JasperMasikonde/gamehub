@@ -252,6 +252,9 @@ export default async function ChallengesPage({
               const other = isHost ? cWithChallenger.challenger : c.host;
               const won = tab === "completed" && c.winnerId === userId;
               const lost = tab === "completed" && c.winnerId && c.winnerId !== userId;
+              const payout = won
+                ? Number(c.wagerAmount) * 2 - (c.platformFee ? Number(c.platformFee) : 0)
+                : 0;
 
               return (
                 <Link key={c.id} href={`/challenges/${c.id}`}>
@@ -285,12 +288,14 @@ export default async function ChallengesPage({
                           </p>
                           <p className="text-xs text-text-muted mt-1">{formatDate(c.updatedAt)}</p>
                         </div>
-                        <div className="text-right shrink-0">
-                          <p className={cn("text-lg font-black", won ? "text-neon-green" : "text-text-primary")}>
-                            {formatCurrency(c.wagerAmount.toString())}
-                          </p>
-                          <p className="text-xs text-text-muted">wager</p>
-                        </div>
+                        {won && (
+                          <div className="text-right shrink-0">
+                            <p className="text-lg font-black text-neon-green">
+                              {formatCurrency(payout.toString())}
+                            </p>
+                            <p className="text-xs text-text-muted">you receive</p>
+                          </div>
+                        )}
                       </div>
                     </CardContent>
                   </Card>

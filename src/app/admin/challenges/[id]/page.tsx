@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { formatCurrency, formatDate } from "@/lib/utils/format";
 import { Card, CardContent, CardHeader } from "@/components/ui/Card";
 import { ChallengeResolvePanel } from "@/components/admin/ChallengeResolvePanel";
+import { AdminQuickMessage } from "@/components/admin/AdminQuickMessage";
 import { Swords, Trophy, AlertTriangle, User } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 import Link from "next/link";
@@ -209,6 +210,26 @@ export default async function AdminChallengeDetailPage({
               </p>
             </div>
           </div>
+
+          {/* Quick contact buttons for both parties */}
+          <div className="flex flex-col gap-2">
+            <p className="text-xs font-medium text-text-muted uppercase tracking-wide">Contact parties</p>
+            <div className="flex flex-wrap gap-2">
+              <AdminQuickMessage
+                userId={challenge.host.id}
+                displayName={challenge.host.displayName ?? challenge.host.username}
+                challengeId={id}
+                defaultMessage={`Hi, we're reviewing the disputed result for your recent challenge (#${id.slice(-8)}). Please provide any evidence (screenshots) to support your submitted result.`}
+              />
+              <AdminQuickMessage
+                userId={challenge.challenger.id}
+                displayName={challenge.challenger.displayName ?? challenge.challenger.username}
+                challengeId={id}
+                defaultMessage={`Hi, we're reviewing the disputed result for your recent challenge (#${id.slice(-8)}). Please provide any evidence (screenshots) to support your submitted result.`}
+              />
+            </div>
+          </div>
+
           <ChallengeResolvePanel
             challengeId={id}
             host={challenge.host}

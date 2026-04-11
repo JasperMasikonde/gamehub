@@ -123,3 +123,10 @@ export function emitEmailVerified(userId: string): void {
   if (!io) return;
   io.to(`user:${userId}`).emit("email_verified");
 }
+
+/** Tell a user's connected browser(s) that their role was updated — triggers a session refresh. */
+export function emitRoleUpdated(userId: string): void {
+  const io = getIO();
+  if (!io) return;
+  io.to(`user:${userId}`).emit("role_updated");
+}

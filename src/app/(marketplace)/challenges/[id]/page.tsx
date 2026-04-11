@@ -7,6 +7,7 @@ import { AcceptChallengePanel } from "@/components/challenges/AcceptChallengePan
 import { HostPaymentBanner } from "@/components/challenges/HostPaymentBanner";
 import { SubmitResultPanel } from "@/components/challenges/SubmitResultPanel";
 import { ScheduleMatchPanel } from "@/components/challenges/ScheduleMatchPanel";
+import { MatchCompletionBanner } from "@/components/challenges/MatchCompletionBanner";
 import { ChallengeChat } from "@/components/challenges/ChallengeChat";
 import { RealtimeRefresh } from "@/components/escrow/RealtimeRefresh";
 import { RefreshUnreadOnMount } from "@/components/messages/RefreshUnreadOnMount";
@@ -121,6 +122,16 @@ export default async function ChallengeDetailPage({
     ? await prisma.siteConfig.findUnique({ where: { id: "singleton" } })
     : null;
   const resultWindowMinutes = siteConfig?.challengeResultWindowMinutes ?? 60;
+
+  // For winner payout banner: find any admin to link "chat with admin"
+  const isWinner = challenge.status === "COMPLETED" && challenge.winnerId === session.user.id;
+  const adminUser = isWinner
+    ? await prisma.user.findFirst({ where: { role: "ADMIN", isSuperAdmin: false }, select: { id: true } })
+      ?? await prisma.user.findFirst({ where: { isSuperAdmin: true }, select: { id: true } })
+    : null;
+  const winnerPayout = isWinner
+    ? Number(challenge.wagerAmount) * 2 - (challenge.platformFee ? Number(challenge.platformFee) : 0)
+    : 0;
 
   // Serialize messages for client component
   const serializedMessages = challenge.messages.map((m) => ({
@@ -263,6 +274,15 @@ export default async function ChallengeDetailPage({
             <p className="text-xs text-text-muted">Prize: {formatCurrency(prize.toString())}</p>
           </div>
         </div>
+      )}
+
+      {/* Winner payout countdown — shown only to the winner */}
+      {isWinner && challenge.completedAt && adminUser && (
+        <MatchCompletionBanner
+          completedAt={challenge.completedAt.toISOString()}
+          payout={winnerPayout}
+          adminUserId={adminUser.id}
+        />
       )}
 
       {/* Disputed banner */}

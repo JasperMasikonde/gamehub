@@ -36,10 +36,12 @@ export function ConversationView({
   initialMessages,
   otherUser,
   myId,
+  backHref = "/messages",
 }: {
   initialMessages: Message[];
   otherUser: OtherUser;
   myId: string;
+  backHref?: string;
 }) {
   const { socket, refreshUnread } = useSocket();
   const [messages, setMessages] = useState<Message[]>(initialMessages);
@@ -160,10 +162,10 @@ export function ConversationView({
   }
 
   return (
-    <div className="flex flex-col h-[calc(100vh-64px)]">
+    <div className="flex flex-col" style={{ height: 'calc(100dvh - 64px)' }}>
       {/* Header */}
       <div className="border-b border-bg-border bg-bg-surface/80 backdrop-blur px-4 py-3 flex items-center gap-3 shrink-0">
-        <Link href="/messages" className="text-text-muted hover:text-text-primary transition-colors">
+        <Link href={backHref} className="text-text-muted hover:text-text-primary transition-colors">
           <ArrowLeft size={18} />
         </Link>
 
@@ -189,7 +191,7 @@ export function ConversationView({
       </div>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
+      <div className="flex-1 overflow-y-auto min-h-0 px-4 py-4 space-y-4">
         {messages.length === 0 && (
           <div className="text-center text-text-muted text-sm py-10">
             No messages yet. Say hi!
@@ -221,7 +223,7 @@ export function ConversationView({
                         )}
                       </div>
                     )}
-                    <div className={cn("max-w-xs lg:max-w-md", isMe ? "items-end" : "items-start", "flex flex-col gap-0.5")}>
+                    <div className={cn("max-w-[80%]", isMe ? "items-end" : "items-start", "flex flex-col gap-0.5")}>
                       <div
                         className={cn(
                           "rounded-2xl text-sm leading-relaxed",
@@ -262,7 +264,7 @@ export function ConversationView({
       </div>
 
       {/* Input */}
-      <div className="border-t border-bg-border bg-bg-surface/80 backdrop-blur px-4 py-3 shrink-0">
+      <div className="border-t border-bg-border bg-bg-surface/80 backdrop-blur px-3 py-3 shrink-0" style={{ paddingBottom: 'max(12px, env(safe-area-inset-bottom))' }}>
         {/* Image preview */}
         {pendingImage && (
           <div className="mb-2 relative inline-block">
@@ -301,7 +303,7 @@ export function ConversationView({
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
-            className="w-10 h-10 rounded-xl bg-bg-elevated border border-bg-border text-text-muted flex items-center justify-center hover:border-neon-blue/40 hover:text-neon-blue transition-colors shrink-0"
+            className="w-11 h-11 rounded-xl bg-bg-elevated border border-bg-border text-text-muted flex items-center justify-center hover:border-neon-blue/40 hover:text-neon-blue transition-colors shrink-0 touch-manipulation"
             title="Attach image"
           >
             <ImagePlus size={16} />
@@ -310,17 +312,22 @@ export function ConversationView({
           <textarea
             ref={inputRef}
             value={content}
-            onChange={(e) => setContent(e.target.value)}
+            onChange={(e) => {
+              setContent(e.target.value);
+              // Auto-grow
+              e.target.style.height = "42px";
+              e.target.style.height = `${Math.min(e.target.scrollHeight, 120)}px`;
+            }}
             onKeyDown={handleKeyDown}
-            placeholder="Type a message… (Enter to send, Shift+Enter for new line)"
+            placeholder="Message…"
             rows={1}
-            className="flex-1 resize-none bg-bg-elevated border border-bg-border rounded-xl px-4 py-2.5 text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:border-neon-blue/40 transition-colors max-h-32 overflow-y-auto"
-            style={{ minHeight: "42px" }}
+            className="flex-1 resize-none bg-bg-elevated border border-bg-border rounded-xl px-3.5 py-2.5 text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:border-neon-blue/40 transition-colors overflow-y-auto"
+            style={{ minHeight: "42px", maxHeight: "120px" }}
           />
           <button
             onClick={sendMessage}
             disabled={(!content.trim() && !pendingImage) || sending || pendingImage?.uploading}
-            className="w-10 h-10 rounded-xl bg-neon-blue/20 border border-neon-blue/30 text-neon-blue flex items-center justify-center hover:bg-neon-blue/30 disabled:opacity-40 disabled:cursor-not-allowed transition-colors shrink-0"
+            className="w-11 h-11 rounded-xl bg-neon-blue/20 border border-neon-blue/30 text-neon-blue flex items-center justify-center hover:bg-neon-blue/30 disabled:opacity-40 disabled:cursor-not-allowed transition-colors shrink-0 touch-manipulation"
           >
             <Send size={16} />
           </button>
