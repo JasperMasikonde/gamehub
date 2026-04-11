@@ -8,6 +8,48 @@ import type { AdminPermission, Role, UserStatus } from "@prisma/client";
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
   ...authConfig,
+  callbacks: {
+    // Keep the session callback from authConfig unchanged
+    ...authConfig.callbacks,
+    // Override jwt to also handle trigger === "update" (session refresh)
+    async jwt({ token, user, trigger }) {
+      // Initial sign-in: populate token from the user object returned by authorize()
+      if (user) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const u = user as any;
+        token.id = u.id;
+        token.username = u.username;
+        token.role = u.role;
+        token.status = u.status;
+        token.isSuperAdmin = u.isSuperAdmin ?? false;
+        token.adminPermissions = u.adminPermissions ?? [];
+        token.isRankPusher = u.isRankPusher ?? false;
+      }
+
+      // Session update (triggered by updateSession() on the client, e.g. after role promotion)
+      if (trigger === "update" && token.id) {
+        const fresh = await prisma.user.findUnique({
+          where: { id: token.id as string },
+          select: {
+            role: true,
+            status: true,
+            isSuperAdmin: true,
+            adminPermissions: true,
+            isRankPusher: true,
+          },
+        });
+        if (fresh) {
+          token.role = fresh.role;
+          token.status = fresh.status;
+          token.isSuperAdmin = fresh.isSuperAdmin;
+          token.adminPermissions = fresh.adminPermissions;
+          token.isRankPusher = fresh.isRankPusher;
+        }
+      }
+
+      return token;
+    },
+  },
   providers: [
     Credentials({
       name: "credentials",
