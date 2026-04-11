@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useSocket } from "@/components/providers/SocketProvider";
-import { Send, Copy, CheckCheck, KeyRound, Gamepad2, Lock } from "lucide-react";
+import { Send, Copy, CheckCheck, KeyRound, Gamepad2, Lock, Bell } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 import { Button } from "@/components/ui/Button";
 
@@ -96,6 +96,10 @@ export function ChallengeChat({
         if (prev.some((m) => m.id === payload.id)) return prev;
         return [...prev, payload];
       });
+      // Auto-open the share-code input when the opponent requests our code
+      if (payload.messageType === "MATCH_CODE_REQUEST" && payload.senderId !== myId) {
+        setShowCodeInput(true);
+      }
     });
 
     return () => { socket.off("challenge_message"); };
@@ -160,29 +164,48 @@ export function ChallengeChat({
           const isMe = m.senderId === myId;
 
           if (m.messageType === "MATCH_CODE_REQUEST") {
+            if (isMe) {
+              // Sender view — compact confirmation
+              return (
+                <div key={m.id} className="flex justify-center">
+                  <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-neon-purple/10 border border-neon-purple/20 text-neon-purple text-xs font-medium">
+                    <KeyRound size={12} />
+                    You requested the match code
+                    <span className="text-neon-purple/50 font-normal">
+                      · {new Date(m.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                    </span>
+                  </div>
+                </div>
+              );
+            }
+            // Recipient view — prominent action card
             return (
-              <div key={m.id} className={cn("flex gap-2", isMe ? "flex-row-reverse" : "flex-row")}>
-                <div
-                  className={cn(
-                    "max-w-[75%] px-3 py-2 rounded-2xl text-sm flex items-center gap-2",
-                    isMe
-                      ? "bg-neon-purple/10 border border-neon-purple/20 text-neon-purple rounded-tr-sm"
-                      : "bg-bg-elevated border border-border text-text-muted rounded-tl-sm"
-                  )}
-                >
-                  <KeyRound size={13} className="shrink-0 opacity-60" />
-                  <div>
-                    {!isMe && (
-                      <p className="text-[10px] font-medium text-text-muted mb-0.5">{m.senderUsername}</p>
-                    )}
-                    <p className="text-xs">
-                      {isMe ? "You requested the match code" : `${m.senderUsername} is requesting your match code`}
+              <div key={m.id} className="rounded-2xl border-2 border-neon-yellow/40 bg-neon-yellow/5 p-4 space-y-3">
+                <div className="flex items-start gap-3">
+                  <div className="w-9 h-9 rounded-full bg-neon-yellow/15 border border-neon-yellow/30 flex items-center justify-center shrink-0">
+                    <Bell size={16} className="text-neon-yellow" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-bold text-neon-yellow">
+                      {m.senderUsername} needs your match code
                     </p>
-                    <p className="text-[10px] opacity-50 mt-0.5">
+                    <p className="text-xs text-text-muted mt-0.5">
+                      Share your eFootball match code so they can join the game.
+                    </p>
+                    <p className="text-[10px] text-text-muted/60 mt-1">
                       {new Date(m.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                     </p>
                   </div>
                 </div>
+                {!isLocked && (
+                  <button
+                    onClick={() => setShowCodeInput(true)}
+                    className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-neon-green text-white text-sm font-semibold hover:opacity-90 transition-opacity"
+                  >
+                    <Gamepad2 size={15} />
+                    Share My Match Code →
+                  </button>
+                )}
               </div>
             );
           }
