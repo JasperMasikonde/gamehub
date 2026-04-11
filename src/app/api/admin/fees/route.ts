@@ -24,7 +24,7 @@ export async function POST(req: NextRequest) {
   }
 
   const body = await req.json();
-  const { label, minWager, maxWager, fee, isActive } = body;
+  const { label, minWager, maxWager, fee, transactionFee, isActive } = body;
 
   if (!label || minWager == null || maxWager == null || fee == null) {
     return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
@@ -40,6 +40,7 @@ export async function POST(req: NextRequest) {
       minWager,
       maxWager,
       fee,
+      transactionFee: transactionFee ?? 0,
       isActive: isActive ?? true,
     },
   });

@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { FeeRuleForm } from "@/components/admin/FeeRuleForm";
 import { FeeRuleDeleteButton } from "@/components/admin/FeeRuleDeleteButton";
 import { EscrowFeeForm } from "@/components/admin/EscrowFeeForm";
+import { WagerLimitsForm } from "@/components/admin/WagerLimitsForm";
 import { ShoppingBag, Swords } from "lucide-react";
 
 export default async function AdminFeesPage() {
@@ -15,6 +16,8 @@ export default async function AdminFeesPage() {
   ]);
 
   const escrowFeeRate = Number(config?.platformFeeRate ?? 0.05) * 100;
+  const minWager = Number(config?.minWagerAmount ?? 0);
+  const maxWager = config?.maxWagerAmount ? Number(config.maxWagerAmount) : null;
 
   return (
     <div className="space-y-8">
@@ -30,7 +33,7 @@ export default async function AdminFeesPage() {
           <h2 className="text-base font-semibold">Marketplace (Account Sales) Fee</h2>
         </div>
         <p className="text-xs text-text-muted -mt-2">
-          A percentage of the sale price deducted before paying out the seller. Applies to all escrow transactions.
+          A percentage of the sale price deducted before paying out the seller.
         </p>
         <EscrowFeeForm currentRate={escrowFeeRate} />
       </section>
@@ -44,25 +47,29 @@ export default async function AdminFeesPage() {
           <h2 className="text-base font-semibold">Challenge Fee Rules</h2>
         </div>
         <p className="text-xs text-text-muted -mt-2">
-          A flat KES fee charged per challenge wager tier. Each rule covers a wager range — ranges must not overlap.
+          Flat KES fees deducted from the prize pool per wager tier. Platform fee = your profit. Transaction fee = M-Pesa payout cost.
         </p>
+
+        <WagerLimitsForm currentMin={minWager} currentMax={maxWager} />
 
         <FeeRuleForm />
 
-        <div className="bg-bg-surface border border-bg-border rounded-2xl overflow-hidden">
-          <table className="w-full text-sm min-w-[640px]">
+        <div className="bg-bg-surface border border-bg-border rounded-2xl overflow-hidden overflow-x-auto">
+          <table className="w-full text-sm min-w-[700px]">
             <thead>
               <tr className="border-b border-bg-border">
                 <th className="text-left p-4 text-text-muted font-medium">Label</th>
                 <th className="text-left p-4 text-text-muted font-medium">Wager Range (KES)</th>
-                <th className="text-left p-4 text-text-muted font-medium">Platform Fee (KES)</th>
+                <th className="text-left p-4 text-text-muted font-medium">Platform Fee</th>
+                <th className="text-left p-4 text-text-muted font-medium">Transaction Fee</th>
+                <th className="text-left p-4 text-text-muted font-medium">Total Deduction</th>
                 <th className="text-left p-4 text-text-muted font-medium">Status</th>
                 <th className="p-4" />
               </tr>
             </thead>
             <tbody className="divide-y divide-bg-border">
               {rules.length === 0 && (
-                <tr><td colSpan={5} className="p-8 text-center text-text-muted">No challenge fee rules yet. Add the first one above.</td></tr>
+                <tr><td colSpan={7} className="p-8 text-center text-text-muted">No challenge fee rules yet. Add the first one above.</td></tr>
               )}
               {rules.map(r => (
                 <tr key={r.id} className="hover:bg-bg-elevated transition-colors">
@@ -70,7 +77,9 @@ export default async function AdminFeesPage() {
                   <td className="p-4 text-text-muted">
                     KES {Number(r.minWager).toLocaleString()} – {Number(r.maxWager).toLocaleString()}
                   </td>
-                  <td className="p-4 font-bold text-neon-green">KES {Number(r.fee).toLocaleString()}</td>
+                  <td className="p-4 text-neon-green font-bold">KES {Number(r.fee).toLocaleString()}</td>
+                  <td className="p-4 text-neon-yellow font-bold">KES {Number(r.transactionFee).toLocaleString()}</td>
+                  <td className="p-4 text-neon-red font-bold">KES {(Number(r.fee) + Number(r.transactionFee)).toLocaleString()}</td>
                   <td className="p-4">
                     <span className={`text-xs font-semibold px-2.5 py-1 rounded-full border ${r.isActive ? "bg-neon-green/10 text-neon-green border-neon-green/20" : "bg-text-muted/10 text-text-muted border-bg-border"}`}>
                       {r.isActive ? "Active" : "Inactive"}

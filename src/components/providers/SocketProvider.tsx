@@ -14,16 +14,63 @@ import { io, Socket } from "socket.io-client";
 import { ToastContainer } from "@/components/ui/Toast";
 import type { ToastPayload, NewMessagePayload } from "@/types/socket";
 
+// ── Notification sound helpers ──────────────────────────────────────────────
+// Uses the Web Audio API to synthesise short tones — no audio files needed.
+
+function getAudioContext(): AudioContext | null {
+  if (typeof window === "undefined") return null;
+  try {
+    return new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
+  } catch {
+    return null;
+  }
+}
+
+/** Play a short synthesised tone. */
+function playTone(
+  frequency: number,
+  type: OscillatorType,
+  durationMs: number,
+  gainValue: number,
+) {
+  const ctx = getAudioContext();
+  if (!ctx) return;
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+  osc.connect(gain);
+  gain.connect(ctx.destination);
+  osc.type = type;
+  osc.frequency.setValueAtTime(frequency, ctx.currentTime);
+  gain.gain.setValueAtTime(gainValue, ctx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + durationMs / 1000);
+  osc.start(ctx.currentTime);
+  osc.stop(ctx.currentTime + durationMs / 1000);
+}
+
+/** Soft double-ping for received notifications. */
+function playReceiveSound() {
+  playTone(880, "sine", 120, 0.18);
+  setTimeout(() => playTone(1100, "sine", 100, 0.12), 130);
+}
+
+/** Single soft click for sent messages. */
+function playSendSound() {
+  playTone(660, "sine", 80, 0.1);
+}
+
 interface SocketContextValue {
   socket: Socket | null;
   unreadMessages: number;
   refreshUnread: () => void;
+  /** Play the short "sent" sound — call after a message/action is sent. */
+  playSendSound: () => void;
 }
 
 const SocketContext = createContext<SocketContextValue>({
   socket: null,
   unreadMessages: 0,
   refreshUnread: () => {},
+  playSendSound: () => {},
 });
 
 export function useSocket() {
@@ -68,12 +115,14 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
 
     socket.on("toast", (payload: ToastPayload) => {
       setToasts((prev) => [...prev, payload]);
+      playReceiveSound();
       const duration = payload.duration ?? 5000;
       setTimeout(() => removeToast(payload.id), duration);
     });
 
     socket.on("new_message", (_payload: NewMessagePayload) => {
       setUnreadMessages((prev) => prev + 1);
+      playReceiveSound();
     });
 
     // Tournament list updates — any page using RealtimeRefresh with this event will auto-refresh
@@ -107,7 +156,7 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <SocketContext.Provider
-      value={{ socket: socketRef.current, unreadMessages, refreshUnread }}
+      value={{ socket: socketRef.current, unreadMessages, refreshUnread, playSendSound }}
     >
       {children}
       <ToastContainer toasts={toasts} onRemove={removeToast} />

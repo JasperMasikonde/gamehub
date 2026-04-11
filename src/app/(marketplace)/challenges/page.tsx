@@ -10,6 +10,7 @@ export const metadata: Metadata = {
 
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
+import { RealtimeRefresh } from "@/components/escrow/RealtimeRefresh";
 import Link from "next/link";
 import { Swords, Plus, Trophy, Clock, CheckCircle, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/Button";
@@ -94,6 +95,9 @@ export default async function ChallengesPage({
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-10">
+      {/* Real-time: refresh when any challenge changes (accept removes from Open list) */}
+      <RealtimeRefresh events={["challenge_update", "tournaments_list_update"]} />
+
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
@@ -248,13 +252,20 @@ export default async function ChallengesPage({
           <div className="flex flex-col gap-3">
             {challenges.map((c) => {
               const isHost = c.hostId === userId;
-              const cWithChallenger = c as typeof c & { challenger?: { id: string; username: string; displayName: string | null } | null };
-              const other = isHost ? cWithChallenger.challenger : c.host;
+              const cFull = c as typeof c & {
+                host: { id: string; username: string; displayName: string | null; avatarUrl: string | null };
+                challenger?: { id: string; username: string; displayName: string | null; avatarUrl: string | null } | null;
+              };
               const won = tab === "completed" && c.winnerId === userId;
               const lost = tab === "completed" && c.winnerId && c.winnerId !== userId;
-              const payout = won
-                ? Number(c.wagerAmount) * 2 - (c.platformFee ? Number(c.platformFee) : 0)
-                : 0;
+              const totalFee = (c.platformFee ? Number(c.platformFee) : 0) + (c.transactionFee ? Number(c.transactionFee) : 0);
+              const payout = won ? Number(c.wagerAmount) * 2 - totalFee : 0;
+
+              // Left = host name (or "You"), Right = challenger name (or "You")
+              const leftName = isHost ? "You" : (cFull.host.displayName ?? cFull.host.username);
+              const rightName = isHost
+                ? (cFull.challenger ? (cFull.challenger.displayName ?? cFull.challenger.username) : "Waiting…")
+                : "You";
 
               return (
                 <Link key={c.id} href={`/challenges/${c.id}`}>
@@ -282,9 +293,9 @@ export default async function ChallengesPage({
                             {lost && <span className="text-xs text-neon-red font-semibold">You lost</span>}
                           </div>
                           <p className="text-sm font-semibold text-text-primary">
-                            {isHost ? "You" : (cWithChallenger.host?.displayName ?? cWithChallenger.host?.username ?? "?")}
+                            {leftName}
                             <span className="text-text-muted font-normal"> vs </span>
-                            {other ? (other.displayName ?? other.username) : "Waiting for opponent"}
+                            {rightName}
                           </p>
                           <p className="text-xs text-text-muted mt-1">{formatDate(c.updatedAt)}</p>
                         </div>

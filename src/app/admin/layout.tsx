@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { AdminSidebar } from "@/components/layout/AdminSidebar";
+import { NotificationBell } from "@/components/layout/NotificationBell";
 
 export default async function AdminLayout({
   children,
@@ -28,7 +29,13 @@ export default async function AdminLayout({
         isSuperAdmin={isSuperAdmin}
         adminPermissions={adminPermissions}
       />
-      <main className="flex-1 p-4 md:p-6 overflow-y-auto pt-16 md:pt-6 pb-8">{children}</main>
+      <div className="flex-1 flex flex-col min-w-0">
+        {/* Admin top bar — notification bell */}
+        <div className="hidden md:flex items-center justify-end px-6 py-3 border-b border-bg-border bg-bg-surface">
+          <NotificationBell />
+        </div>
+        <main className="flex-1 p-4 md:p-6 overflow-y-auto pt-16 md:pt-4 pb-8">{children}</main>
+      </div>
     </div>
   );
 }

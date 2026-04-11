@@ -28,7 +28,7 @@ export function AcceptChallengePanel({
   const [error, setError] = useState("");
   const [showPayment, setShowPayment] = useState(false);
   const [payMethod, setPayMethod] = useState<"wallet" | "mpesa">("wallet");
-  const [feeInfo, setFeeInfo] = useState<{ fee: number | null } | null>(null);
+  const [feeInfo, setFeeInfo] = useState<{ fee: number | null; transactionFee?: number; totalFee?: number } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Redirect to login if not authenticated
@@ -181,16 +181,22 @@ export function AcceptChallengePanel({
           <span>Total prize pool</span>
           <span className="font-medium text-text-primary">{formatCurrency((parseFloat(wagerAmount) * 2).toString())}</span>
         </div>
-        {feeInfo?.fee != null && (
+        {feeInfo?.fee != null && feeInfo.fee > 0 && (
           <div className="flex justify-between text-xs text-text-muted">
             <span>Platform fee</span>
             <span className="font-medium text-neon-red">− {formatCurrency(feeInfo.fee.toString())}</span>
           </div>
         )}
+        {feeInfo?.transactionFee != null && feeInfo.transactionFee > 0 && (
+          <div className="flex justify-between text-xs text-text-muted">
+            <span>Transaction fee (M-Pesa payout)</span>
+            <span className="font-medium text-neon-red">− {formatCurrency(feeInfo.transactionFee.toString())}</span>
+          </div>
+        )}
         <div className="flex justify-between text-sm font-bold border-t border-neon-green/20 pt-1.5">
           <span className="flex items-center gap-1 text-neon-green"><Trophy size={12} /> You receive if you win</span>
           <span className="text-neon-green">
-            {formatCurrency(((parseFloat(wagerAmount) * 2) - (feeInfo?.fee ?? 0)).toString())}
+            {formatCurrency(((parseFloat(wagerAmount) * 2) - (feeInfo?.totalFee ?? feeInfo?.fee ?? 0)).toString())}
           </span>
         </div>
       </div>

@@ -18,9 +18,18 @@ export function CreateChallengeForm() {
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const [feeInfo, setFeeInfo] = useState<{ fee: number | null } | null>(null);
+  const [feeInfo, setFeeInfo] = useState<{ fee: number | null; transactionFee?: number; totalFee?: number } | null>(null);
+  const [wagerLimits, setWagerLimits] = useState<{ minWagerAmount: number; maxWagerAmount: number | null } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const feeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Fetch wager limits on mount
+  useEffect(() => {
+    fetch("/api/challenges/wager-limits")
+      .then((r) => r.ok ? r.json() : null)
+      .then((d) => d && setWagerLimits(d))
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     const w = parseFloat(wager);
@@ -155,7 +164,8 @@ export function CreateChallengeForm() {
           <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-text-muted font-medium pointer-events-none">KSh</span>
           <Input
             type="number"
-            min="1"
+            min={wagerLimits?.minWagerAmount ?? 1}
+            max={wagerLimits?.maxWagerAmount ?? undefined}
             step="1"
             value={wager}
             onChange={(e) => setWager(e.target.value)}
@@ -164,7 +174,15 @@ export function CreateChallengeForm() {
             className="pl-12"
           />
         </div>
-        <p className="text-xs text-text-muted mt-1">Your opponent must match this amount to accept.</p>
+        <p className="text-xs text-text-muted mt-1">
+          Your opponent must match this amount to accept.
+          {wagerLimits && (
+            <span className="ml-1">
+              {wagerLimits.minWagerAmount > 0 && `Min: KES ${wagerLimits.minWagerAmount.toLocaleString()}`}
+              {wagerLimits.maxWagerAmount && ` · Max: KES ${wagerLimits.maxWagerAmount.toLocaleString()}`}
+            </span>
+          )}
+        </p>
 
         {feeInfo && parseFloat(wager) > 0 && (
           <div className="mt-3 rounded-xl border border-neon-green/20 bg-neon-green/5 px-4 py-3 space-y-1.5">
@@ -176,16 +194,22 @@ export function CreateChallengeForm() {
               <span>Total prize pool</span>
               <span className="font-medium text-text-primary">{formatCurrency((parseFloat(wager) * 2).toString())}</span>
             </div>
-            {feeInfo.fee != null && (
+            {feeInfo.fee != null && feeInfo.fee > 0 && (
               <div className="flex justify-between text-xs text-text-muted">
                 <span>Platform fee</span>
                 <span className="font-medium text-neon-red">− {formatCurrency(feeInfo.fee.toString())}</span>
               </div>
             )}
+            {feeInfo.transactionFee != null && feeInfo.transactionFee > 0 && (
+              <div className="flex justify-between text-xs text-text-muted">
+                <span>Transaction fee (M-Pesa payout)</span>
+                <span className="font-medium text-neon-red">− {formatCurrency(feeInfo.transactionFee.toString())}</span>
+              </div>
+            )}
             <div className="flex justify-between text-sm font-bold border-t border-neon-green/20 pt-1.5">
               <span className="flex items-center gap-1 text-neon-green"><Trophy size={12} /> Winner receives</span>
               <span className="text-neon-green">
-                {formatCurrency(((parseFloat(wager) * 2) - (feeInfo.fee ?? 0)).toString())}
+                {formatCurrency(((parseFloat(wager) * 2) - (feeInfo.totalFee ?? feeInfo.fee ?? 0)).toString())}
               </span>
             </div>
           </div>

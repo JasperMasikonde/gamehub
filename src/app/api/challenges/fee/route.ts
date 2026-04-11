@@ -28,12 +28,15 @@ export async function GET(req: NextRequest) {
 
   return NextResponse.json({
     fee: Number(rule.fee),
+    transactionFee: Number(rule.transactionFee),
+    totalFee: Number(rule.fee) + Number(rule.transactionFee),
     rule: {
       id: rule.id,
       label: rule.label,
       minWager: Number(rule.minWager),
       maxWager: Number(rule.maxWager),
       fee: Number(rule.fee),
+      transactionFee: Number(rule.transactionFee),
     },
   });
 }

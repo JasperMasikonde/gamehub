@@ -471,8 +471,9 @@ model Challenge {
   winnerId         String?
   winner           User?       @relation("ChallengeWinner", fields: [winnerId], references: [id])
 
-  platformFee Decimal? @db.Decimal(10, 2)
-  adminNote   String?  @db.Text
+  platformFee    Decimal? @db.Decimal(10, 2)
+  transactionFee Decimal? @db.Decimal(10, 2)
+  adminNote      String?  @db.Text
 
   // Time agreement — proposedMatchTime is the pending (unaccepted) suggestion
   proposedMatchTime DateTime?
@@ -643,6 +644,8 @@ model SiteConfig {
   sellerWindowDays Int      @default(2)
   maintenanceMode  Boolean  @default(false)
   challengeResultWindowMinutes Int @default(60)
+  minWagerAmount   Decimal  @default(0)   @db.Decimal(10, 2)
+  maxWagerAmount   Decimal? @db.Decimal(10, 2)
   updatedAt        DateTime @updatedAt
 }
 
@@ -651,14 +654,15 @@ model SiteConfig {
 // ─────────────────────────────────────────────
 
 model PlatformFeeRule {
-  id        String   @id @default(cuid())
-  label     String
-  minWager  Decimal  @db.Decimal(10, 2)
-  maxWager  Decimal  @db.Decimal(10, 2)
-  fee       Decimal  @db.Decimal(10, 2)
-  isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id              String   @id @default(cuid())
+  label           String
+  minWager        Decimal  @db.Decimal(10, 2)
+  maxWager        Decimal  @db.Decimal(10, 2)
+  fee             Decimal  @db.Decimal(10, 2)   // platform profit fee
+  transactionFee  Decimal  @default(0) @db.Decimal(10, 2) // payout processing fee
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
   @@index([isActive])
 }

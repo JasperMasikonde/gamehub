@@ -11,7 +11,8 @@ import { MatchCompletionBanner } from "@/components/challenges/MatchCompletionBa
 import { ChallengeChat } from "@/components/challenges/ChallengeChat";
 import { RealtimeRefresh } from "@/components/escrow/RealtimeRefresh";
 import { RefreshUnreadOnMount } from "@/components/messages/RefreshUnreadOnMount";
-import { Swords, Trophy, User, Shield, MessageSquare } from "lucide-react";
+import { getWalletBalance } from "@/lib/wallet";
+import { Swords, Trophy, User, Shield, MessageSquare, Wallet } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 import Link from "next/link";
 
@@ -130,7 +131,9 @@ export default async function ChallengeDetailPage({
       ?? await prisma.user.findFirst({ where: { isSuperAdmin: true }, select: { id: true } })
     : null;
   const winnerPayout = isWinner
-    ? Number(challenge.wagerAmount) * 2 - (challenge.platformFee ? Number(challenge.platformFee) : 0)
+    ? Number(challenge.wagerAmount) * 2
+      - (challenge.platformFee ? Number(challenge.platformFee) : 0)
+      - (challenge.transactionFee ? Number(challenge.transactionFee) : 0)
     : 0;
 
   // Serialize messages for client component
@@ -148,6 +151,9 @@ export default async function ChallengeDetailPage({
   }));
 
   const myResult = isHost ? challenge.hostResult : challenge.challengerResult;
+
+  // Wallet balance for party members — shown as a helper so they know their balance
+  const walletBalance = isParty ? await getWalletBalance(session.user.id) : null;
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-10 flex flex-col gap-5">
@@ -199,6 +205,17 @@ export default async function ChallengeDetailPage({
               <p className="text-sm font-semibold text-text-primary">{formatLabel}</p>
             </div>
           </div>
+          {walletBalance !== null && (
+            <div className="mt-4 pt-4 border-t border-bg-border flex items-center justify-between">
+              <div className="flex items-center gap-1.5 text-xs text-text-muted">
+                <Wallet size={12} />
+                Your wallet balance
+              </div>
+              <span className={cn("text-xs font-bold", walletBalance >= Number(challenge.wagerAmount) ? "text-neon-green" : "text-neon-yellow")}>
+                KES {walletBalance.toLocaleString()}
+              </span>
+            </div>
+          )}
           {challenge.description && (
             <p className="text-xs text-text-muted mt-4 pt-4 border-t border-bg-border leading-relaxed">
               {challenge.description}

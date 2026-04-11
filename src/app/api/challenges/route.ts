@@ -41,6 +41,17 @@ export async function POST(req: NextRequest) {
 
   const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
 
+  // Enforce min/max wager from SiteConfig
+  const siteConf = await prisma.siteConfig.findUnique({ where: { id: "singleton" } });
+  if (siteConf) {
+    const min = Number(siteConf.minWagerAmount);
+    const max = siteConf.maxWagerAmount ? Number(siteConf.maxWagerAmount) : null;
+    if (wagerAmount < min)
+      return NextResponse.json({ error: `Minimum wager is KES ${min.toLocaleString()}` }, { status: 400 });
+    if (max !== null && wagerAmount > max)
+      return NextResponse.json({ error: `Maximum wager is KES ${max.toLocaleString()}` }, { status: 400 });
+  }
+
   // Look up the applicable fee rule so we can store it with the challenge
   const feeRule = await prisma.platformFeeRule.findFirst({
     where: { isActive: true, minWager: { lte: wagerAmount }, maxWager: { gte: wagerAmount } },
@@ -58,6 +69,7 @@ export async function POST(req: NextRequest) {
       expiresAt,
       status: "PENDING_HOST_PAYMENT",
       platformFee: feeRule ? feeRule.fee : null,
+      transactionFee: feeRule ? feeRule.transactionFee : null,
     },
   });
 

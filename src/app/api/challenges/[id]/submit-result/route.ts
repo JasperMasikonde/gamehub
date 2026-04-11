@@ -69,15 +69,17 @@ export async function POST(
 
       const updated = await prisma.challenge.update({ where: { id }, data: updateData });
 
-      // Credit winner's wallet: wager * 2 − platformFee
+      // Credit winner's wallet: wager * 2 − platformFee − transactionFee
       const wager = Number(challenge.wagerAmount);
-      const fee = challenge.platformFee ? Number(challenge.platformFee) : 0;
-      const payout = wager * 2 - fee;
+      const platFee = challenge.platformFee ? Number(challenge.platformFee) : 0;
+      const txFee = challenge.transactionFee ? Number(challenge.transactionFee) : 0;
+      const totalFee = platFee + txFee;
+      const payout = wager * 2 - totalFee;
       await creditWallet({
         userId: winnerId,
         amount: payout,
         type: "CHALLENGE_WIN",
-        description: `Challenge win payout (wager KES ${wager.toFixed(2)} × 2 − fee KES ${fee.toFixed(2)})`,
+        description: `Challenge win payout (KES ${(wager * 2).toFixed(2)} pool − KES ${totalFee.toFixed(2)} fees)`,
         challengeId: id,
       });
 
@@ -95,7 +97,7 @@ export async function POST(
           linkUrl: `/challenges/${id}`,
         }),
       ]);
-      emitToast(winnerId, { type: "success", title: "You won! 🏆", message: `KES ${payout.toFixed(2)} credited to your wallet.`, linkUrl: `/challenges/${id}`, linkLabel: "View result", duration: 10000 });
+      emitToast(winnerId, { type: "success", title: "You won! 🏆", message: `KES ${payout.toFixed(2)} has been credited to your wallet.`, linkUrl: `/challenges/${id}`, linkLabel: "View result", duration: 10000 });
       emitToast(loserId, { type: "info", title: "Match result confirmed", message: "The result has been recorded.", linkUrl: `/challenges/${id}`, linkLabel: "View result", duration: 8000 });
       emitChallengeUpdate(challenge.hostId, challenge.challengerId, id);
 

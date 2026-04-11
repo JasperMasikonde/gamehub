@@ -58,7 +58,7 @@ export function ChallengeChat({
   timeAgreed: boolean;
   initialMessages: DbMessage[];
 }) {
-  const { socket } = useSocket();
+  const { socket, playSendSound } = useSocket();
   const [messages, setMessages] = useState<ChatMessage[]>(
     initialMessages.map((m) => ({
       id: m.id,
@@ -98,14 +98,17 @@ export function ChallengeChat({
     if (sending || isLocked) return;
     setSending(true);
     try {
-      await fetch(`/api/challenges/${challengeId}/messages`, {
+      const res = await fetch(`/api/challenges/${challengeId}/messages`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(type === "MATCH_CODE" ? { type, code } : { type }),
       });
-      if (type === "MATCH_CODE") {
-        setCodeInput("");
-        setShowCodeInput(false);
+      if (res.ok) {
+        playSendSound();
+        if (type === "MATCH_CODE") {
+          setCodeInput("");
+          setShowCodeInput(false);
+        }
       }
     } finally {
       setSending(false);
