@@ -261,11 +261,10 @@ export default async function ChallengesPage({
               const totalFee = (c.platformFee ? Number(c.platformFee) : 0) + (c.transactionFee ? Number(c.transactionFee) : 0);
               const payout = won ? Number(c.wagerAmount) * 2 - totalFee : 0;
 
-              // Left = host name (or "You"), Right = challenger name (or "You")
-              const leftName = isHost ? "You" : (cFull.host.displayName ?? cFull.host.username);
-              const rightName = isHost
-                ? (cFull.challenger ? (cFull.challenger.displayName ?? cFull.challenger.username) : "Waiting…")
-                : "You";
+              const hostName = cFull.host.displayName ?? cFull.host.username;
+              const challengerName = cFull.challenger
+                ? (cFull.challenger.displayName ?? cFull.challenger.username)
+                : "Waiting…";
 
               return (
                 <Link key={c.id} href={`/challenges/${c.id}`}>
@@ -292,10 +291,12 @@ export default async function ChallengesPage({
                             {won && <span className="text-xs text-neon-green font-semibold">You won 🏆</span>}
                             {lost && <span className="text-xs text-neon-red font-semibold">You lost</span>}
                           </div>
-                          <p className="text-sm font-semibold text-text-primary">
-                            {leftName}
-                            <span className="text-text-muted font-normal"> vs </span>
-                            {rightName}
+                          <p className="text-sm font-semibold text-text-primary flex items-center gap-1 flex-wrap">
+                            <span>{hostName}</span>
+                            {isHost && <span className="text-[10px] font-normal text-neon-purple bg-neon-purple/10 border border-neon-purple/20 px-1.5 py-0.5 rounded-full">you</span>}
+                            <span className="text-text-muted font-normal">vs</span>
+                            <span>{challengerName}</span>
+                            {!isHost && cFull.challenger && <span className="text-[10px] font-normal text-neon-purple bg-neon-purple/10 border border-neon-purple/20 px-1.5 py-0.5 rounded-full">you</span>}
                           </p>
                           <p className="text-xs text-text-muted mt-1">{formatDate(c.updatedAt)}</p>
                         </div>
