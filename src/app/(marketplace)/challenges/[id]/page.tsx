@@ -137,6 +137,7 @@ export default async function ChallengeDetailPage({
   const serializedMessages = challenge.messages.map((m) => ({
     id: m.id,
     senderId: m.senderId,
+    messageType: m.messageType as "MATCH_CODE_REQUEST" | "MATCH_CODE",
     content: m.content,
     createdAt: m.createdAt.toISOString(),
     sender: {
@@ -309,9 +310,17 @@ export default async function ChallengeDetailPage({
       {isParty && (challenge.status === "ACTIVE" || challenge.status === "SUBMITTED") && (
         <ScheduleMatchPanel
           challengeId={id}
+          isHost={isHost}
+          proposedMatchTime={challenge.proposedMatchTime?.toISOString() ?? null}
+          proposedByHost={challenge.proposedByHost ?? null}
           scheduledAt={challenge.scheduledAt?.toISOString() ?? null}
           resultDeadlineAt={challenge.resultDeadlineAt?.toISOString() ?? null}
           resultWindowMinutes={resultWindowMinutes}
+          opponentName={
+            isHost
+              ? (challenge.challenger?.displayName ?? challenge.challenger?.username ?? "Opponent")
+              : (challenge.host.displayName ?? challenge.host.username)
+          }
         />
       )}
 
@@ -330,8 +339,8 @@ export default async function ChallengeDetailPage({
           <CardHeader>
             <div className="flex items-center justify-between">
               <div>
-                <h2 className="text-sm font-semibold">Match Chat</h2>
-                <p className="text-xs text-text-muted">Exchange match codes and communicate here.</p>
+                <h2 className="text-sm font-semibold">Match Code Exchange</h2>
+                <p className="text-xs text-text-muted">Request or share your match code once you&apos;ve agreed on a time.</p>
               </div>
               {challenge.status === "DISPUTED" && admin && (
                 <Link
@@ -349,6 +358,7 @@ export default async function ChallengeDetailPage({
               challengeId={id}
               myId={session.user.id}
               status={challenge.status}
+              timeAgreed={!!challenge.scheduledAt}
               initialMessages={serializedMessages}
             />
           </CardContent>

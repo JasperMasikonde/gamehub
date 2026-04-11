@@ -4,9 +4,10 @@ import { prisma } from "@/lib/prisma";
 import { z } from "zod";
 import { emitChallengeMessage, emitToast, emitNewMessage } from "@/lib/socket-server";
 
-const sendSchema = z.object({
-  content: z.string().min(1).max(1000),
-});
+const sendSchema = z.discriminatedUnion("type", [
+  z.object({ type: z.literal("MATCH_CODE_REQUEST") }),
+  z.object({ type: z.literal("MATCH_CODE"), code: z.string().min(1).max(200) }),
+]);
 
 const LOCKED_STATUSES = ["COMPLETED", "DISPUTED", "CANCELLED"];
 
@@ -61,30 +62,48 @@ export async function POST(
     );
   }
 
+  // Gate: both parties must have agreed on a match time before exchanging codes
+  if (!challenge.scheduledAt) {
+    return NextResponse.json(
+      { error: "Agree on a match time first before exchanging match codes." },
+      { status: 400 }
+    );
+  }
+
   const body = await req.json();
   const parsed = sendSchema.safeParse(body);
-  if (!parsed.success)
-    return NextResponse.json({ error: "Message cannot be empty" }, { status: 400 });
+  if (!parsed.success) {
+    const first = Object.values(parsed.error.flatten().fieldErrors).flat()[0];
+    return NextResponse.json({ error: first ?? "Invalid message type" }, { status: 400 });
+  }
 
-  const { content } = parsed.data;
+  const messageType = parsed.data.type;
+  const content = messageType === "MATCH_CODE" ? parsed.data.code : "";
   const recipientId = isHost ? challenge.challengerId! : challenge.hostId;
+  const senderName = session.user.username;
 
   const [message] = await Promise.all([
     prisma.challengeMessage.create({
-      data: { challengeId: id, senderId: session.user.id, content },
+      data: {
+        challengeId: id,
+        senderId: session.user.id,
+        messageType,
+        content,
+      },
       include: { sender: { select: { id: true, username: true, displayName: true, avatarUrl: true } } },
     }),
-    // Save to regular inbox — prefix encodes the challenge ID so inbox can link back
+    // Save a copy to the regular inbox for notification purposes
     prisma.message.create({
       data: {
         senderId: session.user.id,
         recipientId,
-        content: `[challenge:${id}] ${content}`,
+        content:
+          messageType === "MATCH_CODE"
+            ? `[challenge:${id}] Match code: ${content}`
+            : `[challenge:${id}] ${senderName} is requesting your match code`,
       },
     }),
   ]);
-
-  const challengeLink = `/challenges/${id}`;
 
   // Real-time: push to challenge room
   emitChallengeMessage(id, {
@@ -95,22 +114,24 @@ export async function POST(
     createdAt: message.createdAt.toISOString(),
   });
 
-  // Toast + unread badge for recipient if they're not in the challenge room
+  // Toast + unread for recipient
+  const toastMessage =
+    messageType === "MATCH_CODE"
+      ? `${senderName} shared their match code`
+      : `${senderName} is requesting your match code`;
   emitToast(recipientId, {
     type: "info",
-    title: `${message.sender.displayName ?? message.sender.username}`,
-    message: content.length > 60 ? content.slice(0, 57) + "…" : content,
-    linkUrl: challengeLink,
+    title: toastMessage,
+    message: messageType === "MATCH_CODE" ? "Open the challenge to see the code" : "Share your code in the challenge chat",
+    linkUrl: `/challenges/${id}`,
     linkLabel: "Open chat →",
-    duration: 6000,
+    duration: 8000,
   });
-
-  // Increment unread count in the messages icon
   emitNewMessage(recipientId, {
     messageId: message.id,
     senderId: session.user.id,
-    senderUsername: message.sender.username,
-    content,
+    senderUsername: senderName,
+    content: toastMessage,
   });
 
   return NextResponse.json({ message }, { status: 201 });

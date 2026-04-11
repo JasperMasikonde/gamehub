@@ -98,6 +98,11 @@ enum ChallengeFormat {
   BEST_OF_5
 }
 
+enum ChallengeMessageType {
+  MATCH_CODE_REQUEST
+  MATCH_CODE
+}
+
 enum ChallengeStatus {
   PENDING_HOST_PAYMENT
   OPEN
@@ -469,8 +474,11 @@ model Challenge {
   platformFee Decimal? @db.Decimal(10, 2)
   adminNote   String?  @db.Text
 
-  scheduledAt      DateTime?
-  resultDeadlineAt DateTime?
+  // Time agreement — proposedMatchTime is the pending (unaccepted) suggestion
+  proposedMatchTime DateTime?
+  proposedByHost    Boolean?
+  scheduledAt       DateTime?   // confirmed by both parties
+  resultDeadlineAt  DateTime?
 
   expiresAt   DateTime
   completedAt DateTime?
@@ -487,12 +495,13 @@ model Challenge {
 }
 
 model ChallengeMessage {
-  id          String    @id @default(cuid())
+  id          String               @id @default(cuid())
   challengeId String
-  challenge   Challenge @relation(fields: [challengeId], references: [id])
+  challenge   Challenge            @relation(fields: [challengeId], references: [id])
   senderId    String
-  sender      User      @relation("ChallengeSender", fields: [senderId], references: [id])
-  content     String    @db.Text
+  sender      User                 @relation("ChallengeSender", fields: [senderId], references: [id])
+  messageType ChallengeMessageType @default(MATCH_CODE_REQUEST)
+  content     String               @db.Text  // the match code for MATCH_CODE, ignored for REQUEST
 
   createdAt DateTime @default(now())
 
