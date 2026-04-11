@@ -23,6 +23,7 @@ import {
   X,
   ShieldCheck,
   TrendingUp,
+  Banknote,
   BookOpen,
   Receipt,
 } from "lucide-react";
@@ -44,6 +45,7 @@ const mainLinks: NavLink[] = [
   { href: "/admin/transactions", label: "Transactions", icon: CreditCard, permission: "MANAGE_TRANSACTIONS" },
   { href: "/admin/disputes", label: "Disputes", icon: AlertTriangle, permission: "MANAGE_DISPUTES" },
   { href: "/admin/challenges", label: "Challenges", icon: Swords, permission: "MANAGE_CHALLENGES" },
+  { href: "/admin/payouts", label: "Payouts", icon: Banknote, permission: "MANAGE_CHALLENGES" },
   { href: "/admin/users", label: "Users", icon: Users, permission: "MANAGE_USERS" },
   { href: "/admin/messages", label: "Messages", icon: MessageSquare, permission: "MANAGE_MESSAGES" },
   { href: "/admin/support", label: "Support", icon: HeadphonesIcon, permission: "SEND_SUPPORT_EMAIL" },

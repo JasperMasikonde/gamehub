@@ -123,6 +123,7 @@ export const config = {
     "/dashboard/:path*",
     "/listings/create",
     "/api/admin/:path*",
+    "/api/wallet/:path*",
     "/api/transactions/:path*",
     "/api/disputes/:path*",
     "/api/uploads",

@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { z } from "zod";
 import { createNotification } from "@/lib/notifications";
 import { emitToast, emitToAdmins, emitChallengeUpdate } from "@/lib/socket-server";
+import { creditWallet } from "@/lib/wallet";
 
 const schema = z.object({
   result: z.enum(["HOST_WIN", "CHALLENGER_WIN"]),
@@ -68,12 +69,24 @@ export async function POST(
 
       const updated = await prisma.challenge.update({ where: { id }, data: updateData });
 
+      // Credit winner's wallet: wager * 2 − platformFee
+      const wager = Number(challenge.wagerAmount);
+      const fee = challenge.platformFee ? Number(challenge.platformFee) : 0;
+      const payout = wager * 2 - fee;
+      await creditWallet({
+        userId: winnerId,
+        amount: payout,
+        type: "CHALLENGE_WIN",
+        description: `Challenge win payout (wager KES ${wager.toFixed(2)} × 2 − fee KES ${fee.toFixed(2)})`,
+        challengeId: id,
+      });
+
       // Notify both parties
       const loserId = winnerId === challenge.hostId ? challenge.challengerId! : challenge.hostId;
       await Promise.all([
         createNotification(winnerId, "CHALLENGE_WON", {
           title: "You won the challenge! 🏆",
-          body: `Congratulations! Your result was confirmed. Collect your winnings.`,
+          body: `KES ${payout.toFixed(2)} has been credited to your wallet.`,
           linkUrl: `/challenges/${id}`,
         }),
         createNotification(loserId, "CHALLENGE_LOST", {
@@ -82,7 +95,7 @@ export async function POST(
           linkUrl: `/challenges/${id}`,
         }),
       ]);
-      emitToast(winnerId, { type: "success", title: "You won! 🏆", message: "Both parties confirmed the result.", linkUrl: `/challenges/${id}`, linkLabel: "View result", duration: 10000 });
+      emitToast(winnerId, { type: "success", title: "You won! 🏆", message: `KES ${payout.toFixed(2)} credited to your wallet.`, linkUrl: `/challenges/${id}`, linkLabel: "View result", duration: 10000 });
       emitToast(loserId, { type: "info", title: "Match result confirmed", message: "The result has been recorded.", linkUrl: `/challenges/${id}`, linkLabel: "View result", duration: 8000 });
       emitChallengeUpdate(challenge.hostId, challenge.challengerId, id);
 

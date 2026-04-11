@@ -140,6 +140,20 @@ enum PaymentStatus {
   FAILED
 }
 
+enum WalletTxType {
+  CHALLENGE_WIN       // credited when you win a challenge
+  CHALLENGE_WAGER     // debited when you pay wager from wallet
+  PAYOUT              // debited when a payout is processed
+  ADMIN_ADJUSTMENT    // manual credit/debit by admin
+}
+
+enum PayoutStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  PAID
+}
+
 // ─────────────────────────────────────────────
 // CORE MODELS
 // ─────────────────────────────────────────────
@@ -198,6 +212,9 @@ model User {
   tournamentMatchesAsP1  TournamentMatch[]  @relation("TournamentMatchP1")
   tournamentMatchesAsP2  TournamentMatch[]  @relation("TournamentMatchP2")
   payments               Payment[]
+  wallet                 Wallet?
+  walletTransactions     WalletTransaction[]
+  payoutRequests         PayoutRequest[]
   rankPushListings       RankPushListing[]  @relation("RankPushProviderListings")
   rankPushOrdersAsClient RankPushOrder[]    @relation("RankPushClient")
   rankPushOrdersAsProvider RankPushOrder[]  @relation("RankPushProvider")
@@ -709,6 +726,55 @@ model TournamentMatch {
 
   @@index([tournamentId])
   @@index([round])
+}
+
+// ─────────────────────────────────────────────
+// WALLET
+// ─────────────────────────────────────────────
+
+model Wallet {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  balance   Decimal  @default(0) @db.Decimal(12, 2)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+}
+
+model WalletTransaction {
+  id          String       @id @default(cuid())
+  userId      String
+  user        User         @relation(fields: [userId], references: [id])
+  type        WalletTxType
+  amount      Decimal      @db.Decimal(12, 2)   // always positive; sign is in type
+  balanceAfter Decimal     @db.Decimal(12, 2)
+  description String
+  challengeId String?
+  payoutId    String?
+  createdAt   DateTime     @default(now())
+
+  @@index([userId, createdAt])
+  @@index([challengeId])
+}
+
+model PayoutRequest {
+  id          String       @id @default(cuid())
+  userId      String
+  user        User         @relation(fields: [userId], references: [id])
+  amount      Decimal      @db.Decimal(12, 2)
+  phone       String
+  status      PayoutStatus @default(PENDING)
+  adminNote   String?      @db.Text
+  processedBy String?
+  processedAt DateTime?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  @@index([userId])
+  @@index([status])
+  @@index([createdAt])
 }
 
 // ─────────────────────────────────────────────

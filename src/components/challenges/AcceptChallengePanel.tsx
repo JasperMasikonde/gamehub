@@ -2,9 +2,10 @@
 
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Swords, Camera, Upload, Loader2, X, Trophy } from "lucide-react";
+import { Swords, Camera, Upload, Loader2, X, Trophy, Wallet, CreditCard } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { PaymentPanel } from "@/components/payments/PaymentPanel";
+import { WalletPayButton } from "@/components/wallet/WalletPayButton";
 import { formatCurrency } from "@/lib/utils/format";
 import { cn } from "@/lib/utils/cn";
 
@@ -26,6 +27,7 @@ export function AcceptChallengePanel({
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
   const [showPayment, setShowPayment] = useState(false);
+  const [payMethod, setPayMethod] = useState<"wallet" | "mpesa">("wallet");
   const [feeInfo, setFeeInfo] = useState<{ fee: number | null } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -91,15 +93,51 @@ export function AcceptChallengePanel({
             {formatLabel} · Wager: <span className="text-neon-green font-semibold">{formatCurrency(wagerAmount)}</span>
           </p>
         </div>
-        <PaymentPanel
-          purpose="challenge"
-          entityId={challengeId}
-          amount={Number(wagerAmount)}
-          metadata={{ challengerSquadUrl: squadUpload.url, hostId }}
-          onSuccess={() => router.push(`/challenges/${challengeId}`)}
-          returnUrl={`/challenges/${challengeId}`}
-          returnLabel="Back to challenge"
-        />
+
+        {/* Payment method tabs */}
+        <div className="flex gap-2">
+          <button
+            onClick={() => setPayMethod("wallet")}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
+              payMethod === "wallet"
+                ? "border-neon-blue bg-neon-blue/10 text-neon-blue"
+                : "border-border text-text-muted hover:text-text-primary"
+            }`}
+          >
+            <Wallet size={12} /> Wallet
+          </button>
+          <button
+            onClick={() => setPayMethod("mpesa")}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
+              payMethod === "mpesa"
+                ? "border-neon-green bg-neon-green/10 text-neon-green"
+                : "border-border text-text-muted hover:text-text-primary"
+            }`}
+          >
+            <CreditCard size={12} /> M-Pesa
+          </button>
+        </div>
+
+        {payMethod === "wallet" ? (
+          <WalletPayButton
+            challengeId={challengeId}
+            wagerAmount={Number(wagerAmount)}
+            role="challenger"
+            challengerSquadUrl={squadUpload.url}
+            onSuccess={() => router.push(`/challenges/${challengeId}`)}
+          />
+        ) : (
+          <PaymentPanel
+            purpose="challenge"
+            entityId={challengeId}
+            amount={Number(wagerAmount)}
+            metadata={{ challengerSquadUrl: squadUpload.url, hostId }}
+            onSuccess={() => router.push(`/challenges/${challengeId}`)}
+            returnUrl={`/challenges/${challengeId}`}
+            returnLabel="Back to challenge"
+          />
+        )}
+
         <button
           onClick={() => setShowPayment(false)}
           className="text-xs text-text-muted hover:text-text-primary underline"

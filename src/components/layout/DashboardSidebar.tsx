@@ -11,6 +11,7 @@ import {
   ChevronRight,
   MessageSquare,
   ShieldCheck,
+  Wallet,
 } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 
@@ -20,6 +21,7 @@ const links = [
   { href: "/dashboard/sales", label: "Sales", icon: Tag },
   { href: "/dashboard/disputes", label: "Disputes", icon: AlertTriangle },
   { href: "/dashboard/escrow-requests", label: "Escrow", icon: ShieldCheck },
+  { href: "/dashboard/wallet", label: "Wallet", icon: Wallet },
   { href: "/messages", label: "Messages", icon: MessageSquare },
 ];
 
