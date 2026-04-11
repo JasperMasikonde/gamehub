@@ -130,3 +130,10 @@ export function emitRoleUpdated(userId: string): void {
   if (!io) return;
   io.to(`user:${userId}`).emit("role_updated");
 }
+
+/** Force-sign-out a banned user's connected browser(s) immediately. */
+export function emitUserBanned(userId: string): void {
+  const io = getIO();
+  if (!io) return;
+  io.to(`user:${userId}`).emit("user_banned");
+}

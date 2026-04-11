@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { requirePermission } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import type { UserStatus } from "@prisma/client";
+import { emitUserBanned } from "@/lib/socket-server";
 
 export async function GET(
   _req: Request,
@@ -62,6 +63,11 @@ export async function PATCH(
   await prisma.adminAction.create({
     data: { adminId: admin.id, targetUserId: id, action: adminActionName, note },
   });
+
+  // Force-sign-out banned users immediately via socket
+  if (action === "ban") {
+    emitUserBanned(id);
+  }
 
   return NextResponse.json({ success: true });
 }

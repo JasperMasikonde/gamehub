@@ -8,7 +8,7 @@ import {
   useRef,
   useState,
 } from "react";
-import { useSession } from "next-auth/react";
+import { useSession, signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { io, Socket } from "socket.io-client";
 import { ToastContainer } from "@/components/ui/Toast";
@@ -89,6 +89,10 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
     socket.on("role_updated", async () => {
       await updateSession();
       router.refresh();
+    });
+
+    socket.on("user_banned", () => {
+      void signOut({ callbackUrl: "/login?banned=1" });
     });
 
     // Load initial unread count

@@ -15,6 +15,7 @@ export function LoginForm() {
   const searchParams = useSearchParams();
   const justRegistered = searchParams.get("registered") === "1";
   const justVerified = searchParams.get("verified") === "1";
+  const isBanned = searchParams.get("banned") === "1";
   const next = searchParams.get("next");
   const redirectTo = next?.startsWith("/") ? next : "/dashboard";
 
@@ -80,6 +81,12 @@ export function LoginForm() {
       }}
       className="flex flex-col gap-4"
     >
+      {isBanned && (
+        <div className="bg-neon-red/10 border border-neon-red/30 rounded-lg px-4 py-2 text-sm text-neon-red">
+          Your account has been suspended. Contact support if you believe this is a mistake.
+        </div>
+      )}
+
       {(justRegistered || justVerified) && (
         <div className="flex items-center gap-2 bg-neon-green/10 border border-neon-green/30 rounded-lg px-4 py-2 text-sm text-neon-green">
           <CheckCircle size={14} />

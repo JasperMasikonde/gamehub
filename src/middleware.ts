@@ -85,6 +85,17 @@ export default auth((req) => {
     return NextResponse.next();
   }
 
+  // Banned users — kick them out regardless of route
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  if (user && (user as any).status === "BANNED") {
+    const loginUrl = new URL("/login?banned=1", req.url);
+    const res = NextResponse.redirect(loginUrl);
+    // Clear the session cookie so the redirect doesn't loop
+    res.cookies.delete("authjs.session-token");
+    res.cookies.delete("__Secure-authjs.session-token");
+    return res;
+  }
+
   // Admin routes: require ADMIN role
   if (pathname.startsWith("/admin") || pathname.startsWith("/api/admin")) {
     if (!user) {
