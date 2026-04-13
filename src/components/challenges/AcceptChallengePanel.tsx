@@ -135,6 +135,7 @@ export function AcceptChallengePanel({
             onSuccess={() => router.push(`/challenges/${challengeId}`)}
             returnUrl={`/challenges/${challengeId}`}
             returnLabel="Back to challenge"
+            hideQrSection
           />
         )}
 

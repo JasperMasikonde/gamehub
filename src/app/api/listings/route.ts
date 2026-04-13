@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { createListingSchema, listingFilterSchema } from "@/lib/validations/listing";
 import { getPublicUrl } from "@/lib/gcs";
 import { ListingStatus, Platform } from "@prisma/client";
+import { sendAdminNotification } from "@/lib/email";
 
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
@@ -111,6 +112,19 @@ export async function POST(req: Request) {
     },
     include: { screenshots: true },
   });
+
+  // Notify admin via email (fire-and-forget)
+  prisma.siteConfig.findUnique({ where: { id: "singleton" } }).then((cfg) => {
+    if (!cfg?.adminNotificationEmail) return;
+    sendAdminNotification({
+      toEmail: cfg.adminNotificationEmail,
+      subject: "New listing pending approval — Eshabiki",
+      eventTitle: "New listing submitted",
+      eventBody: `A new listing "${listing.title}" has been submitted and is awaiting approval.`,
+      linkUrl: `/admin/listings`,
+      linkLabel: "Review listings →",
+    }).catch(console.error);
+  }).catch(console.error);
 
   return NextResponse.json({ listing }, { status: 201 });
 }

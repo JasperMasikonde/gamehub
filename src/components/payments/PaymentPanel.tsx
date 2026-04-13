@@ -20,6 +20,8 @@ interface Props {
   /** Optional link shown when confirmation times out so user can navigate back */
   returnUrl?: string;
   returnLabel?: string;
+  /** Hide the QR code / bank alternative payment section */
+  hideQrSection?: boolean;
 }
 
 type State = "idle" | "initiating" | "polling" | "success" | "failed" | "timed_out";
@@ -33,6 +35,7 @@ export function PaymentPanel({
   onSuccess,
   returnUrl,
   returnLabel = "Go back",
+  hideQrSection = false,
 }: Props) {
   const [phone, setPhone] = useState("");
   const [state, setState] = useState<State>("idle");
@@ -308,33 +311,35 @@ export function PaymentPanel({
         </p>
       </div>
 
-      <div className="border border-bg-border rounded-xl overflow-hidden">
-        <button
-          onClick={toggleQR}
-          className="w-full flex items-center justify-between px-4 py-3 text-sm hover:bg-bg-elevated transition-colors"
-        >
-          <span className="flex items-center gap-2 text-text-muted font-medium">
-            <QrCode size={14} /> Pay via QR Code (alternative)
-          </span>
-          {showQR ? <ChevronUp size={14} className="text-text-muted" /> : <ChevronDown size={14} className="text-text-muted" />}
-        </button>
-        {showQR && (
-          <div className="px-4 pb-4 space-y-3 border-t border-bg-border">
-            <p className="text-xs text-text-muted pt-3">Scan this QR code with your M-Pesa app to pay.</p>
-            {qrLoading ? (
-              <div className="flex justify-center py-6"><Loader2 size={24} className="animate-spin text-text-muted" /></div>
-            ) : qrCode ? (
-              <img
-                src={qrCode}
-                alt="M-Pesa QR Code"
-                className="mx-auto max-w-[200px] rounded-xl border border-bg-border"
-              />
-            ) : (
-              <p className="text-xs text-neon-red">Could not load QR code.</p>
-            )}
-          </div>
-        )}
-      </div>
+      {!hideQrSection && (
+        <div className="border border-bg-border rounded-xl overflow-hidden">
+          <button
+            onClick={toggleQR}
+            className="w-full flex items-center justify-between px-4 py-3 text-sm hover:bg-bg-elevated transition-colors"
+          >
+            <span className="flex items-center gap-2 text-text-muted font-medium">
+              <QrCode size={14} /> Pay via QR Code (alternative)
+            </span>
+            {showQR ? <ChevronUp size={14} className="text-text-muted" /> : <ChevronDown size={14} className="text-text-muted" />}
+          </button>
+          {showQR && (
+            <div className="px-4 pb-4 space-y-3 border-t border-bg-border">
+              <p className="text-xs text-text-muted pt-3">Scan this QR code with your M-Pesa app to pay.</p>
+              {qrLoading ? (
+                <div className="flex justify-center py-6"><Loader2 size={24} className="animate-spin text-text-muted" /></div>
+              ) : qrCode ? (
+                <img
+                  src={qrCode}
+                  alt="M-Pesa QR Code"
+                  className="mx-auto max-w-[200px] rounded-xl border border-bg-border"
+                />
+              ) : (
+                <p className="text-xs text-neon-red">Could not load QR code.</p>
+              )}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

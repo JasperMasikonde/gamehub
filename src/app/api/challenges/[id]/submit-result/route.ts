@@ -5,6 +5,7 @@ import { z } from "zod";
 import { createNotification } from "@/lib/notifications";
 import { emitToast, emitToAdmins, emitChallengeUpdate } from "@/lib/socket-server";
 import { creditWallet } from "@/lib/wallet";
+import { sendAdminNotification } from "@/lib/email";
 
 const schema = z.object({
   result: z.enum(["HOST_WIN", "CHALLENGER_WIN"]),
@@ -100,6 +101,19 @@ export async function POST(
       emitToast(winnerId, { type: "success", title: "You won! 🏆", message: `KES ${payout.toFixed(2)} has been credited to your wallet.`, linkUrl: `/challenges/${id}`, linkLabel: "View result", duration: 10000 });
       emitToast(loserId, { type: "info", title: "Match result confirmed", message: "The result has been recorded.", linkUrl: `/challenges/${id}`, linkLabel: "View result", duration: 8000 });
       emitChallengeUpdate(challenge.hostId, challenge.challengerId, id);
+
+      // Notify admin via email (fire-and-forget)
+      prisma.siteConfig.findUnique({ where: { id: "singleton" } }).then((cfg) => {
+        if (!cfg?.adminNotificationEmail) return;
+        sendAdminNotification({
+          toEmail: cfg.adminNotificationEmail,
+          subject: "Challenge completed — payout required",
+          eventTitle: "Challenge completed",
+          eventBody: `Challenge #${id.slice(-8)} has been completed. Winner payout: KES ${payout.toFixed(2)}. Send via M-Pesa from the challenges admin panel.`,
+          linkUrl: `/admin/challenges/${id}`,
+          linkLabel: "View challenge →",
+        }).catch(console.error);
+      }).catch(console.error);
 
       return NextResponse.json({ challenge: updated });
     } else {

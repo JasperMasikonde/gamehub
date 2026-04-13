@@ -4,6 +4,8 @@ import { prisma } from "@/lib/prisma";
 import { z } from "zod";
 import { createNotification } from "@/lib/notifications";
 import { emitToast, emitChallengeUpdate } from "@/lib/socket-server";
+import { creditWallet } from "@/lib/wallet";
+import { sendAdminNotification } from "@/lib/email";
 
 const schema = z.object({
   winnerId: z.string().min(1),
@@ -51,8 +53,20 @@ export async function POST(
 
   const loserId = winnerId === challenge.hostId ? challenge.challengerId! : challenge.hostId;
   const pool = Number(challenge.wagerAmount) * 2;
-  const fee = challenge.platformFee != null ? Number(challenge.platformFee) : 0;
-  const prize = (pool - fee).toFixed(2);
+  const platFee = challenge.platformFee != null ? Number(challenge.platformFee) : 0;
+  const txFee = challenge.transactionFee != null ? Number(challenge.transactionFee) : 0;
+  const totalFee = platFee + txFee;
+  const payout = pool - totalFee;
+  const prize = payout.toFixed(2);
+
+  // Credit winner's wallet
+  await creditWallet({
+    userId: winnerId,
+    amount: payout,
+    type: "CHALLENGE_WIN",
+    description: `Challenge dispute resolved — win payout (KES ${pool.toFixed(2)} pool − KES ${totalFee.toFixed(2)} fees)`,
+    challengeId: id,
+  });
 
   await Promise.all([
     createNotification(winnerId, "CHALLENGE_WON", {

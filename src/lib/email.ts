@@ -476,6 +476,75 @@ export async function sendListingApprovedEmail({
 }
 
 // ---------------------------------------------------------------------------
+// Admin event notifications
+// ---------------------------------------------------------------------------
+export async function sendAdminNotification({
+  toEmail,
+  subject,
+  eventTitle,
+  eventBody,
+  linkUrl,
+  linkLabel,
+}: {
+  toEmail: string;
+  subject: string;
+  eventTitle: string;
+  eventBody: string;
+  linkUrl?: string;
+  linkLabel?: string;
+}) {
+  const actionBtn = linkUrl
+    ? btn(linkLabel ?? "View →", `${BASE_URL}${linkUrl}`)
+    : "";
+  const body = `
+    <p style="margin:0 0 16px;color:#374151;font-size:15px;font-weight:700;">Admin Notification</p>
+    <div style="background:#fef3c7;border-left:4px solid #f59e0b;padding:14px 18px;border-radius:4px;margin:0 0 16px;">
+      <p style="margin:0 0 6px;color:#374151;font-size:14px;font-weight:600;">${eventTitle}</p>
+      <p style="margin:0;color:#6b7280;font-size:13px;line-height:1.5;">${eventBody}</p>
+    </div>
+    ${actionBtn}
+    ${footer("You received this because you configured admin notifications on Eshabiki.")}
+  `;
+  await sendMail({ to: toEmail, subject, html: emailLayout(body) });
+}
+
+// ---------------------------------------------------------------------------
+// Challenge removed by admin
+// ---------------------------------------------------------------------------
+export async function sendChallengeRemovedEmail({
+  toEmail,
+  toName,
+  challengeId,
+  reason,
+}: {
+  toEmail: string;
+  toName: string;
+  challengeId: string;
+  reason: string;
+}) {
+  const body = `
+    ${greeting(toName)}
+    <p style="color:#374151;font-size:15px;line-height:1.6;margin:0 0 16px;">
+      A challenge you were involved in has been removed by an administrator.
+    </p>
+    <div style="background:#fef2f2;border-left:4px solid #ef4444;padding:14px 18px;border-radius:4px;margin:0 0 16px;">
+      <p style="margin:0 0 6px;color:#374151;font-size:14px;font-weight:600;">Reason for removal</p>
+      <p style="margin:0;color:#6b7280;font-size:13px;line-height:1.5;">${reason}</p>
+    </div>
+    <p style="color:#374151;font-size:14px;line-height:1.6;margin:0 0 16px;">
+      If you believe this was a mistake, please contact our support team.
+    </p>
+    ${btn("Contact Support", `${BASE_URL}/support`)}
+    ${footer("You received this because you participated in a challenge on Eshabiki.")}
+  `;
+  await sendMail({
+    to: `"${toName}" <${toEmail}>`,
+    subject: "Your challenge has been removed",
+    html: emailLayout(body),
+  });
+}
+
+// ---------------------------------------------------------------------------
 // Listing removed / rejected
 // ---------------------------------------------------------------------------
 export async function sendListingRemovedEmail({

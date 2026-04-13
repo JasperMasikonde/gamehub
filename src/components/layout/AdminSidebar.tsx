@@ -26,6 +26,7 @@ import {
   Banknote,
   BookOpen,
   Receipt,
+  Settings,
 } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 import type { AdminPermission } from "@prisma/client";
@@ -50,6 +51,7 @@ const mainLinks: NavLink[] = [
   { href: "/admin/messages", label: "Messages", icon: MessageSquare, permission: "MANAGE_MESSAGES" },
   { href: "/admin/support", label: "Support", icon: HeadphonesIcon, permission: "SEND_SUPPORT_EMAIL" },
   { href: "/admin/admins", label: "Admins", icon: ShieldCheck, superAdminOnly: true },
+  { href: "/admin/settings", label: "Settings", icon: Settings },
 ];
 
 const shopLinks: NavLink[] = [

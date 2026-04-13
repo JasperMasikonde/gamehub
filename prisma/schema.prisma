@@ -649,6 +649,8 @@ model SiteConfig {
   // Match code format — regex used to validate codes players share in chat
   matchCodePattern String   @default("^\\d{4}-?\\d{4}$")
   matchCodeHint    String   @default("8 digits, e.g. 12345678 or 1234-5678")
+  // Admin receives email notifications at this address for key events
+  adminNotificationEmail String?
   updatedAt        DateTime @updatedAt
 }
 

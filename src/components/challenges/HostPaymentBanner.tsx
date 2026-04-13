@@ -74,6 +74,7 @@ export function HostPaymentBanner({
           onSuccess={() => router.refresh()}
           returnUrl={`/challenges/${challengeId}`}
           returnLabel="Back to challenge"
+          hideQrSection
         />
       )}
     </div>

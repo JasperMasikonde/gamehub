@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { formatCurrency, formatDate } from "@/lib/utils/format";
 import { Card, CardContent, CardHeader } from "@/components/ui/Card";
 import { ChallengeResolvePanel } from "@/components/admin/ChallengeResolvePanel";
+import { ChallengeRemovePanel } from "@/components/admin/ChallengeRemovePanel";
 import { AdminQuickMessage } from "@/components/admin/AdminQuickMessage";
 import { Swords, Trophy, AlertTriangle, User } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
@@ -49,7 +50,9 @@ export default async function AdminChallengeDetailPage({
   const wager = Number(challenge.wagerAmount);
   const prize = wager * 2;
   const fee = challenge.platformFee != null ? Number(challenge.platformFee) : null;
-  const winnerPayout = fee != null ? prize - fee : prize;
+  const txFee = challenge.transactionFee != null ? Number(challenge.transactionFee) : null;
+  const totalFee = (fee ?? 0) + (txFee ?? 0);
+  const winnerPayout = prize - totalFee;
   const formatLabel = challenge.format === "BEST_OF_3" ? "Best of 3" : "Best of 5";
 
   return (
@@ -70,21 +73,25 @@ export default async function AdminChallengeDetailPage({
       {/* Wager / payout breakdown */}
       <Card>
         <CardContent>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-center">
+          <div className="grid grid-cols-2 sm:grid-cols-5 gap-4 text-center">
             <div>
               <p className="text-xs text-text-muted">Wager (each)</p>
               <p className="text-lg font-black text-neon-green">{formatCurrency(challenge.wagerAmount.toString())}</p>
             </div>
             <div>
               <p className="text-xs text-text-muted">Total Pool</p>
-              <p className="text-lg font-black text-neon-yellow flex items-center justify-center gap-1">
-                {formatCurrency(prize.toString())}
-              </p>
+              <p className="text-lg font-black text-neon-yellow">{formatCurrency(prize.toString())}</p>
             </div>
             <div>
               <p className="text-xs text-text-muted">Platform Fee</p>
               <p className="text-lg font-black text-neon-red">
                 {fee != null ? `− ${formatCurrency(fee.toString())}` : "—"}
+              </p>
+            </div>
+            <div>
+              <p className="text-xs text-text-muted">Transaction Fee</p>
+              <p className="text-lg font-black text-neon-red">
+                {txFee != null ? `− ${formatCurrency(txFee.toString())}` : "—"}
               </p>
             </div>
             <div>
@@ -106,9 +113,9 @@ export default async function AdminChallengeDetailPage({
                 : "Winner payout (send via M-Pesa)"}
             </p>
             <p className="text-2xl font-black text-neon-green">{formatCurrency(winnerPayout.toString())}</p>
-            {fee != null && (
+            {totalFee > 0 && (
               <p className="text-[11px] text-text-muted mt-0.5">
-                Pool {formatCurrency(prize.toString())} − fee {formatCurrency(fee.toString())}
+                Pool {formatCurrency(prize.toString())} − fees {formatCurrency(totalFee.toString())}
               </p>
             )}
           </div>
@@ -236,6 +243,11 @@ export default async function AdminChallengeDetailPage({
             challenger={challenge.challenger}
           />
         </>
+      )}
+
+      {/* Remove challenge — only show if not already in a terminal state */}
+      {!["COMPLETED", "CANCELLED"].includes(challenge.status) && (
+        <ChallengeRemovePanel challengeId={id} />
       )}
 
       {/* Chat log */}
