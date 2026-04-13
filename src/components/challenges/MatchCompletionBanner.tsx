@@ -11,9 +11,10 @@ interface Props {
   completedAt: string;  // kept for compat but no longer drives a countdown
   payout: number;
   adminUserId: string;
+  challengeId: string;
 }
 
-export function MatchCompletionBanner({ payout }: Props) {
+export function MatchCompletionBanner({ payout, challengeId }: Props) {
   const { socket } = useSocket();
 
   // Wallet balance — starts at payout (already credited), updates via socket
@@ -70,7 +71,7 @@ export function MatchCompletionBanner({ payout }: Props) {
       const res = await fetch("/api/wallet/payout-request", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ amount: amt, phone: phone.trim() }),
+        body: JSON.stringify({ amount: amt, phone: phone.trim(), challengeId }),
       });
       const data = await res.json();
       if (!res.ok) { setError(data.error ?? "Failed to submit"); return; }

@@ -787,11 +787,13 @@ model PayoutRequest {
   adminNote   String?      @db.Text
   processedBy String?
   processedAt DateTime?
+  challengeId String?      // links request to the challenge it originated from
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
 
   @@index([userId])
   @@index([status])
+  @@index([challengeId])
   @@index([createdAt])
 }
 

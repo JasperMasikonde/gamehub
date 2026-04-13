@@ -300,6 +300,7 @@ export default async function ChallengeDetailPage({
           completedAt={challenge.completedAt.toISOString()}
           payout={winnerPayout}
           adminUserId={adminUser.id}
+          challengeId={id}
         />
       )}
 

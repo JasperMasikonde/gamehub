@@ -3,10 +3,12 @@ import { resolveSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
 import { emitWalletUpdate } from "@/lib/socket-server";
+import { sendAdminNotification } from "@/lib/email";
 
 const schema = z.object({
   amount: z.number().positive().min(1),
   phone: z.string().min(9).max(15),
+  challengeId: z.string().optional(),
 });
 
 export async function POST(req: Request) {
@@ -20,7 +22,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: first ?? "Invalid input" }, { status: 400 });
   }
 
-  const { amount, phone } = parsed.data;
+  const { amount, phone, challengeId } = parsed.data;
   const userId = session.user.id;
 
   // Check for already-pending request
@@ -48,7 +50,7 @@ export async function POST(req: Request) {
       }
 
       const req = await tx.payoutRequest.create({
-        data: { userId, amount, phone },
+        data: { userId, amount, phone, ...(challengeId ? { challengeId } : {}) },
       });
 
       const updated = await tx.wallet.update({
@@ -82,6 +84,27 @@ export async function POST(req: Request) {
 
   // Push live balance to user's browser
   emitWalletUpdate(userId, newBalance);
+
+  // Notify admin by email (fire-and-forget)
+  (async () => {
+    try {
+      const [config, requester] = await Promise.all([
+        prisma.siteConfig.findUnique({ where: { id: "singleton" } }),
+        prisma.user.findUnique({ where: { id: userId }, select: { username: true, email: true } }),
+      ]);
+      const adminEmail = config?.adminNotificationEmail;
+      if (!adminEmail) return;
+      const challengeLink = challengeId ? `/admin/challenges/${challengeId}` : "/admin/payouts";
+      await sendAdminNotification({
+        toEmail: adminEmail,
+        subject: "New Payout Request",
+        eventTitle: "A user has requested a payout",
+        eventBody: `User: ${requester?.username ?? userId} (${requester?.email ?? ""})\nAmount: KES ${Number(amount).toFixed(2)}\nPhone: ${phone}${challengeId ? `\nChallenge: ${challengeId}` : ""}`,
+        linkUrl: challengeLink,
+        linkLabel: "View →",
+      });
+    } catch { /* ignore email errors */ }
+  })();
 
   return NextResponse.json({ payoutRequest, balance: newBalance });
 }

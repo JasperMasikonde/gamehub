@@ -6,6 +6,7 @@ import { Swords, AlertTriangle, Phone, Banknote } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 import { ChallengeWindowSettings } from "@/components/admin/ChallengeWindowSettings";
 import { MatchCodePatternForm } from "@/components/admin/MatchCodePatternForm";
+import { AdminPayoutActions } from "@/components/admin/AdminPayoutActions";
 import { Code } from "lucide-react";
 
 export const dynamic = "force-dynamic";
@@ -61,6 +62,32 @@ export default async function AdminChallengesPage({
     if (p.purpose === "challenge_host") entry.hostPhone = p.phone;
     if (p.purpose === "challenge") entry.challengerPhone = p.phone;
     phoneMap.set(p.entityId, entry);
+  }
+
+  // Fetch payout requests for completed challenges (by challengeId or by winner userId)
+  const winnerIds = completed.filter((c) => c.winnerId).map((c) => c.winnerId!);
+  const payoutRequests = completedIds.length > 0
+    ? await prisma.payoutRequest.findMany({
+        where: {
+          OR: [
+            { challengeId: { in: completedIds } },
+            ...(winnerIds.length > 0 ? [{ userId: { in: winnerIds }, challengeId: null }] : []),
+          ],
+          status: { not: "REJECTED" },
+        },
+        orderBy: { createdAt: "desc" },
+        select: { id: true, challengeId: true, userId: true, amount: true, phone: true, status: true },
+      })
+    : [];
+
+  // Map challengeId → best payout request (prefer one with explicit challengeId link)
+  const payoutMap = new Map<string, { id: string; status: "PENDING" | "APPROVED" | "PAID"; amount: number; phone: string }>();
+  for (const c of completed) {
+    if (!c.winnerId) continue;
+    const linked = payoutRequests.find((r) => r.challengeId === c.id);
+    const fallback = payoutRequests.find((r) => r.userId === c.winnerId && !r.challengeId);
+    const req = linked ?? fallback;
+    if (req) payoutMap.set(c.id, { id: req.id, status: req.status as "PENDING" | "APPROVED" | "PAID", amount: Number(req.amount), phone: req.phone });
   }
 
   const config = await prisma.siteConfig.findUnique({ where: { id: "singleton" } });
@@ -162,7 +189,11 @@ export default async function AdminChallengesPage({
               const phones = phoneMap.get(c.id);
               const winnerIsHost = c.winnerId === c.host.id;
               const payoutPhone = winnerIsHost ? phones?.hostPhone : phones?.challengerPhone;
-              const prize = Number(c.wagerAmount) * 2;
+              const pool = Number(c.wagerAmount) * 2;
+              const platFee = c.platformFee != null ? Number(c.platformFee) : 0;
+              const txFee = c.transactionFee != null ? Number(c.transactionFee) : 0;
+              const winnerPayout = pool - platFee - txFee;
+              const payoutReq = payoutMap.get(c.id);
 
               return (
                 <div
@@ -180,16 +211,38 @@ export default async function AdminChallengesPage({
                     <p className="text-xs text-text-muted mt-0.5">
                       {c.host.username} vs {c.challenger?.username ?? "—"} · {c.format === "BEST_OF_3" ? "Bo3" : "Bo5"}
                     </p>
+                    <Link href={`/admin/challenges/${c.id}`} className="text-[10px] text-neon-blue hover:underline">
+                      View challenge →
+                    </Link>
                   </div>
                   <div className="text-right shrink-0 flex flex-col items-end gap-1">
-                    <p className="text-base font-black text-neon-green">{formatCurrency(prize.toString())}</p>
-                    {payoutPhone ? (
-                      <div className="flex items-center gap-1">
-                        <Phone size={10} className="text-neon-green" />
-                        <span className="text-xs font-mono font-semibold text-neon-green">{payoutPhone}</span>
-                      </div>
+                    <p className="text-base font-black text-neon-green">{formatCurrency(winnerPayout.toString())}</p>
+                    {(platFee > 0 || txFee > 0) && (
+                      <p className="text-[10px] text-text-muted">Pool {formatCurrency(pool.toString())} − fees {formatCurrency((platFee + txFee).toString())}</p>
+                    )}
+                    {payoutReq ? (
+                      <>
+                        <div className="flex items-center gap-1">
+                          <Phone size={10} className="text-neon-green" />
+                          <span className="text-xs font-mono font-semibold text-neon-green">{payoutReq.phone}</span>
+                        </div>
+                        <AdminPayoutActions
+                          payoutId={payoutReq.id}
+                          status={payoutReq.status}
+                          phone={payoutReq.phone}
+                          amount={payoutReq.amount}
+                        />
+                      </>
+                    ) : payoutPhone ? (
+                      <>
+                        <div className="flex items-center gap-1">
+                          <Phone size={10} className="text-neon-green" />
+                          <span className="text-xs font-mono font-semibold text-neon-green">{payoutPhone}</span>
+                        </div>
+                        <span className="text-[10px] text-text-muted italic">no payout request yet</span>
+                      </>
                     ) : (
-                      <span className="text-xs text-text-muted italic">no phone found</span>
+                      <span className="text-xs text-text-muted italic">waiting for payout request</span>
                     )}
                   </div>
                 </div>
@@ -216,6 +269,10 @@ export default async function AdminChallengesPage({
                 const phones = phoneMap.get(c.id);
                 const winnerIsHost = c.winnerId === c.host.id;
                 const payoutPhone = winnerIsHost ? phones?.hostPhone : phones?.challengerPhone;
+                const pool = Number(c.wagerAmount) * 2;
+                const cPlatFee = c.platformFee != null ? Number(c.platformFee) : 0;
+                const cTxFee = c.transactionFee != null ? Number(c.transactionFee) : 0;
+                const netPrize = pool - cPlatFee - cTxFee;
 
                 return (
                   <tr
@@ -236,7 +293,7 @@ export default async function AdminChallengesPage({
                       {formatCurrency(c.wagerAmount.toString())}
                     </td>
                     <td className="px-4 py-3 text-xs font-medium text-neon-yellow">
-                      {formatCurrency((Number(c.wagerAmount) * 2).toString())}
+                      {formatCurrency(netPrize.toString())}
                     </td>
                     <td className="px-4 py-3">
                       {c.winner ? (
