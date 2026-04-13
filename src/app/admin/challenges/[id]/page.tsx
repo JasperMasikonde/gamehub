@@ -4,6 +4,7 @@ import { formatCurrency, formatDate } from "@/lib/utils/format";
 import { Card, CardContent, CardHeader } from "@/components/ui/Card";
 import { ChallengeResolvePanel } from "@/components/admin/ChallengeResolvePanel";
 import { ChallengeRemovePanel } from "@/components/admin/ChallengeRemovePanel";
+import { AdminWalletAdjustPanel } from "@/components/admin/AdminWalletAdjustPanel";
 import { AdminQuickMessage } from "@/components/admin/AdminQuickMessage";
 import { Swords, Trophy, AlertTriangle, User } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
@@ -244,6 +245,23 @@ export default async function AdminChallengeDetailPage({
           />
         </>
       )}
+
+      {/* Wallet adjustments for both parties */}
+      <div>
+        <h2 className="text-sm font-semibold mb-3">Wallet Adjustments</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <AdminWalletAdjustPanel
+            userId={challenge.host.id}
+            username={challenge.host.username}
+          />
+          {challenge.challenger && (
+            <AdminWalletAdjustPanel
+              userId={challenge.challenger.id}
+              username={challenge.challenger.username}
+            />
+          )}
+        </div>
+      </div>
 
       {/* Remove challenge — only show if not already in a terminal state */}
       {!["COMPLETED", "CANCELLED"].includes(challenge.status) && (

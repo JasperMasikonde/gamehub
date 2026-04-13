@@ -11,8 +11,9 @@ import { MatchCompletionBanner } from "@/components/challenges/MatchCompletionBa
 import { ChallengeChat } from "@/components/challenges/ChallengeChat";
 import { RealtimeRefresh } from "@/components/escrow/RealtimeRefresh";
 import { RefreshUnreadOnMount } from "@/components/messages/RefreshUnreadOnMount";
+import { WalletBalanceDisplay } from "@/components/wallet/WalletBalanceDisplay";
 import { getWalletBalance } from "@/lib/wallet";
-import { Swords, Trophy, User, Shield, MessageSquare, Wallet } from "lucide-react";
+import { Swords, Trophy, User, Shield, MessageSquare } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 import Link from "next/link";
 
@@ -207,13 +208,12 @@ export default async function ChallengeDetailPage({
           </div>
           {walletBalance !== null && (
             <div className="mt-4 pt-4 border-t border-bg-border flex items-center justify-between">
-              <div className="flex items-center gap-1.5 text-xs text-text-muted">
-                <Wallet size={12} />
-                Your wallet balance
-              </div>
-              <span className={cn("text-xs font-bold", walletBalance >= Number(challenge.wagerAmount) ? "text-neon-green" : "text-neon-yellow")}>
-                KES {walletBalance.toLocaleString()}
-              </span>
+              <span className="text-xs text-text-muted">Your wallet balance</span>
+              <WalletBalanceDisplay
+                initialBalance={walletBalance}
+                warnBelow={Number(challenge.wagerAmount)}
+                className="text-xs"
+              />
             </div>
           )}
           {challenge.description && (

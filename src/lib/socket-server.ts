@@ -137,3 +137,10 @@ export function emitUserBanned(userId: string): void {
   if (!io) return;
   io.to(`user:${userId}`).emit("user_banned");
 }
+
+/** Push a wallet balance update to a user's connected browser(s). */
+export function emitWalletUpdate(userId: string, balance: number): void {
+  const io = getIO();
+  if (!io) return;
+  io.to(`user:${userId}`).emit("wallet_update", { balance });
+}
