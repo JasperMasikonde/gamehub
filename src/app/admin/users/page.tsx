@@ -1,9 +1,9 @@
 import { prisma } from "@/lib/prisma";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
-import { formatDate } from "@/lib/utils/format";
+import { formatDate, formatCurrency } from "@/lib/utils/format";
 import Link from "next/link";
-import { ShieldCheck } from "lucide-react";
+import { ShieldCheck, Wallet } from "lucide-react";
 
 export default async function AdminUsersPage() {
   const users = await prisma.user.findMany({
@@ -18,6 +18,7 @@ export default async function AdminUsersPage() {
       totalSales: true,
       totalPurchases: true,
       createdAt: true,
+      wallet: { select: { balance: true } },
     },
   });
 
@@ -36,7 +37,7 @@ export default async function AdminUsersPage() {
           <table className="w-full text-sm min-w-[640px]">
             <thead>
               <tr className="border-b border-bg-border">
-                {["User", "Role", "Status", "Sales", "Purchases", "Joined", ""].map(
+                {["User", "Role", "Status", "Wallet", "Sales", "Purchases", "Joined", ""].map(
                   (h) => (
                     <th
                       key={h}
@@ -75,6 +76,16 @@ export default async function AdminUsersPage() {
                     <Badge variant={statusVariant(u.status) as "success" | "danger" | "warning"}>
                       {u.status}
                     </Badge>
+                  </td>
+                  <td className="px-4 py-3">
+                    {u.wallet ? (
+                      <Link href={`/admin/users/${u.id}`} className="flex items-center gap-1 text-xs font-semibold text-neon-green hover:underline">
+                        <Wallet size={11} />
+                        {formatCurrency(u.wallet.balance.toString())}
+                      </Link>
+                    ) : (
+                      <span className="text-xs text-text-muted">—</span>
+                    )}
                   </td>
                   <td className="px-4 py-3 text-xs text-text-muted">{u.totalSales}</td>
                   <td className="px-4 py-3 text-xs text-text-muted">{u.totalPurchases}</td>

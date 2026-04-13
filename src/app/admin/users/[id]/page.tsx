@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/Badge";
 import { TransactionStatusPill } from "@/components/ui/StatusPill";
 import { formatCurrency, formatDate } from "@/lib/utils/format";
 import { AdminUserActions } from "@/components/admin/AdminUserActions";
+import { AdminWalletAdjustPanel } from "@/components/admin/AdminWalletAdjustPanel";
 import { ShieldCheck } from "lucide-react";
 
 export default async function AdminUserDetailPage({
@@ -68,6 +69,8 @@ export default async function AdminUserDetailPage({
           />
         )}
       </div>
+
+      <AdminWalletAdjustPanel userId={user.id} username={user.username} />
 
       <div className="grid grid-cols-3 gap-3 text-center">
         <Card>
