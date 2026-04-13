@@ -11,10 +11,10 @@ let lastCleanup = Date.now();
 
 function getRateLimit(pathname: string): { limit: number; windowMs: number } {
   if (pathname.startsWith("/api/auth"))
-    return { limit: 10, windowMs: 60_000 };   // 10/min — brute-force guard
+    return { limit: 30, windowMs: 60_000 };   // 30/min — brute-force guard
   if (pathname.startsWith("/api/"))
-    return { limit: 60, windowMs: 60_000 };   // 60/min for API routes
-  return { limit: 120, windowMs: 60_000 };    // 120/min for page routes
+    return { limit: 500, windowMs: 60_000 };  // 500/min for API routes
+  return { limit: 600, windowMs: 60_000 };    // 600/min for page routes
 }
 
 function checkRateLimit(req: NextRequest): NextResponse | null {
