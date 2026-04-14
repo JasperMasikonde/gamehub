@@ -64,7 +64,7 @@ export default async function ListingDetailPage({
               <img
                 src={listing.screenshots[0].url}
                 alt={listing.title}
-                className="w-full aspect-video object-cover"
+                className="w-full h-auto max-h-[70vh] object-contain bg-bg-elevated"
               />
               {listing.screenshots.length > 1 && (
                 <div className="flex gap-2 p-3 overflow-x-auto">

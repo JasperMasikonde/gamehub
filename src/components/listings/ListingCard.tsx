@@ -30,7 +30,7 @@ export function ListingCard({ listing }: { listing: ListingWithRelations }) {
             <img
               src={coverImage}
               alt={listing.title}
-              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+              className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-500"
             />
           ) : (
             <div className="w-full h-full flex flex-col items-center justify-center gap-2 text-bg-border">
