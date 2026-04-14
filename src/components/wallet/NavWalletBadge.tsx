@@ -1,28 +1,24 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { usePathname } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { useSocket } from "@/components/providers/SocketProvider";
 import { Wallet } from "lucide-react";
 import Link from "next/link";
 
 export function NavWalletBadge() {
-  const pathname = usePathname();
   const { data: session } = useSession();
   const { socket } = useSocket();
   const [balance, setBalance] = useState<number | null>(null);
 
-  const onChallenges = pathname.startsWith("/challenges");
-
-  // Fetch balance when entering the challenges section
+  // Fetch balance on mount for any logged-in user
   useEffect(() => {
-    if (!onChallenges || !session?.user) { setBalance(null); return; }
+    if (!session?.user) { setBalance(null); return; }
     fetch("/api/wallet")
       .then((r) => r.ok ? r.json() : null)
       .then((d) => { if (d) setBalance(Number(d.balance)); })
       .catch(() => {});
-  }, [onChallenges, session?.user]);
+  }, [session?.user]);
 
   // Keep in sync via WebSocket
   useEffect(() => {
@@ -32,7 +28,7 @@ export function NavWalletBadge() {
     return () => { socket.off("wallet_update", handler); };
   }, [socket]);
 
-  if (!onChallenges || !session?.user || balance === null) return null;
+  if (!session?.user || balance === null) return null;
 
   return (
     <Link

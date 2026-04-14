@@ -1,7 +1,8 @@
 import { TransactionStatus, type Transaction } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { createNotification } from "@/lib/notifications";
-import { emitToast, emitToAdmins, emitTransactionUpdate } from "@/lib/socket-server";
+import { emitToast, emitToAdmins, emitTransactionUpdate, emitWalletUpdate } from "@/lib/socket-server";
+import { creditWallet } from "@/lib/wallet";
 import {
   sendEscrowFundedEmail,
   sendCredentialsDeliveredEmail,
@@ -80,6 +81,27 @@ export async function transitionTransaction(
     where: { id: transactionId },
     data: updates as Parameters<typeof prisma.transaction.update>[0]["data"],
   });
+
+  // Credit wallet on terminal states
+  if (newStatus === TransactionStatus.COMPLETED) {
+    const walletTx = await creditWallet({
+      userId: updated.sellerId,
+      amount: Number(updated.sellerReceives),
+      type: "SALE_CREDIT",
+      description: `Sale proceeds for transaction #${updated.id.slice(-8)}`,
+    });
+    emitWalletUpdate(updated.sellerId, Number(walletTx.balanceAfter));
+  }
+
+  if (newStatus === TransactionStatus.REFUNDED) {
+    const walletTx = await creditWallet({
+      userId: updated.buyerId,
+      amount: Number(updated.amount),
+      type: "REFUND_CREDIT",
+      description: `Refund for transaction #${updated.id.slice(-8)}`,
+    });
+    emitWalletUpdate(updated.buyerId, Number(walletTx.balanceAfter));
+  }
 
   // Fire notifications
   await notifyOnTransition(updated, newStatus, actorId);

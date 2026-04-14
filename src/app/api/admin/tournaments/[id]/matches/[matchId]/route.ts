@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requirePermission } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { emitTournamentUpdate } from "@/lib/socket-server";
+import { emitTournamentUpdate, emitWalletUpdate, emitToast } from "@/lib/socket-server";
+import { creditWallet } from "@/lib/wallet";
+import { createNotification } from "@/lib/notifications";
 
 type Ctx = { params: Promise<{ id: string; matchId: string }> };
 
@@ -37,6 +39,31 @@ export async function PATCH(req: NextRequest, { params }: Ctx) {
   });
   if (remaining === 0) {
     await prisma.tournament.update({ where: { id: tournamentId }, data: { status: "COMPLETED" } });
+
+    // Credit tournament winner's wallet if there is a prize pool
+    if (tournament && Number(tournament.prizePool) > 0 && winnerId) {
+      const prize = Number(tournament.prizePool);
+      const walletTx = await creditWallet({
+        userId: winnerId,
+        amount: prize,
+        type: "TOURNAMENT_WIN",
+        description: `Tournament "${tournament.name}" — winner prize`,
+      });
+      emitWalletUpdate(winnerId, Number(walletTx.balanceAfter));
+      await createNotification(winnerId, "TOURNAMENT_WIN", {
+        title: "Tournament complete — prize credited! 🏆",
+        body: `You won the "${tournament.name}" tournament! KES ${prize.toFixed(2)} has been added to your wallet.`,
+        linkUrl: `/dashboard/wallet`,
+      });
+      emitToast(winnerId, {
+        type: "success",
+        title: "Tournament winner! 🏆",
+        message: `KES ${prize.toFixed(2)} prize credited to your wallet.`,
+        linkUrl: `/dashboard/wallet`,
+        linkLabel: "View wallet →",
+        duration: 0,
+      });
+    }
   }
 
   const updated = await prisma.tournamentMatch.findUnique({ where: { id: matchId } });

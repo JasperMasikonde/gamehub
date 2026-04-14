@@ -1,10 +1,14 @@
 import { prisma } from "@/lib/prisma";
 import { Card, CardContent } from "@/components/ui/Card";
 import { formatRelativeTime, formatCurrency } from "@/lib/utils/format";
-import { Users, ListOrdered, CreditCard, AlertTriangle, Banknote, Swords } from "lucide-react";
+import { Users, ListOrdered, CreditCard, AlertTriangle, Banknote, Swords, Eye, TrendingUp } from "lucide-react";
 import Link from "next/link";
 
 export default async function AdminOverviewPage() {
+  const today = new Date().toISOString().slice(0, 10);
+  const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+  const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+
   const [
     userCount,
     listingCount,
@@ -13,6 +17,10 @@ export default async function AdminOverviewPage() {
     recentActions,
     pendingEscrowPayouts,
     pendingChallengePayouts,
+    visitorsToday,
+    visitorsThisWeek,
+    visitorsThisMonth,
+    recentDailyVisits,
   ] = await Promise.all([
     prisma.user.count(),
     prisma.listing.count({ where: { status: "PENDING_APPROVAL" } }),
@@ -32,6 +40,17 @@ export default async function AdminOverviewPage() {
     }),
     // Challenges completed — winner needs to be paid
     prisma.challenge.count({ where: { status: "COMPLETED" } }),
+    // Visitor counts
+    prisma.siteVisit.count({ where: { date: today } }),
+    prisma.siteVisit.count({ where: { date: { gte: sevenDaysAgo } } }),
+    prisma.siteVisit.count({ where: { date: { gte: thirtyDaysAgo } } }),
+    // Last 7 days breakdown
+    prisma.siteVisit.groupBy({
+      by: ["date"],
+      _count: { id: true },
+      where: { date: { gte: sevenDaysAgo } },
+      orderBy: { date: "asc" },
+    }),
   ]);
 
   const escrowPayoutTotal = pendingEscrowPayouts.reduce(
@@ -128,6 +147,73 @@ export default async function AdminOverviewPage() {
             </div>
           </Link>
         </div>
+      </div>
+
+      {/* Visitor Stats */}
+      <div>
+        <h2 className="text-sm font-semibold mb-3">Website Visitors</h2>
+        <div className="grid grid-cols-3 gap-4 mb-4">
+          <Card>
+            <CardContent className="flex items-center gap-3">
+              <Eye size={20} className="text-neon-blue" />
+              <div>
+                <p className="text-xs text-text-muted">Today</p>
+                <p className="text-2xl font-bold">{visitorsToday.toLocaleString()}</p>
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="flex items-center gap-3">
+              <TrendingUp size={20} className="text-neon-purple" />
+              <div>
+                <p className="text-xs text-text-muted">Last 7 days</p>
+                <p className="text-2xl font-bold">{visitorsThisWeek.toLocaleString()}</p>
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="flex items-center gap-3">
+              <Users size={20} className="text-neon-yellow" />
+              <div>
+                <p className="text-xs text-text-muted">Last 30 days</p>
+                <p className="text-2xl font-bold">{visitorsThisMonth.toLocaleString()}</p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+        {/* 7-day bar chart (CSS-based) */}
+        {recentDailyVisits.length > 0 && (() => {
+          const max = Math.max(...recentDailyVisits.map((d) => d._count.id), 1);
+          // Fill in missing days
+          const days: { date: string; count: number }[] = [];
+          for (let i = 6; i >= 0; i--) {
+            const d = new Date(Date.now() - i * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+            const found = recentDailyVisits.find((v) => v.date === d);
+            days.push({ date: d, count: found ? found._count.id : 0 });
+          }
+          return (
+            <Card>
+              <div className="px-4 pt-4 pb-2">
+                <p className="text-xs text-text-muted mb-3">Daily unique visitors (last 7 days)</p>
+                <div className="flex items-end gap-1.5 h-20">
+                  {days.map(({ date, count }) => (
+                    <div key={date} className="flex-1 flex flex-col items-center gap-1">
+                      <span className="text-[10px] text-text-muted tabular-nums">{count}</span>
+                      <div
+                        className="w-full rounded-t bg-neon-blue/60 hover:bg-neon-blue/80 transition-colors min-h-[2px]"
+                        style={{ height: `${Math.max((count / max) * 56, 2)}px` }}
+                        title={`${date}: ${count} visitors`}
+                      />
+                      <span className="text-[10px] text-text-muted">
+                        {new Date(date + "T12:00:00Z").toLocaleDateString("en", { weekday: "short" })}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </Card>
+          );
+        })()}
       </div>
 
       <div>

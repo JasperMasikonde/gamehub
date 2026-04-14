@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { resolveSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { createNotification } from "@/lib/notifications";
-import { emitToast } from "@/lib/socket-server";
+import { emitToast, emitWalletUpdate } from "@/lib/socket-server";
+import { creditWallet } from "@/lib/wallet";
 
 export async function PATCH(
   _req: NextRequest,
@@ -31,18 +32,27 @@ export async function PATCH(
     data: { status: "COMPLETED", completedAt: new Date() },
   });
 
+  // Credit provider's wallet with their earnings
+  const walletTx = await creditWallet({
+    userId: order.providerId,
+    amount: Number(order.providerGets),
+    type: "RANK_PUSH_CREDIT",
+    description: `Rank push order #${order.id.slice(-8)} completed`,
+  });
+  emitWalletUpdate(order.providerId, Number(walletTx.balanceAfter));
+
   await createNotification(order.providerId, "RANK_PUSH_COMPLETED", {
-    title: "Order completed — payment released!",
-    body: "The client confirmed your rank push service. Payment will be processed.",
-    linkUrl: `/dashboard/rank-push`,
+    title: "Order completed — payment credited to wallet!",
+    body: `The client confirmed your rank push service. KES ${Number(order.providerGets).toFixed(2)} has been added to your wallet.`,
+    linkUrl: `/dashboard/wallet`,
   });
 
   emitToast(order.providerId, {
     type: "success",
-    title: "Order confirmed!",
-    message: "The client confirmed your service. Payment is on its way.",
-    linkUrl: `/dashboard/rank-push`,
-    linkLabel: "View orders →",
+    title: "Order confirmed! 💰",
+    message: `KES ${Number(order.providerGets).toFixed(2)} credited to your wallet.`,
+    linkUrl: `/dashboard/wallet`,
+    linkLabel: "View wallet →",
     duration: 10000,
   });
 

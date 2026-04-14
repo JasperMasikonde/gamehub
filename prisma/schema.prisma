@@ -150,6 +150,10 @@ enum WalletTxType {
   CHALLENGE_WAGER     // debited when you pay wager from wallet
   PAYOUT              // debited when a payout is processed
   ADMIN_ADJUSTMENT    // manual credit/debit by admin
+  SALE_CREDIT         // credited to seller when escrow transaction is completed
+  REFUND_CREDIT       // credited to buyer when dispute is resolved in their favor
+  RANK_PUSH_CREDIT    // credited to provider when rank push order is confirmed
+  TOURNAMENT_WIN      // credited to winner when tournament completes
 }
 
 enum PayoutStatus {
@@ -794,6 +798,21 @@ model PayoutRequest {
   @@index([userId])
   @@index([status])
   @@index([challengeId])
+  @@index([createdAt])
+}
+
+// ─────────────────────────────────────────────
+// VISITOR TRACKING
+// ─────────────────────────────────────────────
+
+model SiteVisit {
+  id        String   @id @default(cuid())
+  sessionId String   // persistent visitor ID stored in localStorage
+  date      String   // YYYY-MM-DD — deduplication key (one entry per visitor per day)
+  createdAt DateTime @default(now())
+
+  @@unique([sessionId, date])
+  @@index([date])
   @@index([createdAt])
 }
 

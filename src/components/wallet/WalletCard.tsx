@@ -29,6 +29,10 @@ const txIcon: Record<WalletTxType, React.ReactNode> = {
   CHALLENGE_WAGER: <ArrowUpCircle size={15} className="text-neon-red" />,
   PAYOUT: <ArrowUpCircle size={15} className="text-neon-yellow" />,
   ADMIN_ADJUSTMENT: <RefreshCw size={15} className="text-neon-blue" />,
+  SALE_CREDIT: <ArrowDownCircle size={15} className="text-neon-green" />,
+  REFUND_CREDIT: <ArrowDownCircle size={15} className="text-neon-blue" />,
+  RANK_PUSH_CREDIT: <ArrowDownCircle size={15} className="text-neon-purple" />,
+  TOURNAMENT_WIN: <ArrowDownCircle size={15} className="text-neon-yellow" />,
 };
 
 const payoutStatusBadge: Record<PayoutStatus, { label: string; color: string; icon: React.ReactNode }> = {
@@ -146,7 +150,7 @@ export function WalletCard() {
           <h3 className="text-sm font-semibold text-text-primary mb-3">Transaction History</h3>
           <div className="flex flex-col gap-3">
             {transactions.map((tx) => {
-              const isCredit = tx.type === "CHALLENGE_WIN" || tx.type === "ADMIN_ADJUSTMENT";
+              const isCredit = ["CHALLENGE_WIN", "ADMIN_ADJUSTMENT", "SALE_CREDIT", "REFUND_CREDIT", "RANK_PUSH_CREDIT", "TOURNAMENT_WIN"].includes(tx.type);
               return (
                 <div key={tx.id} className="flex items-start gap-3">
                   <div className="mt-0.5">{txIcon[tx.type]}</div>
