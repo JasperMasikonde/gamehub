@@ -798,6 +798,25 @@ model PayoutRequest {
 }
 
 // ─────────────────────────────────────────────
+// SUPPORT INBOX
+// ─────────────────────────────────────────────
+
+model SupportEmail {
+  id        String    @id @default(cuid())
+  fromEmail String
+  fromName  String?
+  subject   String
+  bodyText  String?   @db.Text
+  bodyHtml  String?   @db.Text
+  isRead    Boolean   @default(false)
+  repliedAt DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([isRead])
+  @@index([createdAt])
+}
+
+// ─────────────────────────────────────────────
 // PAYMENTS
 // ─────────────────────────────────────────────
 
