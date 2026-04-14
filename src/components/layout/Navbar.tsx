@@ -8,6 +8,7 @@ import { User, LogOut, Plus, ShieldCheck, Menu, X, Swords, ShoppingBag, Trophy, 
 import { NotificationBell } from "@/components/layout/NotificationBell";
 import { MessagesIcon } from "@/components/layout/MessagesIcon";
 import { CartIcon } from "@/components/shop/CartIcon";
+import { NavWalletBadge } from "@/components/wallet/NavWalletBadge";
 
 export function Navbar() {
   const { data: session, status } = useSession();
@@ -69,6 +70,7 @@ export function Navbar() {
                     Sell Account
                   </Button>
                 </Link>
+                <NavWalletBadge />
                 <CartIcon />
                 <MessagesIcon />
                 <NotificationBell />
@@ -125,6 +127,7 @@ export function Navbar() {
           <div className="md:hidden flex items-center gap-1">
             {session?.user && (
               <>
+                <NavWalletBadge />
                 <CartIcon />
                 <MessagesIcon />
                 <NotificationBell />
