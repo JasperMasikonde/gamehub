@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils/cn";
 import { ChallengeWindowSettings } from "@/components/admin/ChallengeWindowSettings";
 import { MatchCodePatternForm } from "@/components/admin/MatchCodePatternForm";
 import { AdminPayoutActions } from "@/components/admin/AdminPayoutActions";
+import { DeleteDemoChallengesButton } from "@/components/admin/DeleteDemoChallengesButton";
 import { Code } from "lucide-react";
 
 export const dynamic = "force-dynamic";
@@ -385,6 +386,16 @@ export default async function AdminChallengesPage({
               Controls what codes players can submit when sharing a match code. Uses a JavaScript regex tested against the full code string.
             </p>
             <MatchCodePatternForm currentPattern={matchCodePattern} currentHint={matchCodeHint} />
+          </section>
+
+          <hr className="border-bg-border" />
+
+          <section className="space-y-3">
+            <h2 className="text-base font-semibold">Demo Data</h2>
+            <p className="text-xs text-text-muted">
+              Use <code className="bg-bg-elevated px-1 rounded text-[11px]">npm run db:seed-demo</code> to populate the site with camera-ready challenges for recordings. Delete them here when done.
+            </p>
+            <DeleteDemoChallengesButton />
           </section>
         </div>
       )}
