@@ -61,8 +61,8 @@ export async function PATCH(
   }
 
   if (action === "mark_paid") {
-    if (payout.status !== "APPROVED")
-      return NextResponse.json({ error: "Request must be approved first" }, { status: 400 });
+    if (payout.status !== "APPROVED" && payout.status !== "PENDING")
+      return NextResponse.json({ error: "Cannot mark a paid or rejected request as paid" }, { status: 400 });
 
     await prisma.payoutRequest.update({
       where: { id },

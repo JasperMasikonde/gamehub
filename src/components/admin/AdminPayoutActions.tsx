@@ -46,17 +46,30 @@ export function AdminPayoutActions({ payoutId, status: initialStatus, phone, amo
   return (
     <div className="flex flex-col items-end gap-1">
       {status === "PENDING" && (
-        <button
-          onClick={() => act("approve")}
-          disabled={loading}
-          className={cn(
-            "flex items-center gap-1 text-[11px] font-semibold px-2 py-1 rounded-lg border transition-colors",
-            "border-neon-blue/30 text-neon-blue bg-neon-blue/10 hover:bg-neon-blue/20"
-          )}
-        >
-          {loading ? <Loader2 size={10} className="animate-spin" /> : <CheckCircle size={10} />}
-          Approve
-        </button>
+        <div className="flex items-center gap-1">
+          <button
+            onClick={() => act("approve")}
+            disabled={loading}
+            className={cn(
+              "flex items-center gap-1 text-[11px] font-semibold px-2 py-1 rounded-lg border transition-colors",
+              "border-neon-blue/30 text-neon-blue bg-neon-blue/10 hover:bg-neon-blue/20"
+            )}
+          >
+            {loading ? <Loader2 size={10} className="animate-spin" /> : <CheckCircle size={10} />}
+            Approve
+          </button>
+          <button
+            onClick={() => act("mark_paid")}
+            disabled={loading}
+            className={cn(
+              "flex items-center gap-1 text-[11px] font-semibold px-2 py-1 rounded-lg border transition-colors",
+              "border-neon-green/30 text-neon-green bg-neon-green/10 hover:bg-neon-green/20"
+            )}
+          >
+            {loading ? <Loader2 size={10} className="animate-spin" /> : <Send size={10} />}
+            Mark Paid
+          </button>
+        </div>
       )}
       {status === "APPROVED" && (
         <button
