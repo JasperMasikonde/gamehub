@@ -6,7 +6,7 @@ import { emitWalletUpdate } from "@/lib/socket-server";
 import { sendAdminNotification } from "@/lib/email";
 
 const schema = z.object({
-  amount: z.number().positive().min(1),
+  amount: z.number().positive().min(50, "Minimum payout is KES 50"),
   phone: z.string().min(9).max(15),
   challengeId: z.string().optional(),
 });

@@ -21,6 +21,7 @@ interface PayoutRequest {
   phone: string;
   status: PayoutStatus;
   adminNote: string | null;
+  processedAt: string | null;
   createdAt: string;
 }
 
@@ -121,26 +122,61 @@ export function WalletCard() {
         />
       )}
 
-      {/* Payout history */}
+      {/* Payout requests — status tracker */}
       {payouts.length > 0 && (
-        <div className="rounded-xl border border-border bg-surface p-4">
-          <h3 className="text-sm font-semibold text-text-primary mb-3">Payout Requests</h3>
-          <div className="flex flex-col gap-2">
-            {payouts.map((p) => {
-              const badge = payoutStatusBadge[p.status];
-              return (
-                <div key={p.id} className="flex items-center justify-between text-sm">
-                  <div className="flex flex-col">
-                    <span className="text-text-primary font-medium">KES {Number(p.amount).toLocaleString()}</span>
-                    <span className="text-text-muted text-xs">to {p.phone}</span>
-                  </div>
-                  <div className={`flex items-center gap-1 text-xs font-medium ${badge.color}`}>
+        <div className="rounded-xl border border-bg-border bg-bg-surface p-4 flex flex-col gap-3">
+          <h3 className="text-sm font-semibold text-text-primary">Payout Requests</h3>
+          {payouts.map((p) => {
+            const badge = payoutStatusBadge[p.status];
+            const fmtDate = (d: string) =>
+              new Date(d).toLocaleDateString("en-KE", { day: "numeric", month: "short", year: "numeric" });
+
+            const nextStep: Record<PayoutStatus, string> = {
+              PENDING: "Your request is in the queue. We typically process payouts within 24 hours.",
+              APPROVED: "Approved! Your M-Pesa payment is being sent shortly.",
+              PAID: "Sent to your M-Pesa. Check your phone for the confirmation SMS.",
+              REJECTED: "This request was not approved. See the note below for details.",
+            };
+
+            const borderColor: Record<PayoutStatus, string> = {
+              PENDING: "border-neon-yellow/30 bg-neon-yellow/5",
+              APPROVED: "border-neon-blue/30 bg-neon-blue/5",
+              PAID: "border-neon-green/30 bg-neon-green/5",
+              REJECTED: "border-neon-red/30 bg-neon-red/5",
+            };
+
+            return (
+              <div key={p.id} className={`rounded-lg border p-3 flex flex-col gap-2 ${borderColor[p.status]}`}>
+                {/* Top row: amount + status badge */}
+                <div className="flex items-center justify-between">
+                  <span className="text-base font-bold text-text-primary">
+                    KES {Number(p.amount).toLocaleString("en-KE", { minimumFractionDigits: 2 })}
+                  </span>
+                  <span className={`flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full border ${badge.color} border-current/20 bg-current/5`}>
                     {badge.icon} {badge.label}
-                  </div>
+                  </span>
                 </div>
-              );
-            })}
-          </div>
+
+                {/* Details row */}
+                <div className="flex flex-wrap gap-x-4 gap-y-0.5 text-xs text-text-muted">
+                  <span>M-Pesa: <span className="font-mono text-text-primary">{p.phone}</span></span>
+                  <span>Requested: {fmtDate(p.createdAt)}</span>
+                  {p.processedAt && <span>Processed: {fmtDate(p.processedAt)}</span>}
+                </div>
+
+                {/* Status message */}
+                <p className={`text-xs ${badge.color}`}>{nextStep[p.status]}</p>
+
+                {/* Admin note */}
+                {p.adminNote && (
+                  <div className="rounded-md bg-bg-elevated border border-bg-border px-3 py-2 text-xs text-text-muted">
+                    <span className="font-medium text-text-primary">Note from admin: </span>
+                    {p.adminNote}
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
       )}
 

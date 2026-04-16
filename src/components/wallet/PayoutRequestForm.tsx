@@ -11,7 +11,7 @@ const schema = z.object({
   amount: z
     .number({ message: "Enter a valid amount" })
     .positive("Amount must be positive")
-    .min(100, "Minimum payout is KES 100"),
+    .min(50, "Minimum payout is KES 50"),
   phone: z.string().min(9, "Enter a valid phone number").max(15),
 });
 
@@ -74,7 +74,7 @@ export function PayoutRequestForm({ balance, onSuccess, onCancel }: Props) {
       <Input
         label="Amount (KES)"
         type="number"
-        min={100}
+        min={50}
         max={balance}
         step={1}
         error={errors.amount?.message}
