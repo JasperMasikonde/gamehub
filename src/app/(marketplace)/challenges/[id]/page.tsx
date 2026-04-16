@@ -119,6 +119,9 @@ export default async function ChallengeDetailPage({
 
   const formatLabel = challenge.format === "BEST_OF_3" ? "Best of 3" : "Best of 5";
   const prize = Number(challenge.wagerAmount) * 2;
+  const totalFee = (challenge.platformFee ? Number(challenge.platformFee) : 0)
+    + (challenge.transactionFee ? Number(challenge.transactionFee) : 0);
+  const netPayout = prize - totalFee;
 
   const siteConfig = isParty && (challenge.status === "ACTIVE" || challenge.status === "SUBMITTED")
     ? await prisma.siteConfig.findUnique({ where: { id: "singleton" } })
@@ -195,11 +198,16 @@ export default async function ChallengeDetailPage({
               <p className="text-lg font-black text-neon-green">{formatCurrency(challenge.wagerAmount.toString())}</p>
             </div>
             <div>
-              <p className="text-xs text-text-muted">Total Prize</p>
+              <p className="text-xs text-text-muted">Winner receives</p>
               <p className="text-lg font-black text-neon-yellow flex items-center justify-center gap-1">
                 <Trophy size={14} />
-                {formatCurrency(prize.toString())}
+                {formatCurrency(netPayout.toString())}
               </p>
+              {totalFee > 0 && (
+                <p className="text-[10px] text-text-muted mt-0.5">
+                  after KES {totalFee.toLocaleString()} fees
+                </p>
+              )}
             </div>
             <div>
               <p className="text-xs text-text-muted">Format</p>
@@ -289,7 +297,7 @@ export default async function ChallengeDetailPage({
             <p className="text-sm font-bold text-neon-green">
               🏆 {challenge.winner.displayName ?? challenge.winner.username} wins!
             </p>
-            <p className="text-xs text-text-muted">Prize: {formatCurrency(prize.toString())}</p>
+            <p className="text-xs text-text-muted">Payout: {formatCurrency(netPayout.toString())}</p>
           </div>
         </div>
       )}

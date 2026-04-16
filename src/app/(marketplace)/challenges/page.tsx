@@ -208,10 +208,12 @@ export default async function ChallengesPage({
                           <p className="text-lg font-black text-neon-green">
                             {formatCurrency(c.wagerAmount.toString())}
                           </p>
-                          <p className="text-xs text-text-muted">wager</p>
+                          <p className="text-xs text-text-muted">wager each</p>
                           <span className="text-xs text-neon-purple font-medium flex items-center gap-1 justify-end mt-1">
                             <Trophy size={10} />
-                            {formatCurrency((Number(c.wagerAmount) * 2).toString())} prize
+                            {formatCurrency(
+                              (Number(c.wagerAmount) * 2 - (Number(c.platformFee) || 0) - (Number(c.transactionFee) || 0)).toString()
+                            )} to winner
                           </span>
                         </div>
                         {/* Only show Accept button for users who are not the host */}
