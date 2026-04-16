@@ -277,7 +277,9 @@ export default async function AdminChallengesPage({
                         {c.host.username} vs {c.challenger?.username ?? "—"}
                       </p>
                       <p className="text-xs text-text-muted mt-0.5">
-                        {c.format === "BEST_OF_3" ? "Bo3" : "Bo5"} · Wager {formatCurrency(c.wagerAmount.toString())} each · Prize {formatCurrency((Number(c.wagerAmount) * 2).toString())}
+                        {c.format === "BEST_OF_3" ? "Bo3" : "Bo5"} · Wager {formatCurrency(c.wagerAmount.toString())} each · Winner gets {formatCurrency(
+                          (Number(c.wagerAmount) * 2 - (Number(c.platformFee) || 0) - (Number(c.transactionFee) || 0)).toString()
+                        )}
                       </p>
                     </div>
                     <div className="text-right shrink-0">
