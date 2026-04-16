@@ -1,10 +1,30 @@
 import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
+import Google from "next-auth/providers/google";
 import bcrypt from "bcryptjs";
 import { headers } from "next/headers";
 import { prisma } from "@/lib/prisma";
 import { authConfig } from "@/lib/auth.config";
 import type { AdminPermission, Role, UserStatus } from "@prisma/client";
+
+/** Generate a unique username from a Google display name or email. */
+async function generateGoogleUsername(seed: string): Promise<string> {
+  // Use the part before @ for emails, strip non-alphanumeric chars
+  const base = seed
+    .split("@")[0]
+    .toLowerCase()
+    .replace(/[^a-z0-9_]/g, "")
+    .slice(0, 20) || "user";
+
+  // Try the base first, then add random suffixes until unique
+  const candidates = [base, ...Array.from({ length: 5 }, () => `${base}${Math.floor(1000 + Math.random() * 9000)}`)];
+  for (const name of candidates) {
+    const taken = await prisma.user.findUnique({ where: { username: name }, select: { id: true } });
+    if (!taken) return name;
+  }
+  // Fallback: cuid-based unique name
+  return `user${Date.now().toString(36)}`;
+}
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
   ...authConfig,
@@ -12,7 +32,35 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     // Keep the session callback from authConfig unchanged
     ...authConfig.callbacks,
     // Override jwt to also handle trigger === "update" (session refresh)
-    async jwt({ token, user, trigger }) {
+    async jwt({ token, user, account, trigger }) {
+      // Google OAuth sign-in: look up (or already-created) DB user by email
+      if (account?.provider === "google" && user?.email) {
+        const dbUser = await prisma.user.findUnique({
+          where: { email: user.email },
+          select: {
+            id: true,
+            username: true,
+            displayName: true,
+            avatarUrl: true,
+            role: true,
+            status: true,
+            isSuperAdmin: true,
+            adminPermissions: true,
+            isRankPusher: true,
+          },
+        });
+        if (dbUser) {
+          token.id = dbUser.id;
+          token.username = dbUser.username;
+          token.role = dbUser.role;
+          token.status = dbUser.status;
+          token.isSuperAdmin = dbUser.isSuperAdmin;
+          token.adminPermissions = dbUser.adminPermissions;
+          token.isRankPusher = dbUser.isRankPusher;
+        }
+        return token;
+      }
+
       // Initial sign-in: populate token from the user object returned by authorize()
       if (user) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -49,8 +97,60 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
       return token;
     },
+
+    async signIn({ user, account }) {
+      // Only intercept Google OAuth — credentials flow is handled by authorize()
+      if (account?.provider === "google") {
+        if (!user.email) return false;
+
+        const existing = await prisma.user.findUnique({
+          where: { email: user.email },
+          select: { id: true, status: true },
+        });
+
+        if (existing) {
+          // Block banned accounts
+          if (existing.status === "BANNED") return "/login?banned=1";
+          // Update avatar if Google provides one and we don't have one stored
+          if (user.image) {
+            await prisma.user.update({
+              where: { id: existing.id },
+              data: { avatarUrl: user.image },
+            });
+          }
+          return true;
+        }
+
+        // New Google user — provision an account automatically
+        const username = await generateGoogleUsername(user.name ?? user.email);
+        await prisma.user.create({
+          data: {
+            email: user.email,
+            username,
+            displayName: user.name ?? username,
+            avatarUrl: user.image ?? null,
+            emailVerified: new Date(),
+            status: "ACTIVE",
+          },
+        });
+
+        // Seed SiteConfig if it doesn't exist yet
+        await prisma.siteConfig.upsert({
+          where: { id: "singleton" },
+          create: { id: "singleton", updatedAt: new Date() },
+          update: {},
+        });
+
+        return true;
+      }
+      return true;
+    },
   },
   providers: [
+    Google({
+      clientId: process.env.GOOGLE_CLIENT_ID!,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+    }),
     Credentials({
       name: "credentials",
       credentials: {
