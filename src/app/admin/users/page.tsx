@@ -1,3 +1,5 @@
+import { requirePermission } from "@/lib/auth";
+import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
@@ -6,6 +8,7 @@ import Link from "next/link";
 import { ShieldCheck, Wallet } from "lucide-react";
 
 export default async function AdminUsersPage() {
+  try { await requirePermission("MANAGE_USERS"); } catch { redirect("/admin"); }
   const users = await prisma.user.findMany({
     orderBy: { createdAt: "desc" },
     select: {

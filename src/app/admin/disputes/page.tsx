@@ -1,3 +1,5 @@
+import { requirePermission } from "@/lib/auth";
+import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
@@ -8,6 +10,7 @@ import Link from "next/link";
 import { AlertTriangle, Swords } from "lucide-react";
 
 export default async function AdminDisputesPage() {
+  try { await requirePermission("MANAGE_DISPUTES"); } catch { redirect("/admin"); }
   const [disputes, challengeDisputes] = await Promise.all([
     // Escrow disputes
     prisma.dispute.findMany({

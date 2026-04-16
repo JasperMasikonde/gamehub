@@ -1,10 +1,21 @@
+import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { Card, CardContent } from "@/components/ui/Card";
 import { formatRelativeTime, formatCurrency } from "@/lib/utils/format";
 import { Users, ListOrdered, CreditCard, AlertTriangle, Banknote, Swords, Eye, TrendingUp } from "lucide-react";
 import Link from "next/link";
+import type { AdminPermission } from "@prisma/client";
 
 export default async function AdminOverviewPage() {
+  const session = await auth();
+  const dbUser = await prisma.user.findUnique({
+    where: { id: session!.user.id },
+    select: { isSuperAdmin: true, adminPermissions: true },
+  });
+  const isSuperAdmin = dbUser?.isSuperAdmin ?? false;
+  const perms = (dbUser?.adminPermissions ?? []) as AdminPermission[];
+  const can = (p: AdminPermission) => isSuperAdmin || perms.includes(p);
+
   const today = new Date().toISOString().slice(0, 10);
   const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
   const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
@@ -22,29 +33,22 @@ export default async function AdminOverviewPage() {
     visitorsThisMonth,
     recentDailyVisits,
   ] = await Promise.all([
-    prisma.user.count(),
-    prisma.listing.count({ where: { status: "PENDING_APPROVAL" } }),
-    prisma.transaction.count({ where: { status: "IN_ESCROW" } }),
-    prisma.dispute.count({ where: { status: { in: ["OPEN", "UNDER_REVIEW"] } } }),
+    can("MANAGE_USERS") ? prisma.user.count() : Promise.resolve(null),
+    can("MANAGE_LISTINGS") ? prisma.listing.count({ where: { status: "PENDING_APPROVAL" } }) : Promise.resolve(null),
+    can("MANAGE_TRANSACTIONS") ? prisma.transaction.count({ where: { status: "IN_ESCROW" } }) : Promise.resolve(null),
+    can("MANAGE_DISPUTES") ? prisma.dispute.count({ where: { status: { in: ["OPEN", "UNDER_REVIEW"] } } }) : Promise.resolve(null),
     prisma.adminAction.findMany({
       orderBy: { createdAt: "desc" },
       take: 20,
-      include: {
-        admin: { select: { username: true } },
-      },
+      include: { admin: { select: { username: true } } },
     }),
-    // Escrow transactions completed — seller needs to be paid
-    prisma.transaction.findMany({
-      where: { status: "COMPLETED" },
-      select: { sellerReceives: true },
-    }),
-    // Challenges completed — winner needs to be paid
-    prisma.challenge.count({ where: { status: "COMPLETED" } }),
-    // Visitor counts
+    can("MANAGE_TRANSACTIONS")
+      ? prisma.transaction.findMany({ where: { status: "COMPLETED" }, select: { sellerReceives: true } })
+      : Promise.resolve(null),
+    can("MANAGE_CHALLENGES") ? prisma.challenge.count({ where: { status: "COMPLETED" } }) : Promise.resolve(null),
     prisma.siteVisit.count({ where: { date: today } }),
     prisma.siteVisit.count({ where: { date: { gte: sevenDaysAgo } } }),
     prisma.siteVisit.count({ where: { date: { gte: thirtyDaysAgo } } }),
-    // Last 7 days breakdown
     prisma.siteVisit.groupBy({
       by: ["date"],
       _count: { id: true },
@@ -53,17 +57,16 @@ export default async function AdminOverviewPage() {
     }),
   ]);
 
-  const escrowPayoutTotal = pendingEscrowPayouts.reduce(
-    (sum, tx) => sum + Number(tx.sellerReceives),
-    0
-  );
+  const escrowPayoutTotal = pendingEscrowPayouts
+    ? pendingEscrowPayouts.reduce((sum, tx) => sum + Number(tx.sellerReceives), 0)
+    : 0;
 
   const stats = [
-    { icon: Users, label: "Total Users", value: userCount, color: "text-neon-blue", href: "/admin/users" },
-    { icon: ListOrdered, label: "Pending Listings", value: listingCount, color: "text-neon-yellow", href: "/admin/listings" },
-    { icon: CreditCard, label: "Active Escrows", value: txCount, color: "text-neon-green", href: "/admin/transactions" },
-    { icon: AlertTriangle, label: "Open Disputes", value: openDisputeCount, color: "text-neon-red", href: "/admin/disputes" },
-  ];
+    can("MANAGE_USERS") && { icon: Users, label: "Total Users", value: userCount!, color: "text-neon-blue", href: "/admin/users" },
+    can("MANAGE_LISTINGS") && { icon: ListOrdered, label: "Pending Listings", value: listingCount!, color: "text-neon-yellow", href: "/admin/listings" },
+    can("MANAGE_TRANSACTIONS") && { icon: CreditCard, label: "Active Escrows", value: txCount!, color: "text-neon-green", href: "/admin/transactions" },
+    can("MANAGE_DISPUTES") && { icon: AlertTriangle, label: "Open Disputes", value: openDisputeCount!, color: "text-neon-red", href: "/admin/disputes" },
+  ].filter(Boolean) as { icon: React.ElementType; label: string; value: number; color: string; href: string }[];
 
   return (
     <div className="flex flex-col gap-6">
@@ -89,65 +92,71 @@ export default async function AdminOverviewPage() {
       </div>
 
       {/* Payout alerts */}
-      <div>
-        <h2 className="text-sm font-semibold mb-3">Pending Payouts</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {/* Escrow payouts */}
-          <Link href="/admin/transactions?status=COMPLETED">
-            <div className={`flex items-center gap-4 p-4 rounded-xl border cursor-pointer transition-colors
-              ${pendingEscrowPayouts.length > 0
-                ? "bg-neon-green/5 border-neon-green/30 hover:bg-neon-green/10"
-                : "bg-bg-elevated border-bg-border hover:border-bg-border/80"}`}>
-              <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0
-                ${pendingEscrowPayouts.length > 0 ? "bg-neon-green/15" : "bg-bg-surface"}`}>
-                <Banknote size={18} className={pendingEscrowPayouts.length > 0 ? "text-neon-green" : "text-text-muted"} />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-text-primary">Escrow Payouts</p>
-                <p className="text-xs text-text-muted mt-0.5">
-                  {pendingEscrowPayouts.length > 0
-                    ? `${pendingEscrowPayouts.length} seller${pendingEscrowPayouts.length !== 1 ? "s" : ""} awaiting payment`
-                    : "No pending payouts"}
-                </p>
-              </div>
-              <div className="text-right shrink-0">
-                <p className={`text-lg font-black ${pendingEscrowPayouts.length > 0 ? "text-neon-green" : "text-text-muted"}`}>
-                  {pendingEscrowPayouts.length}
-                </p>
-                {pendingEscrowPayouts.length > 0 && (
-                  <p className="text-xs text-text-muted">{formatCurrency(escrowPayoutTotal.toString())}</p>
-                )}
-              </div>
-            </div>
-          </Link>
+      {(can("MANAGE_TRANSACTIONS") || can("MANAGE_CHALLENGES")) && (
+        <div>
+          <h2 className="text-sm font-semibold mb-3">Pending Payouts</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {/* Escrow payouts */}
+            {can("MANAGE_TRANSACTIONS") && (
+              <Link href="/admin/transactions?status=COMPLETED">
+                <div className={`flex items-center gap-4 p-4 rounded-xl border cursor-pointer transition-colors
+                  ${pendingEscrowPayouts!.length > 0
+                    ? "bg-neon-green/5 border-neon-green/30 hover:bg-neon-green/10"
+                    : "bg-bg-elevated border-bg-border hover:border-bg-border/80"}`}>
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0
+                    ${pendingEscrowPayouts!.length > 0 ? "bg-neon-green/15" : "bg-bg-surface"}`}>
+                    <Banknote size={18} className={pendingEscrowPayouts!.length > 0 ? "text-neon-green" : "text-text-muted"} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-text-primary">Escrow Payouts</p>
+                    <p className="text-xs text-text-muted mt-0.5">
+                      {pendingEscrowPayouts!.length > 0
+                        ? `${pendingEscrowPayouts!.length} seller${pendingEscrowPayouts!.length !== 1 ? "s" : ""} awaiting payment`
+                        : "No pending payouts"}
+                    </p>
+                  </div>
+                  <div className="text-right shrink-0">
+                    <p className={`text-lg font-black ${pendingEscrowPayouts!.length > 0 ? "text-neon-green" : "text-text-muted"}`}>
+                      {pendingEscrowPayouts!.length}
+                    </p>
+                    {pendingEscrowPayouts!.length > 0 && (
+                      <p className="text-xs text-text-muted">{formatCurrency(escrowPayoutTotal.toString())}</p>
+                    )}
+                  </div>
+                </div>
+              </Link>
+            )}
 
-          {/* Challenge payouts */}
-          <Link href="/admin/challenges?status=COMPLETED">
-            <div className={`flex items-center gap-4 p-4 rounded-xl border cursor-pointer transition-colors
-              ${pendingChallengePayouts > 0
-                ? "bg-neon-purple/5 border-neon-purple/30 hover:bg-neon-purple/10"
-                : "bg-bg-elevated border-bg-border hover:border-bg-border/80"}`}>
-              <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0
-                ${pendingChallengePayouts > 0 ? "bg-neon-purple/15" : "bg-bg-surface"}`}>
-                <Swords size={18} className={pendingChallengePayouts > 0 ? "text-neon-purple" : "text-text-muted"} />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-text-primary">Challenge Payouts</p>
-                <p className="text-xs text-text-muted mt-0.5">
-                  {pendingChallengePayouts > 0
-                    ? `${pendingChallengePayouts} winner${pendingChallengePayouts !== 1 ? "s" : ""} awaiting payment`
-                    : "No pending payouts"}
-                </p>
-              </div>
-              <div className="text-right shrink-0">
-                <p className={`text-lg font-black ${pendingChallengePayouts > 0 ? "text-neon-purple" : "text-text-muted"}`}>
-                  {pendingChallengePayouts}
-                </p>
-              </div>
-            </div>
-          </Link>
+            {/* Challenge payouts */}
+            {can("MANAGE_CHALLENGES") && (
+              <Link href="/admin/challenges?status=COMPLETED">
+                <div className={`flex items-center gap-4 p-4 rounded-xl border cursor-pointer transition-colors
+                  ${pendingChallengePayouts! > 0
+                    ? "bg-neon-purple/5 border-neon-purple/30 hover:bg-neon-purple/10"
+                    : "bg-bg-elevated border-bg-border hover:border-bg-border/80"}`}>
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0
+                    ${pendingChallengePayouts! > 0 ? "bg-neon-purple/15" : "bg-bg-surface"}`}>
+                    <Swords size={18} className={pendingChallengePayouts! > 0 ? "text-neon-purple" : "text-text-muted"} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-text-primary">Challenge Payouts</p>
+                    <p className="text-xs text-text-muted mt-0.5">
+                      {pendingChallengePayouts! > 0
+                        ? `${pendingChallengePayouts} winner${pendingChallengePayouts !== 1 ? "s" : ""} awaiting payment`
+                        : "No pending payouts"}
+                    </p>
+                  </div>
+                  <div className="text-right shrink-0">
+                    <p className={`text-lg font-black ${pendingChallengePayouts! > 0 ? "text-neon-purple" : "text-text-muted"}`}>
+                      {pendingChallengePayouts}
+                    </p>
+                  </div>
+                </div>
+              </Link>
+            )}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Visitor Stats */}
       <div>

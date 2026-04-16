@@ -1,3 +1,5 @@
+import { requirePermission } from "@/lib/auth";
+import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { Card } from "@/components/ui/Card";
 import { ListingStatusPill } from "@/components/ui/StatusPill";
@@ -5,6 +7,7 @@ import { formatCurrency, formatDate } from "@/lib/utils/format";
 import { AdminListingActions } from "@/components/admin/AdminListingActions";
 
 export default async function AdminListingsPage() {
+  try { await requirePermission("MANAGE_LISTINGS"); } catch { redirect("/admin"); }
   const listings = await prisma.listing.findMany({
     where: { status: { in: ["PENDING_APPROVAL", "ACTIVE"] } },
     orderBy: { createdAt: "desc" },

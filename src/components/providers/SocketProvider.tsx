@@ -137,7 +137,9 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
 
     socket.on("role_updated", async () => {
       await updateSession();
-      router.refresh();
+      // Hard navigate so the new JWT is read fresh — router.refresh() alone
+      // doesn't force the client-side useSession() to re-read the new role.
+      window.location.href = "/admin";
     });
 
     socket.on("user_banned", () => {

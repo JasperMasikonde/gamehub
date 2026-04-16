@@ -1,3 +1,5 @@
+import { requirePermission } from "@/lib/auth";
+import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { Card } from "@/components/ui/Card";
 
@@ -15,6 +17,8 @@ export default async function AdminTransactionsPage({
 }: {
   searchParams: Promise<{ status?: string }>;
 }) {
+  try { await requirePermission("MANAGE_TRANSACTIONS"); } catch { redirect("/admin"); }
+
   const { status: statusParam } = await searchParams;
   const filterStatus = STATUSES.includes(statusParam ?? "") && statusParam !== "ALL" ? statusParam : undefined;
 

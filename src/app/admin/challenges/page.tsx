@@ -1,3 +1,5 @@
+import { requirePermission } from "@/lib/auth";
+import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { formatCurrency, formatDate } from "@/lib/utils/format";
 import { Card } from "@/components/ui/Card";
@@ -34,6 +36,8 @@ export default async function AdminChallengesPage({
 }: {
   searchParams: Promise<{ status?: string; tab?: string }>;
 }) {
+  try { await requirePermission("MANAGE_CHALLENGES"); } catch { redirect("/admin"); }
+
   const { status: statusParam, tab: tabParam } = await searchParams;
   const activeTab: Tab = (tabParam as Tab) ?? "challenges";
   const filterStatus = statusParam && statusParam !== "ALL" ? statusParam : undefined;
