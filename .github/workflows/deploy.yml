@@ -19,5 +19,22 @@ jobs:
           script: |
             cd /root/gamehub
             git pull origin main
-            docker compose up -d --build app
+
+            # Build — if it fails, print logs and exit (old container keeps running)
+            if ! docker compose build app; then
+              echo "❌ Build failed — old version still running"
+              exit 1
+            fi
+
+            docker compose up -d app
             docker image prune -f
+
+            # Verify the container is actually running after deploy
+            sleep 5
+            if ! docker ps | grep -q gamehub_app; then
+              echo "❌ Container failed to start — check logs:"
+              docker logs gamehub_app --tail 30
+              exit 1
+            fi
+
+            echo "✅ Deploy successful"
