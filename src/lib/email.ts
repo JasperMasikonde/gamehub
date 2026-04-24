@@ -545,6 +545,73 @@ export async function sendChallengeRemovedEmail({
 }
 
 // ---------------------------------------------------------------------------
+// Tournament registration open — blast to all users
+// ---------------------------------------------------------------------------
+export async function sendTournamentOpenEmail({
+  toEmail,
+  toName,
+  tournamentName,
+  game,
+  slug,
+  entryFee,
+  prizePool,
+  startDate,
+}: {
+  toEmail: string;
+  toName: string;
+  tournamentName: string;
+  game: string;
+  slug: string;
+  entryFee: number;
+  prizePool: number;
+  startDate: Date | null;
+}) {
+  const link = `${BASE_URL}/tournaments/${slug}`;
+  const feeLabel = entryFee > 0 ? `KES ${entryFee.toLocaleString()}` : "Free entry";
+  const prizeLabel = prizePool > 0 ? `KES ${prizePool.toLocaleString()}` : null;
+  const dateLabel = startDate
+    ? startDate.toLocaleDateString("en-KE", { weekday: "long", day: "numeric", month: "long" })
+    : null;
+
+  const body = `
+    ${greeting(toName)}
+    <p style="color:#374151;font-size:15px;line-height:1.6;margin:0 0 16px;">
+      A new tournament is now open for registration on Eshabiki. Don't miss your spot!
+    </p>
+    <div style="background:#0a0a0a;border-radius:10px;padding:24px 28px;margin:0 0 20px;">
+      <p style="margin:0 0 6px;color:#00ff87;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1px;">New Tournament</p>
+      <p style="margin:0 0 4px;color:#ffffff;font-size:22px;font-weight:900;">${tournamentName}</p>
+      <p style="margin:0;color:#a0a0b0;font-size:14px;">${game}</p>
+      <table style="margin:18px 0 0;border-collapse:collapse;">
+        <tr>
+          <td style="padding:4px 16px 4px 0;color:#a0a0b0;font-size:13px;">Entry</td>
+          <td style="padding:4px 0;color:#ffffff;font-size:13px;font-weight:600;">${feeLabel}</td>
+        </tr>
+        ${prizeLabel ? `<tr>
+          <td style="padding:4px 16px 4px 0;color:#a0a0b0;font-size:13px;">Prize pool</td>
+          <td style="padding:4px 0;color:#00ff87;font-size:13px;font-weight:700;">${prizeLabel}</td>
+        </tr>` : ""}
+        ${dateLabel ? `<tr>
+          <td style="padding:4px 16px 4px 0;color:#a0a0b0;font-size:13px;">Starts</td>
+          <td style="padding:4px 0;color:#ffffff;font-size:13px;font-weight:600;">${dateLabel}</td>
+        </tr>` : ""}
+      </table>
+    </div>
+    <p style="color:#374151;font-size:14px;line-height:1.6;margin:0 0 4px;">
+      Registration is open now — spots are limited.
+    </p>
+    ${btn("Register Now", link)}
+    ${footer("You received this because you have an Eshabiki account. To stop receiving tournament announcements, update your notification preferences in your profile.")}
+  `;
+
+  await sendMail({
+    to: `"${toName}" <${toEmail}>`,
+    subject: `🏆 New tournament open: ${tournamentName}`,
+    html: emailLayout(body),
+  });
+}
+
+// ---------------------------------------------------------------------------
 // Listing removed / rejected
 // ---------------------------------------------------------------------------
 export async function sendListingRemovedEmail({

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requirePermission } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { emitTournamentUpdate } from "@/lib/socket-server";
+import { sendTournamentOpenEmail } from "@/lib/email";
 
 export async function GET(
   _req: NextRequest,
@@ -112,6 +113,31 @@ export async function PATCH(
   });
 
   emitTournamentUpdate(tournament.id, tournament.slug);
+
+  // If status just changed to REGISTRATION_OPEN, blast all users
+  if (status === "REGISTRATION_OPEN" && existing.status !== "REGISTRATION_OPEN") {
+    const users = await prisma.user.findMany({
+      where: { email: { not: undefined } },
+      select: { email: true, displayName: true, username: true },
+    });
+
+    // Fire and forget — don't block the response
+    void Promise.allSettled(
+      users.map(u =>
+        sendTournamentOpenEmail({
+          toEmail: u.email!,
+          toName: u.displayName ?? u.username,
+          tournamentName: tournament.name,
+          game: tournament.game,
+          slug: tournament.slug,
+          entryFee: Number(tournament.entryFee),
+          prizePool: Number(tournament.prizePool),
+          startDate: tournament.startDate,
+        })
+      )
+    );
+  }
+
   return NextResponse.json({ tournament });
 }
 
