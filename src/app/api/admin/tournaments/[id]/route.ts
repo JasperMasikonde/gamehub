@@ -75,6 +75,9 @@ export async function PATCH(
     imageKey,
     startDate,
     endDate,
+    homeAndAway,
+    groupCount,
+    groupsAdvance,
   } = body;
 
   if (slug && slug !== existing.slug) {
@@ -102,6 +105,9 @@ export async function PATCH(
       ...(imageKey !== undefined && { imageKey }),
       ...(startDate !== undefined && { startDate: startDate ? new Date(startDate) : null }),
       ...(endDate !== undefined && { endDate: endDate ? new Date(endDate) : null }),
+      ...(homeAndAway != null && { homeAndAway }),
+      ...(groupCount != null && { groupCount: Number(groupCount) }),
+      ...(groupsAdvance != null && { groupsAdvance: Number(groupsAdvance) }),
     },
   });
 

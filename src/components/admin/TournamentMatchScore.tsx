@@ -45,6 +45,14 @@ export function TournamentMatchScore({
   const [error, setError] = useState("");
   const [viewShot, setViewShot] = useState<string | null>(null);
 
+  // Auto-set winner when both scores are entered
+  function handleScoreChange(p1: string, p2: string) {
+    const n1 = Number(p1); const n2 = Number(p2);
+    if (!isNaN(n1) && !isNaN(n2) && p1 !== "" && p2 !== "" && (n1 !== n2)) {
+      setWinnerId(n1 > n2 ? (player1?.id ?? "") : (player2?.id ?? ""));
+    }
+  }
+
   // ── Completed ──────────────────────────────────────────────────
   if (status === "COMPLETED" || status === "WALKOVER") {
     const winner = player1?.id === currentWinnerId ? player1 : player2;
@@ -175,9 +183,9 @@ export function TournamentMatchScore({
       <form onSubmit={submit} className="space-y-2">
         <div className="flex items-center gap-2 text-sm">
           <span className="text-text-muted text-xs truncate flex-1">{player1.displayName ?? player1.username}</span>
-          <input type="number" min="0" value={p1Score} onChange={e => setP1Score(e.target.value)} className={inp} placeholder="0" />
+          <input type="number" min="0" value={p1Score} onChange={e => { setP1Score(e.target.value); handleScoreChange(e.target.value, p2Score); }} className={inp} placeholder="0" />
           <span className="text-text-muted">–</span>
-          <input type="number" min="0" value={p2Score} onChange={e => setP2Score(e.target.value)} className={inp} placeholder="0" />
+          <input type="number" min="0" value={p2Score} onChange={e => { setP2Score(e.target.value); handleScoreChange(p1Score, e.target.value); }} className={inp} placeholder="0" />
           <span className="text-text-muted text-xs truncate flex-1 text-right">{player2.displayName ?? player2.username}</span>
         </div>
         <div className="flex items-center gap-2">

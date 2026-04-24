@@ -43,14 +43,21 @@ export async function POST(req: NextRequest) {
     imageKey,
     startDate,
     endDate,
+    homeAndAway,
+    groupCount,
+    groupsAdvance,
   } = body;
 
   if (!name || !slug || !game || !type || !maxParticipants) {
     return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
   }
 
-  if (!["LEAGUE", "KNOCKOUT"].includes(type)) {
+  if (!["LEAGUE", "KNOCKOUT", "CHAMPIONS_LEAGUE"].includes(type)) {
     return NextResponse.json({ error: "Invalid tournament type" }, { status: 400 });
+  }
+
+  if (type === "CHAMPIONS_LEAGUE" && (!groupCount || groupCount < 2)) {
+    return NextResponse.json({ error: "Champions League requires at least 2 groups" }, { status: 400 });
   }
 
   const existing = await prisma.tournament.findUnique({ where: { slug } });
@@ -74,6 +81,10 @@ export async function POST(req: NextRequest) {
       imageKey: imageKey ?? null,
       startDate: startDate ? new Date(startDate) : null,
       endDate: endDate ? new Date(endDate) : null,
+      homeAndAway: homeAndAway ?? false,
+      groupCount: type === "CHAMPIONS_LEAGUE" ? Number(groupCount) : null,
+      groupsAdvance: type === "CHAMPIONS_LEAGUE" ? Number(groupsAdvance ?? 2) : null,
+      phase: type === "CHAMPIONS_LEAGUE" ? "GROUP" : null,
     },
   });
 

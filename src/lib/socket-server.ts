@@ -95,6 +95,16 @@ export function emitEscrowRequestUpdate(
   io.to(`user:${initiatorId}`).to(`user:${counterpartyId}`).emit("escrow_request_update", { requestId });
 }
 
+/** Broadcast a new tournament group-chat message to everyone in the tournament room. */
+export function emitTournamentMessage(
+  slug: string,
+  payload: { id: string; senderId: string; senderUsername: string; senderDisplayName: string | null; content: string; imageUrl: string | null; createdAt: string }
+): void {
+  const io = getIO();
+  if (!io) return;
+  io.to(`tournament:${slug}`).emit("tournament_message", payload);
+}
+
 /** Broadcast a tournament update to everyone watching that tournament + the global list. */
 export function emitTournamentUpdate(tournamentId: string, slug: string): void {
   const io = getIO();

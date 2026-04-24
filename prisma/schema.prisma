@@ -121,6 +121,12 @@ enum MatchResult {
 enum TournamentType {
   LEAGUE
   KNOCKOUT
+  CHAMPIONS_LEAGUE
+}
+
+enum TournamentPhase {
+  GROUP
+  KNOCKOUT
 }
 
 enum TournamentStatus {
@@ -220,6 +226,7 @@ model User {
   tournamentEntries      TournamentParticipant[] @relation("TournamentParticipants")
   tournamentMatchesAsP1  TournamentMatch[]  @relation("TournamentMatchP1")
   tournamentMatchesAsP2  TournamentMatch[]  @relation("TournamentMatchP2")
+  tournamentMessages     TournamentMessage[] @relation("TournamentMessages")
   payments               Payment[]
   wallet                 Wallet?
   walletTransactions     WalletTransaction[]
@@ -697,8 +704,18 @@ model Tournament {
   imageKey        String?
   startDate       DateTime?
   endDate         DateTime?
+  // Home & away legs
+  homeAndAway     Boolean                 @default(false)
+  // Gameweek tracking (admin advances week by week)
+  currentGameweek Int                     @default(0)
+  // Champions League specific
+  groupCount      Int?
+  groupsAdvance   Int?
+  phase           TournamentPhase?
   participants    TournamentParticipant[]
   matches         TournamentMatch[]
+  groups          TournamentGroup[]
+  messages        TournamentMessage[]
   createdAt       DateTime                @default(now())
   updatedAt       DateTime                @updatedAt
 
@@ -707,16 +724,45 @@ model Tournament {
   @@index([slug])
 }
 
+model TournamentGroup {
+  id           String                  @id @default(cuid())
+  tournamentId String
+  tournament   Tournament              @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  name         String
+  order        Int
+  participants TournamentParticipant[]
+  matches      TournamentMatch[]
+  createdAt    DateTime                @default(now())
+
+  @@index([tournamentId])
+}
+
+model TournamentMessage {
+  id           String     @id @default(cuid())
+  tournamentId String
+  tournament   Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  senderId     String
+  sender       User       @relation("TournamentMessages", fields: [senderId], references: [id])
+  content      String     @db.Text
+  imageUrl     String?
+  createdAt    DateTime   @default(now())
+
+  @@index([tournamentId])
+  @@index([createdAt])
+}
+
 model TournamentParticipant {
-  id                String     @id @default(cuid())
-  tournamentId      String
-  tournament        Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
-  userId            String
-  user              User       @relation("TournamentParticipants", fields: [userId], references: [id])
-  seed              Int?
-  teamName          String?
+  id                 String           @id @default(cuid())
+  tournamentId       String
+  tournament         Tournament       @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  userId             String
+  user               User             @relation("TournamentParticipants", fields: [userId], references: [id])
+  seed               Int?
+  teamName           String?
   squadScreenshotKey String?
-  joinedAt          DateTime   @default(now())
+  groupId            String?
+  group              TournamentGroup? @relation(fields: [groupId], references: [id])
+  joinedAt           DateTime         @default(now())
 
   @@unique([tournamentId, userId])
   @@index([tournamentId])
@@ -737,17 +783,29 @@ model TournamentMatch {
   player2Score Int?
   winnerId     String?
   status              TournamentMatchStatus @default(SCHEDULED)
-  scheduledAt         DateTime?
   completedAt         DateTime?
   nextMatchId         String?
   player1ResultKey    String?
   player2ResultKey    String?
+  // Gameweek (admin opens one at a time)
+  gameweek            Int?
+  // Home & away leg (1 = first leg, 2 = second leg; null if not applicable)
+  leg                 Int?
+  // CL group
+  groupId             String?
+  group               TournamentGroup? @relation(fields: [groupId], references: [id])
+  // Match time scheduling (propose/accept like challenges)
+  proposedMatchTime   DateTime?
+  proposedById        String?
+  scheduledAt         DateTime?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([tournamentId])
   @@index([round])
+  @@index([gameweek])
+  @@index([groupId])
 }
 
 // ─────────────────────────────────────────────

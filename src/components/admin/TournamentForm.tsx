@@ -11,6 +11,7 @@ interface Props {
     maxParticipants?: number; requiresPayment?: boolean; entryFee?: string;
     prizePool?: string; currency?: string; description?: string; rules?: string;
     startDate?: string; endDate?: string;
+    homeAndAway?: boolean; groupCount?: number; groupsAdvance?: number;
   };
 }
 
@@ -29,6 +30,9 @@ export function TournamentForm({ tournamentId, defaultValues = {} }: Props) {
   const [rules, setRules] = useState(defaultValues.rules ?? "");
   const [startDate, setStartDate] = useState(defaultValues.startDate ?? "");
   const [endDate, setEndDate] = useState(defaultValues.endDate ?? "");
+  const [homeAndAway, setHomeAndAway] = useState(defaultValues.homeAndAway ?? false);
+  const [groupCount, setGroupCount] = useState(String(defaultValues.groupCount ?? 4));
+  const [groupsAdvance, setGroupsAdvance] = useState(String(defaultValues.groupsAdvance ?? 2));
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -55,6 +59,9 @@ export function TournamentForm({ tournamentId, defaultValues = {} }: Props) {
           rules: rules || null,
           startDate: startDate || null,
           endDate: endDate || null,
+          homeAndAway,
+          groupCount: type === "CHAMPIONS_LEAGUE" ? Number(groupCount) : null,
+          groupsAdvance: type === "CHAMPIONS_LEAGUE" ? Number(groupsAdvance) : null,
         }),
       });
       const data = await res.json();
@@ -66,6 +73,7 @@ export function TournamentForm({ tournamentId, defaultValues = {} }: Props) {
   }
 
   const cls = "w-full px-3 py-2.5 rounded-xl bg-bg-elevated border border-bg-border text-text-primary placeholder:text-text-muted text-sm focus:outline-none focus:border-neon-blue/50 transition-colors";
+  const isCL = type === "CHAMPIONS_LEAGUE";
 
   return (
     <form onSubmit={handleSubmit} className="space-y-5 max-w-2xl">
@@ -87,6 +95,7 @@ export function TournamentForm({ tournamentId, defaultValues = {} }: Props) {
           <select value={type} onChange={e => setType(e.target.value)} className={cls}>
             <option value="KNOCKOUT">Knockout</option>
             <option value="LEAGUE">League</option>
+            <option value="CHAMPIONS_LEAGUE">Champions League</option>
           </select>
         </div>
         <div>
@@ -107,6 +116,46 @@ export function TournamentForm({ tournamentId, defaultValues = {} }: Props) {
         </div>
       </div>
 
+      {/* Champions League options */}
+      {isCL && (
+        <div className="rounded-xl border border-neon-blue/20 bg-neon-blue/5 p-4 space-y-4">
+          <p className="text-sm font-semibold text-neon-blue">Champions League Settings</p>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs text-text-muted mb-1">Number of Groups *</label>
+              <input type="number" min="2" max="16" value={groupCount} onChange={e => setGroupCount(e.target.value)} required={isCL} className={cls} placeholder="4" />
+              <p className="text-[10px] text-text-muted mt-1">e.g. 4 groups like Group A–D</p>
+            </div>
+            <div>
+              <label className="block text-xs text-text-muted mb-1">Teams Advancing Per Group</label>
+              <input type="number" min="1" value={groupsAdvance} onChange={e => setGroupsAdvance(e.target.value)} className={cls} placeholder="2" />
+              <p className="text-[10px] text-text-muted mt-1">Top N teams go to knockout</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Home & Away toggle */}
+      {(type === "LEAGUE" || isCL) && (
+        <div className="rounded-xl border border-bg-border bg-bg-elevated p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-semibold text-text-primary">Home & Away</p>
+              <p className="text-xs text-text-muted mt-0.5">
+                {homeAndAway
+                  ? "Each fixture is played twice (home and away legs)"
+                  : "Each fixture is played once"}
+              </p>
+            </div>
+            <button type="button" onClick={() => setHomeAndAway(p => !p)} className="transition-colors">
+              {homeAndAway
+                ? <ToggleRight size={32} className="text-neon-green" />
+                : <ToggleLeft size={32} className="text-text-muted" />}
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Entry fee toggle */}
       <div className="rounded-xl border border-bg-border bg-bg-elevated p-4 space-y-3">
         <div className="flex items-center justify-between">
@@ -116,11 +165,7 @@ export function TournamentForm({ tournamentId, defaultValues = {} }: Props) {
               {requiresPayment ? "Players must pay to enrol" : "Free entry — anyone can join"}
             </p>
           </div>
-          <button
-            type="button"
-            onClick={() => setRequiresPayment(p => !p)}
-            className="flex items-center gap-1.5 transition-colors"
-          >
+          <button type="button" onClick={() => setRequiresPayment(p => !p)} className="flex items-center gap-1.5 transition-colors">
             {requiresPayment
               ? <ToggleRight size={32} className="text-neon-green" />
               : <ToggleLeft size={32} className="text-text-muted" />}
@@ -131,18 +176,10 @@ export function TournamentForm({ tournamentId, defaultValues = {} }: Props) {
           <div>
             <label className="block text-xs text-text-muted mb-1">Entry Fee (KES) *</label>
             <input
-              type="number"
-              min="1"
-              step="0.01"
-              value={entryFee}
-              onChange={e => setEntryFee(e.target.value)}
-              required={requiresPayment}
-              className={cls}
-              placeholder="e.g. 200"
+              type="number" min="1" step="0.01" value={entryFee} onChange={e => setEntryFee(e.target.value)}
+              required={requiresPayment} className={cls} placeholder="e.g. 200"
             />
-            <p className="text-xs text-text-muted mt-1.5">
-              Players will be prompted to pay via M-Pesa when enrolling.
-            </p>
+            <p className="text-xs text-text-muted mt-1.5">Players will be prompted to pay via M-Pesa when enrolling.</p>
           </div>
         )}
       </div>

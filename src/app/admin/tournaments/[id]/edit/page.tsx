@@ -26,6 +26,9 @@ export default async function EditTournamentPage({ params }: { params: Promise<{
     rules: tournament.rules ?? "",
     startDate: tournament.startDate ? new Date(tournament.startDate).toISOString().slice(0, 16) : "",
     endDate: tournament.endDate ? new Date(tournament.endDate).toISOString().slice(0, 16) : "",
+    homeAndAway: tournament.homeAndAway,
+    groupCount: tournament.groupCount ?? undefined,
+    groupsAdvance: tournament.groupsAdvance ?? undefined,
   };
 
   return (
