@@ -28,6 +28,7 @@ interface Props {
   homeAndAway: boolean;
   // gameweek
   gameweek: number | null;
+  gameweekDeadline: string | null;
 }
 
 export function MatchPrepCard({
@@ -35,7 +36,7 @@ export function MatchPrepCard({
   mySquadSubmitted, opponentSquadSubmitted,
   myResultKey, opponentResultKey,
   proposedMatchTime, proposedById, scheduledAt,
-  leg, homeAndAway, gameweek,
+  leg, homeAndAway, gameweek, gameweekDeadline,
 }: Props) {
   const timeAgreed = !!scheduledAt;
   const squadReady = mySquadSubmitted && opponentSquadSubmitted;
@@ -82,6 +83,7 @@ export function MatchPrepCard({
           slug={slug}
           matchId={matchId}
           myId={myId}
+          matchDeadline={gameweekDeadline}
           proposedMatchTime={proposedMatchTime}
           proposedById={proposedById}
           scheduledAt={scheduledAt}

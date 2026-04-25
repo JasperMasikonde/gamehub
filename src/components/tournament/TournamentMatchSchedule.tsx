@@ -13,6 +13,7 @@ interface Props {
   myId: string;
   scheduledAt: string | null;
   opponentName: string;
+  matchDeadline: string | null;
 }
 
 // ── Formatting helpers ────────────────────────────────────────────────────────
@@ -58,25 +59,31 @@ const ALL_SLOTS = [
 
 type Slot = (typeof ALL_SLOTS)[number];
 
-function getDateOptions(): Date[] {
+const MIN_BUFFER_MS = 30 * 60 * 1000; // 30-min minimum from now
+
+function getDateOptions(deadline?: Date | null): Date[] {
   const dates: Date[] = [];
   const now = new Date();
-  for (let i = 0; i < 5; i++) {
+  for (let i = 0; i < 7; i++) {
     const d = new Date(now);
     d.setDate(d.getDate() + i);
     d.setHours(0, 0, 0, 0);
+    if (deadline) {
+      const dayEnd = new Date(d); dayEnd.setHours(23, 59, 59, 999);
+      if (dayEnd > deadline) { break; } // don't offer days past deadline
+    }
     dates.push(d);
   }
   return dates;
 }
 
-function availableSlotsFor(date: Date): Slot[] {
-  const isToday = date.toDateString() === new Date().toDateString();
-  if (!isToday) return [...ALL_SLOTS];
-  const cutoff = Date.now() + 60 * 60 * 1000;
+function availableSlotsFor(date: Date, deadline?: Date | null): Slot[] {
+  const cutoff = Date.now() + MIN_BUFFER_MS;
   return ALL_SLOTS.filter(s => {
     const t = new Date(date); t.setHours(s.h, s.m, 0, 0);
-    return t.getTime() > cutoff;
+    if (t.getTime() <= cutoff) return false;
+    if (deadline && t > deadline) return false;
+    return true;
   });
 }
 
@@ -103,29 +110,34 @@ interface PickerProps {
   loading: boolean;
   error: string;
   ctaLabel?: string;
+  deadline?: Date | null;
 }
 
-function TimePicker({ onPropose, loading, error, ctaLabel = "Propose this time" }: PickerProps) {
-  const dates = getDateOptions();
-  const [selDate, setSelDate] = useState<Date>(dates[0]);
+function TimePicker({ onPropose, loading, error, ctaLabel = "Propose this time", deadline }: PickerProps) {
+  const dates = getDateOptions(deadline);
+  const [selDate, setSelDate] = useState<Date>(dates[0] ?? new Date());
   const [selSlot, setSelSlot] = useState<Slot | null>(null);
   const [customTime, setCustomTime] = useState("");
   const [customError, setCustomError] = useState("");
 
+  function validateCustom(timeStr: string, forDate: Date): string {
+    const iso = buildCustomISO(forDate, timeStr);
+    if (!iso) return "Invalid time.";
+    const t = new Date(iso).getTime();
+    if (t <= Date.now() + MIN_BUFFER_MS) return "That time has already passed.";
+    if (deadline && new Date(iso) > deadline) {
+      return `Must be before the deadline: ${fmtShort(deadline.toISOString())}`;
+    }
+    return "";
+  }
+
   function pickDate(d: Date) {
     setSelDate(d);
-    setCustomError("");
     if (selSlot) {
-      const still = availableSlotsFor(d).find(s => s.h === selSlot.h && s.m === selSlot.m);
+      const still = availableSlotsFor(d, deadline).find(s => s.h === selSlot.h && s.m === selSlot.m);
       if (!still) setSelSlot(null);
     }
-    if (customTime) {
-      // re-validate custom time against new date
-      const iso = buildCustomISO(d, customTime);
-      if (iso && new Date(iso).getTime() <= Date.now() + 60 * 60 * 1000) {
-        setCustomError("That time has passed — pick a later time.");
-      }
-    }
+    if (customTime) setCustomError(validateCustom(customTime, d));
   }
 
   function pickSlot(s: Slot) {
@@ -137,16 +149,10 @@ function TimePicker({ onPropose, loading, error, ctaLabel = "Propose this time" 
   function handleCustomChange(val: string) {
     setCustomTime(val);
     setSelSlot(null);
-    setCustomError("");
-    if (val) {
-      const iso = buildCustomISO(selDate, val);
-      if (!iso || new Date(iso).getTime() <= Date.now() + 60 * 60 * 1000) {
-        setCustomError("Must be at least 1 hour from now.");
-      }
-    }
+    setCustomError(val ? validateCustom(val, selDate) : "");
   }
 
-  const slots = availableSlotsFor(selDate);
+  const slots = availableSlotsFor(selDate, deadline);
 
   const previewISO = selSlot
     ? buildISO(selDate, selSlot)
@@ -160,12 +166,20 @@ function TimePicker({ onPropose, loading, error, ctaLabel = "Propose this time" 
 
   return (
     <div className="space-y-5">
+      {/* Deadline banner */}
+      {deadline && (
+        <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-yellow-500/8 border border-yellow-500/20 text-xs text-yellow-400">
+          <Clock size={11} className="shrink-0" />
+          Deadline: {fmtFull(deadline.toISOString())}
+        </div>
+      )}
+
       {/* Day row */}
       <div>
         <p className="text-xs font-semibold text-text-muted uppercase tracking-wide mb-2.5">Day</p>
         <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none -mx-1 px-1">
           {dates.map((d, i) => {
-            const hasTimes = availableSlotsFor(d).length > 0;
+            const hasTimes = availableSlotsFor(d, deadline).length > 0;
             const isSel = d.toDateString() === selDate.toDateString();
             return (
               <button
@@ -277,7 +291,9 @@ export function TournamentMatchSchedule({
   proposedById: initProposedBy,
   scheduledAt: initScheduled,
   opponentName,
+  matchDeadline,
 }: Props) {
+  const deadline = matchDeadline ? new Date(matchDeadline) : null;
   const [proposed, setProposed]       = useState(initProposed);
   const [proposedBy, setProposedBy]   = useState(initProposedBy);
   const [scheduled, setScheduled]     = useState(initScheduled);
@@ -342,6 +358,7 @@ export function TournamentMatchSchedule({
               onPropose={iso => void apiCall("propose", iso)}
               loading={loading}
               error={error}
+              deadline={deadline}
               ctaLabel="Propose new time"
             />
           </div>
@@ -396,6 +413,7 @@ export function TournamentMatchSchedule({
               onPropose={iso => void apiCall("propose", iso)}
               loading={loading}
               error={error}
+              deadline={deadline}
               ctaLabel="Send counter-proposal"
             />
           </div>
@@ -433,6 +451,7 @@ export function TournamentMatchSchedule({
               onPropose={iso => void apiCall("propose", iso)}
               loading={loading}
               error={error}
+              deadline={deadline}
               ctaLabel="Update my proposal"
             />
           </div>
@@ -456,6 +475,7 @@ export function TournamentMatchSchedule({
           onPropose={iso => void apiCall("propose", iso)}
           loading={loading}
           error={error}
+          deadline={deadline}
           ctaLabel={`Propose to ${opponentName}`}
         />
       </div>

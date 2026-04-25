@@ -252,6 +252,7 @@ export default async function TournamentDetailPage({
                 leg={m.leg}
                 homeAndAway={tournament.homeAndAway}
                 gameweek={m.gameweek}
+                gameweekDeadline={tournament.gameweekDeadline?.toISOString() ?? null}
               />
             );
           })}

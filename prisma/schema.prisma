@@ -708,7 +708,8 @@ model Tournament {
   // Home & away legs
   homeAndAway     Boolean                 @default(false)
   // Gameweek tracking (admin advances week by week)
-  currentGameweek Int                     @default(0)
+  currentGameweek  Int                     @default(0)
+  gameweekDeadline DateTime?
   // Champions League specific
   groupCount      Int?
   groupsAdvance   Int?
