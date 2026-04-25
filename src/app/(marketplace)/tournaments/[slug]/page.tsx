@@ -80,13 +80,20 @@ export default async function TournamentDetailPage({
   const isOpen = tournament.status === "REGISTRATION_OPEN";
   const isLive = tournament.status === "IN_PROGRESS";
 
-  // My pending matches in current gameweek (for live tournaments)
+  // My pending matches — only the currently open matchday (admin-gated).
+  // Knockout matches have no gameweek, so they are always shown when pending.
+  // League/CL matches are hidden until the admin opens that matchday (currentGameweek > 0).
   const myPendingMatches = isLive && userId
-    ? tournament.matches.filter(m =>
-        m.status !== "COMPLETED" && m.status !== "WALKOVER" &&
-        (m.player1Id === userId || m.player2Id === userId) &&
-        (tournament.currentGameweek === 0 || m.gameweek === null || m.gameweek === tournament.currentGameweek)
-      )
+    ? tournament.matches.filter(m => {
+        if (m.status === "COMPLETED" || m.status === "WALKOVER") return false;
+        if (m.player1Id !== userId && m.player2Id !== userId) return false;
+        if (m.gameweek !== null) {
+          // League / CL: only the gameweek the admin has explicitly opened
+          return tournament.currentGameweek > 0 && m.gameweek === tournament.currentGameweek;
+        }
+        // Knockout (no gameweek): always show pending rounds
+        return true;
+      })
     : [];
 
   // Fetch group chat messages (only for registered participants)
@@ -199,12 +206,27 @@ export default async function TournamentDetailPage({
         </div>
       )}
 
+      {/* ── Waiting for matchday banner (league/CL, live but no matchday open yet) ── */}
+      {isRegistered && isLive && !isKnockout && tournament.currentGameweek === 0 && (
+        <div className="flex items-center gap-3 bg-bg-surface border border-bg-border rounded-2xl px-5 py-4">
+          <div className="w-8 h-8 rounded-xl bg-bg-elevated border border-bg-border flex items-center justify-center shrink-0">
+            <Trophy size={15} className="text-text-muted" />
+          </div>
+          <div>
+            <p className="text-sm font-semibold">Waiting for Matchday 1</p>
+            <p className="text-xs text-text-muted mt-0.5">The admin will open the first matchday soon. You&apos;ll see your fixtures and be able to contact your opponent once it&apos;s live.</p>
+          </div>
+        </div>
+      )}
+
       {/* ── My pending matches ── */}
       {myPendingMatches.length > 0 && (
         <div className="space-y-3">
           <h2 className="font-semibold text-sm flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-yellow-400 animate-pulse" />
-            Your upcoming match{myPendingMatches.length > 1 ? "es" : ""}
+            {tournament.currentGameweek > 0
+              ? `Matchday ${tournament.currentGameweek} — Your match${myPendingMatches.length > 1 ? "es" : ""}`
+              : `Your upcoming match${myPendingMatches.length > 1 ? "es" : ""}`}
           </h2>
           {myPendingMatches.map(m => {
             const isMe1 = m.player1Id === userId;
@@ -395,48 +417,52 @@ export default async function TournamentDetailPage({
 
           {(isLeague || (isCL && inGroupPhase)) && (
             <>
-              {gameweeks.length === 0 ? (
-                <div className="text-center py-12 text-text-muted text-sm">Fixtures will appear once the tournament starts.</div>
+              {/* Only show gameweeks the admin has opened (≤ currentGameweek) */}
+              {tournament.currentGameweek === 0 ? (
+                <div className="text-center py-12 text-text-muted text-sm">
+                  Fixtures will be published when the admin opens Matchday 1.
+                </div>
               ) : (
-                gameweeks.map(gw => {
-                  const gwMatches = tournament.matches.filter(m => m.gameweek === gw);
-                  const isCurrentGw = gw === tournament.currentGameweek;
-                  const isPastGw = gw < tournament.currentGameweek;
-                  const isFutureGw = gw > tournament.currentGameweek;
-                  return (
-                    <div key={gw} className={cn("bg-bg-surface border rounded-2xl overflow-hidden", isCurrentGw ? "border-yellow-500/30" : "border-bg-border")}>
-                      <div className={cn("px-4 py-3 border-b flex items-center justify-between", isCurrentGw ? "border-yellow-500/20 bg-yellow-500/5" : "border-bg-border")}>
-                        <div className="flex items-center gap-2">
-                          {isCurrentGw && <span className="w-1.5 h-1.5 rounded-full bg-yellow-400 animate-pulse" />}
-                          <h3 className={cn("text-sm font-semibold", isCurrentGw ? "text-yellow-400" : "text-text-primary")}>Matchday {gw}</h3>
+                gameweeks
+                  .filter(gw => gw <= tournament.currentGameweek)
+                  .map(gw => {
+                    const gwMatches = tournament.matches.filter(m => m.gameweek === gw);
+                    const isCurrentGw = gw === tournament.currentGameweek;
+                    const isPastGw = gw < tournament.currentGameweek;
+                    return (
+                      <div key={gw} className={cn("bg-bg-surface border rounded-2xl overflow-hidden", isCurrentGw ? "border-yellow-500/30" : "border-bg-border")}>
+                        <div className={cn("px-4 py-3 border-b flex items-center justify-between", isCurrentGw ? "border-yellow-500/20 bg-yellow-500/5" : "border-bg-border")}>
+                          <div className="flex items-center gap-2">
+                            {isCurrentGw && <span className="w-1.5 h-1.5 rounded-full bg-yellow-400 animate-pulse" />}
+                            <h3 className={cn("text-sm font-semibold", isCurrentGw ? "text-yellow-400" : "text-text-primary")}>Matchday {gw}</h3>
+                          </div>
+                          <span className="text-xs text-text-muted">
+                            {isCurrentGw ? "Live" : isPastGw ? "Completed" : ""}
+                          </span>
                         </div>
-                        <span className="text-xs text-text-muted">
-                          {isCurrentGw ? "Live" : isPastGw ? "Completed" : "Upcoming"}
-                        </span>
+                        <div className="divide-y divide-bg-border">
+                          {gwMatches.map(m => {
+                            const groupName = isCL ? tournament.groups.find(g => g.id === m.groupId)?.name : null;
+                            return (
+                              <div key={m.id} className="flex items-center px-4 py-3 gap-2 text-sm">
+                                {groupName && <span className="text-[10px] text-text-muted border border-bg-border rounded px-1.5 py-0.5 shrink-0">{groupName}</span>}
+                                {m.leg && <span className="text-[10px] text-text-muted shrink-0">L{m.leg}</span>}
+                                <span className={cn("flex-1 truncate text-right", m.winnerId === m.player1?.id ? "text-neon-green font-semibold" : "text-text-muted")}>
+                                  {m.player1?.displayName ?? m.player1?.username ?? "TBD"}
+                                </span>
+                                <span className="font-mono text-text-muted mx-1 shrink-0 min-w-[40px] text-center">
+                                  {m.status === "COMPLETED" ? `${m.player1Score ?? 0}–${m.player2Score ?? 0}` : "vs"}
+                                </span>
+                                <span className={cn("flex-1 truncate", m.winnerId === m.player2?.id ? "text-neon-green font-semibold" : "text-text-muted")}>
+                                  {m.player2?.displayName ?? m.player2?.username ?? "TBD"}
+                                </span>
+                              </div>
+                            );
+                          })}
+                        </div>
                       </div>
-                      <div className={cn("divide-y divide-bg-border", isFutureGw && tournament.currentGameweek > 0 ? "opacity-40" : "")}>
-                        {gwMatches.map(m => {
-                          const groupName = isCL ? tournament.groups.find(g => g.id === m.groupId)?.name : null;
-                          return (
-                            <div key={m.id} className="flex items-center px-4 py-3 gap-2 text-sm">
-                              {groupName && <span className="text-[10px] text-text-muted border border-bg-border rounded px-1.5 py-0.5 shrink-0">{groupName}</span>}
-                              {m.leg && <span className="text-[10px] text-text-muted shrink-0">L{m.leg}</span>}
-                              <span className={cn("flex-1 truncate text-right", m.winnerId === m.player1?.id ? "text-neon-green font-semibold" : "text-text-muted")}>
-                                {m.player1?.displayName ?? m.player1?.username ?? "TBD"}
-                              </span>
-                              <span className="font-mono text-text-muted mx-1 shrink-0 min-w-[40px] text-center">
-                                {m.status === "COMPLETED" ? `${m.player1Score ?? 0}–${m.player2Score ?? 0}` : "vs"}
-                              </span>
-                              <span className={cn("flex-1 truncate", m.winnerId === m.player2?.id ? "text-neon-green font-semibold" : "text-text-muted")}>
-                                {m.player2?.displayName ?? m.player2?.username ?? "TBD"}
-                              </span>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  );
-                })
+                    );
+                  })
               )}
             </>
           )}
