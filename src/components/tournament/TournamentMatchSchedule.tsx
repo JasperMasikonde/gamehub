@@ -73,7 +73,7 @@ function getDateOptions(): Date[] {
 function availableSlotsFor(date: Date): Slot[] {
   const isToday = date.toDateString() === new Date().toDateString();
   if (!isToday) return [...ALL_SLOTS];
-  const cutoff = Date.now() + 60 * 60 * 1000; // 1-hour buffer
+  const cutoff = Date.now() + 60 * 60 * 1000;
   return ALL_SLOTS.filter(s => {
     const t = new Date(date); t.setHours(s.h, s.m, 0, 0);
     return t.getTime() > cutoff;
@@ -83,6 +83,16 @@ function availableSlotsFor(date: Date): Slot[] {
 function buildISO(date: Date, slot: Slot): string {
   const d = new Date(date);
   d.setHours(slot.h, slot.m, 0, 0);
+  return d.toISOString();
+}
+
+function buildCustomISO(date: Date, timeStr: string): string | null {
+  const [hStr, mStr] = timeStr.split(":");
+  const h = parseInt(hStr, 10);
+  const m = parseInt(mStr, 10);
+  if (isNaN(h) || isNaN(m)) return null;
+  const d = new Date(date);
+  d.setHours(h, m, 0, 0);
   return d.toISOString();
 }
 
@@ -99,18 +109,54 @@ function TimePicker({ onPropose, loading, error, ctaLabel = "Propose this time" 
   const dates = getDateOptions();
   const [selDate, setSelDate] = useState<Date>(dates[0]);
   const [selSlot, setSelSlot] = useState<Slot | null>(null);
+  const [customTime, setCustomTime] = useState("");
+  const [customError, setCustomError] = useState("");
 
   function pickDate(d: Date) {
     setSelDate(d);
-    // drop selected time if it's no longer available
+    setCustomError("");
     if (selSlot) {
       const still = availableSlotsFor(d).find(s => s.h === selSlot.h && s.m === selSlot.m);
       if (!still) setSelSlot(null);
     }
+    if (customTime) {
+      // re-validate custom time against new date
+      const iso = buildCustomISO(d, customTime);
+      if (iso && new Date(iso).getTime() <= Date.now() + 60 * 60 * 1000) {
+        setCustomError("That time has passed — pick a later time.");
+      }
+    }
+  }
+
+  function pickSlot(s: Slot) {
+    setSelSlot(prev => (prev?.h === s.h && prev?.m === s.m ? null : s));
+    setCustomTime("");
+    setCustomError("");
+  }
+
+  function handleCustomChange(val: string) {
+    setCustomTime(val);
+    setSelSlot(null);
+    setCustomError("");
+    if (val) {
+      const iso = buildCustomISO(selDate, val);
+      if (!iso || new Date(iso).getTime() <= Date.now() + 60 * 60 * 1000) {
+        setCustomError("Must be at least 1 hour from now.");
+      }
+    }
   }
 
   const slots = availableSlotsFor(selDate);
-  const previewISO = selSlot ? buildISO(selDate, selSlot) : null;
+
+  const previewISO = selSlot
+    ? buildISO(selDate, selSlot)
+    : customTime && !customError
+      ? buildCustomISO(selDate, customTime)
+      : null;
+
+  function handleCta() {
+    if (previewISO) onPropose(previewISO);
+  }
 
   return (
     <div className="space-y-5">
@@ -154,7 +200,7 @@ function TimePicker({ onPropose, loading, error, ctaLabel = "Propose this time" 
               return (
                 <button
                   key={`${s.h}-${s.m}`}
-                  onClick={() => setSelSlot(isSel ? null : s)}
+                  onClick={() => pickSlot(s)}
                   className={cn(
                     "py-3 rounded-2xl border text-sm font-bold transition-all active:scale-95",
                     isSel
@@ -170,6 +216,36 @@ function TimePicker({ onPropose, loading, error, ctaLabel = "Propose this time" 
         )}
       </div>
 
+      {/* Custom time */}
+      <div>
+        <p className="text-xs font-semibold text-text-muted uppercase tracking-wide mb-2">Custom time</p>
+        <div className="flex items-center gap-3">
+          <input
+            type="time"
+            value={customTime}
+            onChange={e => handleCustomChange(e.target.value)}
+            className={cn(
+              "flex-1 min-w-0 px-4 py-3 rounded-2xl border bg-bg-elevated text-sm font-semibold text-text-primary",
+              "focus:outline-none transition-colors",
+              customTime && !customError
+                ? "border-neon-green text-neon-green"
+                : customError
+                ? "border-neon-red"
+                : "border-bg-border focus:border-neon-green/60"
+            )}
+          />
+          {customTime && !customError && (
+            <button
+              onClick={() => { setCustomTime(""); setCustomError(""); }}
+              className="text-xs text-text-muted hover:text-text-primary shrink-0"
+            >
+              Clear
+            </button>
+          )}
+        </div>
+        {customError && <p className="mt-1.5 text-xs text-neon-red">{customError}</p>}
+      </div>
+
       {/* Preview + CTA */}
       {previewISO && (
         <div className="space-y-3 pt-1">
@@ -180,7 +256,7 @@ function TimePicker({ onPropose, loading, error, ctaLabel = "Propose this time" 
           <Button
             className="w-full h-12 text-sm font-bold glow-green"
             variant="primary"
-            onClick={() => onPropose(previewISO)}
+            onClick={handleCta}
             loading={loading}
           >
             {ctaLabel}
@@ -209,7 +285,7 @@ export function TournamentMatchSchedule({
   const [loading, setLoading]         = useState(false);
   const [error, setError]             = useState("");
 
-  const iMadeProposal   = proposed !== null && proposedBy === myId;
+  const iMadeProposal    = proposed !== null && proposedBy === myId;
   const theyMadeProposal = proposed !== null && proposedBy !== myId;
 
   async function apiCall(action: string, scheduledAt?: string) {
@@ -278,7 +354,6 @@ export function TournamentMatchSchedule({
   if (theyMadeProposal && proposed) {
     return (
       <div className="rounded-2xl border border-neon-blue/30 bg-neon-blue/5 overflow-hidden">
-        {/* Proposal header */}
         <div className="px-4 pt-4 pb-3 space-y-3">
           <div className="flex items-center gap-2">
             <Zap size={13} className="text-neon-blue shrink-0" />
@@ -291,7 +366,6 @@ export function TournamentMatchSchedule({
             <p className="text-base font-bold text-text-primary">{fmtFull(proposed)}</p>
           </div>
 
-          {/* Primary action — big, green, impossible to miss */}
           <button
             onClick={() => void apiCall("accept")}
             disabled={loading}
@@ -306,7 +380,6 @@ export function TournamentMatchSchedule({
             {loading ? "Accepting…" : "Accept — let's play!"}
           </button>
 
-          {/* Secondary action */}
           <button
             onClick={() => setShowPicker(p => !p)}
             className="w-full flex items-center justify-center gap-1.5 py-2.5 text-sm text-text-muted hover:text-text-primary transition-colors"
