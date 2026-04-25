@@ -82,7 +82,6 @@ export function MatchPrepCard({
           slug={slug}
           matchId={matchId}
           myId={myId}
-          isPlayer1={isPlayer1}
           proposedMatchTime={proposedMatchTime}
           proposedById={proposedById}
           scheduledAt={scheduledAt}
