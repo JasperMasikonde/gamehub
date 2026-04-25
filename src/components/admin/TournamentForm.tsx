@@ -2,14 +2,15 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
-import { Loader2, ToggleLeft, ToggleRight } from "lucide-react";
+import { Loader2, ToggleLeft, ToggleRight, Lock, Globe } from "lucide-react";
 
 interface Props {
   tournamentId?: string;
   defaultValues?: {
     name?: string; slug?: string; game?: string; type?: string;
     maxParticipants?: number; requiresPayment?: boolean; entryFee?: string;
-    prizePool?: string; currency?: string; description?: string; rules?: string;
+    prizePool?: string; currency?: string; description?: string;
+    privateDescription?: string; rules?: string;
     startDate?: string; endDate?: string;
     homeAndAway?: boolean; groupCount?: number; groupsAdvance?: number;
   };
@@ -27,6 +28,7 @@ export function TournamentForm({ tournamentId, defaultValues = {} }: Props) {
   const [entryFee, setEntryFee] = useState(defaultValues.entryFee ?? "0");
   const [prizePool, setPrizePool] = useState(defaultValues.prizePool ?? "0");
   const [description, setDescription] = useState(defaultValues.description ?? "");
+  const [privateDescription, setPrivateDescription] = useState(defaultValues.privateDescription ?? "");
   const [rules, setRules] = useState(defaultValues.rules ?? "");
   const [startDate, setStartDate] = useState(defaultValues.startDate ?? "");
   const [endDate, setEndDate] = useState(defaultValues.endDate ?? "");
@@ -56,6 +58,7 @@ export function TournamentForm({ tournamentId, defaultValues = {} }: Props) {
           entryFee: requiresPayment ? Number(entryFee) : 0,
           prizePool: Number(prizePool),
           description: description || null,
+          privateDescription: privateDescription || null,
           rules: rules || null,
           startDate: startDate || null,
           endDate: endDate || null,
@@ -184,10 +187,40 @@ export function TournamentForm({ tournamentId, defaultValues = {} }: Props) {
         )}
       </div>
 
-      <div>
-        <label className="block text-xs text-text-muted mb-1">Description</label>
-        <textarea value={description} onChange={e => setDescription(e.target.value)} rows={3} className={cls + " resize-none"} placeholder="About this tournament…" />
+      {/* Public description */}
+      <div className="rounded-xl border border-bg-border bg-bg-elevated p-4 space-y-2">
+        <div className="flex items-center gap-2 mb-1">
+          <Globe size={13} className="text-neon-blue shrink-0" />
+          <p className="text-sm font-semibold text-text-primary">Public Description</p>
+          <span className="ml-auto text-[10px] text-neon-blue font-semibold bg-neon-blue/10 border border-neon-blue/20 px-2 py-0.5 rounded-full">Visible to everyone</span>
+        </div>
+        <p className="text-xs text-text-muted">Shown on the tournament page to all visitors before they register.</p>
+        <textarea
+          value={description}
+          onChange={e => setDescription(e.target.value)}
+          rows={3}
+          className={cls + " resize-none mt-1"}
+          placeholder="Hype the tournament — format, prize, who should enter…"
+        />
       </div>
+
+      {/* Private description */}
+      <div className="rounded-xl border border-neon-purple/25 bg-neon-purple/5 p-4 space-y-2">
+        <div className="flex items-center gap-2 mb-1">
+          <Lock size={13} className="text-neon-purple shrink-0" />
+          <p className="text-sm font-semibold text-text-primary">Members-Only Description</p>
+          <span className="ml-auto text-[10px] text-neon-purple font-semibold bg-neon-purple/10 border border-neon-purple/20 px-2 py-0.5 rounded-full">Registered players only</span>
+        </div>
+        <p className="text-xs text-text-muted">Only visible to players who have paid and registered. Use this for match codes, WhatsApp links, entry instructions, bracket seeds, or anything sensitive.</p>
+        <textarea
+          value={privateDescription}
+          onChange={e => setPrivateDescription(e.target.value)}
+          rows={4}
+          className={cls + " resize-none mt-1 border-neon-purple/20 focus:border-neon-purple/50"}
+          placeholder="e.g. WhatsApp group link, platform match codes, seeding instructions…"
+        />
+      </div>
+
       <div>
         <label className="block text-xs text-text-muted mb-1">Rules</label>
         <textarea value={rules} onChange={e => setRules(e.target.value)} rows={4} className={cls + " resize-none"} placeholder="Tournament rules and format…" />

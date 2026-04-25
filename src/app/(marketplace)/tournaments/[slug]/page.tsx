@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Trophy, Users, Calendar, Info, MessageSquare, LayoutGrid, Shield } from "lucide-react";
+import { ArrowLeft, Trophy, Users, Calendar, Info, MessageSquare, LayoutGrid, Shield, Lock } from "lucide-react";
 import { KnockoutBracket } from "@/components/tournament/KnockoutBracket";
 import { LeagueStandings } from "@/components/tournament/LeagueStandings";
 import { CLGroupStandings } from "@/components/tournament/CLGroupStandings";
@@ -188,12 +188,12 @@ export default async function TournamentDetailPage({
         </div>
       )}
 
-      {/* ── Squad verification (registered + live) ── */}
-      {isRegistered && isLive && myParticipant && (
+      {/* ── Squad + team name (registered, as soon as open or live) ── */}
+      {isRegistered && (isOpen || isLive) && myParticipant && (
         <div className="bg-bg-surface border border-bg-border rounded-2xl p-5">
           <h2 className="font-semibold text-sm mb-3 flex items-center gap-2">
             <Shield size={13} className="text-neon-blue" />
-            Verify Your Squad
+            Submit Your Squad & Team Name
           </h2>
           <SquadScreenshotUpload slug={slug} currentKey={myParticipant.squadScreenshotKey ?? null} currentTeamName={myParticipant.teamName ?? null} />
         </div>
@@ -347,7 +347,7 @@ export default async function TournamentDetailPage({
               </div>
             </div>
 
-            {/* Description/Rules short */}
+            {/* Public description short */}
             {tournament.description && (
               <div className="bg-bg-surface border border-bg-border rounded-2xl p-4">
                 <h2 className="font-semibold text-sm mb-2 flex items-center gap-1.5"><Info size={12} className="text-text-muted" /> About</h2>
@@ -357,6 +357,32 @@ export default async function TournamentDetailPage({
                 )}
               </div>
             )}
+
+            {/* Private description — registered participants only */}
+            {tournament.privateDescription && isRegistered ? (
+              <div className="bg-neon-purple/5 border border-neon-purple/25 rounded-2xl p-4">
+                <h2 className="font-semibold text-sm mb-2 flex items-center gap-1.5">
+                  <Lock size={12} className="text-neon-purple" />
+                  <span className="text-neon-purple">Members Info</span>
+                </h2>
+                <p className="text-sm text-text-muted leading-relaxed line-clamp-6 whitespace-pre-line">{tournament.privateDescription}</p>
+                {tournament.privateDescription.length > 200 && (
+                  <Link href={`/tournaments/${slug}?tab=info`} className="text-xs text-neon-purple hover:underline mt-1 block">Read more</Link>
+                )}
+              </div>
+            ) : tournament.privateDescription && !isRegistered ? (
+              <div className="bg-bg-surface border border-bg-border rounded-2xl p-4">
+                <div className="flex items-center gap-2 text-text-muted">
+                  <Lock size={13} />
+                  <p className="text-sm font-medium">Members-only info</p>
+                </div>
+                <p className="text-xs text-text-muted mt-1.5">
+                  {isOpen
+                    ? "Register to unlock entry instructions, links, and more."
+                    : "Only visible to registered participants."}
+                </p>
+              </div>
+            ) : null}
           </div>
         </div>
       )}
@@ -444,6 +470,40 @@ export default async function TournamentDetailPage({
               <p className="text-sm text-text-muted leading-relaxed whitespace-pre-line">{tournament.rules}</p>
             </div>
           )}
+
+          {/* Private description */}
+          {tournament.privateDescription && (
+            isRegistered ? (
+              <div className="bg-neon-purple/5 border border-neon-purple/25 rounded-2xl p-5 lg:col-span-2">
+                <h2 className="font-semibold text-sm mb-3 flex items-center gap-2">
+                  <Lock size={13} className="text-neon-purple" />
+                  <span className="text-neon-purple">Members Info</span>
+                  <span className="ml-auto text-[10px] text-neon-purple font-semibold bg-neon-purple/10 border border-neon-purple/20 px-2 py-0.5 rounded-full">Registered players only</span>
+                </h2>
+                <p className="text-sm text-text-muted leading-relaxed whitespace-pre-line">{tournament.privateDescription}</p>
+              </div>
+            ) : (
+              <div className="bg-bg-surface border border-bg-border rounded-2xl p-5 lg:col-span-2 flex items-center gap-4">
+                <div className="w-10 h-10 rounded-xl bg-bg-elevated border border-bg-border flex items-center justify-center shrink-0">
+                  <Lock size={16} className="text-text-muted" />
+                </div>
+                <div>
+                  <p className="font-semibold text-sm">Members-only information</p>
+                  <p className="text-xs text-text-muted mt-0.5">
+                    {isOpen
+                      ? "Register to unlock entry instructions, links, and exclusive tournament details."
+                      : "This information is only visible to registered participants."}
+                  </p>
+                </div>
+                {isOpen && !isFull && (
+                  <div className="ml-auto shrink-0">
+                    <Link href={`/tournaments/${slug}`} className="text-xs text-neon-green font-semibold hover:underline">Register →</Link>
+                  </div>
+                )}
+              </div>
+            )
+          )}
+
           <div className="bg-bg-surface border border-bg-border rounded-2xl p-5 lg:col-span-2">
             <h2 className="font-semibold text-sm mb-3 flex items-center gap-2"><Users size={13} className="text-text-muted" /> All Participants</h2>
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">

@@ -23,6 +23,7 @@ export default async function EditTournamentPage({ params }: { params: Promise<{
     entryFee: String(tournament.entryFee),
     prizePool: String(tournament.prizePool),
     description: tournament.description ?? "",
+    privateDescription: tournament.privateDescription ?? "",
     rules: tournament.rules ?? "",
     startDate: tournament.startDate ? new Date(tournament.startDate).toISOString().slice(0, 16) : "",
     endDate: tournament.endDate ? new Date(tournament.endDate).toISOString().slice(0, 16) : "",

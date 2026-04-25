@@ -699,8 +699,9 @@ model Tournament {
   entryFee        Decimal                 @default(0) @db.Decimal(10, 2)
   prizePool       Decimal                 @default(0) @db.Decimal(10, 2)
   currency        String                  @default("KES")
-  description     String?                 @db.Text
-  rules           String?                 @db.Text
+  description        String?                 @db.Text
+  privateDescription String?                 @db.Text
+  rules              String?                 @db.Text
   imageKey        String?
   startDate       DateTime?
   endDate         DateTime?
