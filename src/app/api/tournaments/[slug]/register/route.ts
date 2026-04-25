@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { resolveSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { emitTournamentUpdate } from "@/lib/socket-server";
 
 type Ctx = { params: Promise<{ slug: string }> };
 
@@ -27,5 +28,6 @@ export async function POST(_req: Request, { params }: Ctx) {
   const participant = await prisma.tournamentParticipant.create({
     data: { tournamentId: tournament.id, userId: session.user.id },
   });
+  emitTournamentUpdate(tournament.id, slug);
   return NextResponse.json({ participant }, { status: 201 });
 }

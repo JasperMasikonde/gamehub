@@ -161,6 +161,6 @@ export async function DELETE(
   }
 
   await prisma.tournament.delete({ where: { id } });
-
+  emitTournamentUpdate(id, existing.slug);
   return NextResponse.json({ success: true });
 }
