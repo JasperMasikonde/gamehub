@@ -2,22 +2,24 @@ export const dynamic = "force-dynamic";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Buy & Sell eFootball Accounts in Kenya | Eshabiki",
+  title: "East Africa's #1 eFootball Platform | Eshabiki",
   description:
-    "Buy or sell eFootball accounts safely in Kenya. Escrow-protected payments via M-Pesa. Verified sellers, instant delivery, full refund guarantee. Kenya's #1 eFootball marketplace.",
+    "Play, compete, and trade on Kenya's biggest eFootball ecosystem. Buy & sell accounts with M-Pesa escrow, enter tournaments, challenge players for cash, push your rank, and shop in-game goods — all in one place.",
   keywords: [
+    "eFootball Kenya",
+    "eFootball platform Kenya",
     "buy eFootball account Kenya",
     "sell eFootball account Kenya",
-    "eFootball account marketplace",
-    "eFootball accounts for sale Kenya",
-    "sell eFootball account",
-    "buy eFootball account",
+    "eFootball tournament Kenya",
+    "eFootball challenges wager Kenya",
+    "eFootball rank push Kenya",
     "eFootball marketplace Kenya",
+    "M-Pesa eFootball",
   ],
   openGraph: {
-    title: "Buy & Sell eFootball Accounts in Kenya | Eshabiki",
+    title: "East Africa's #1 eFootball Platform | Eshabiki",
     description:
-      "Kenya's safest eFootball account marketplace. Escrow payments, verified sellers, M-Pesa. Buy or sell in minutes.",
+      "Kenya's full eFootball ecosystem — accounts marketplace, wager challenges, tournaments, rank push, and more. M-Pesa escrow. Free to join.",
   },
 };
 
@@ -30,6 +32,7 @@ import { prisma } from "@/lib/prisma";
 import {
   Gamepad2, ShieldCheck, Zap, Trophy, ArrowRight,
   Users, TrendingUp, Star, ChevronRight, CheckCircle,
+  Swords, ShoppingBag, Store, Flame,
 } from "lucide-react";
 
 async function getStats() {
@@ -68,36 +71,37 @@ export default async function HomePage() {
         <div className="absolute inset-0 pointer-events-none">
           <div className="absolute top-20 left-1/4 w-72 h-72 bg-neon-green/8 rounded-full blur-3xl" />
           <div className="absolute top-40 right-1/4 w-96 h-96 bg-neon-blue/6 rounded-full blur-3xl" />
+          <div className="absolute top-60 left-1/2 w-64 h-64 bg-neon-purple/5 rounded-full blur-3xl" />
           <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-full h-px bg-gradient-to-r from-transparent via-neon-blue/20 to-transparent" />
         </div>
 
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 pt-20 pb-24 text-center">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-neon-green/30 bg-neon-green/5 text-neon-green text-xs font-semibold mb-8 tracking-wide">
-            <Zap size={12} className="fill-neon-green" />
-            THE #1 eFOOTBALL ACCOUNT MARKETPLACE
+            <Flame size={12} className="fill-neon-green" />
+            EAST AFRICA&apos;S #1 eFOOTBALL PLATFORM
           </div>
 
           <h1 className="text-5xl sm:text-7xl font-black leading-[1.05] tracking-tight mb-6">
-            Buy &amp; Sell{" "}
-            <span className="gradient-text text-glow-green">eFootball Accounts</span>
+            One Platform.{" "}
+            <span className="gradient-text text-glow-green">Endless Game.</span>
             <br />
-            <span className="text-text-subtle">in Kenya, Safely</span>
+            <span className="text-text-subtle">Built for East Africa.</span>
           </h1>
 
           <p className="text-text-subtle text-xl mb-10 max-w-2xl mx-auto leading-relaxed">
-            Kenya&apos;s #1 eFootball account marketplace. Every transaction is escrow-protected via M-Pesa —
-            your money is held safely until you confirm the account works, or we refund you. No exceptions.
+            Buy accounts. Challenge players. Enter tournaments. Push your rank. Shop in-game goods.
+            Everything eFootball — protected by M-Pesa escrow and built for the Kenyan community.
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center mb-16">
             <Link href="/listings">
               <Button size="lg" className="glow-green text-base px-8 py-4 h-auto">
-                Browse {stats.listings} Accounts <ArrowRight size={18} />
+                Explore the Platform <ArrowRight size={18} />
               </Button>
             </Link>
             <Link href="/register">
               <Button size="lg" variant="outline" className="text-base px-8 py-4 h-auto">
-                Start Selling Free
+                Join Free — No Card Needed
               </Button>
             </Link>
           </div>
@@ -106,8 +110,8 @@ export default async function HomePage() {
           <div className="flex flex-wrap items-center justify-center gap-8 sm:gap-12">
             {[
               { value: stats.listings, label: "Active Listings", color: "text-neon-green" },
-              { value: stats.users, label: "Registered Users", color: "text-neon-blue" },
-              { value: stats.completed, label: "Completed Sales", color: "text-neon-purple" },
+              { value: stats.users, label: "Community Members", color: "text-neon-blue" },
+              { value: stats.completed, label: "Completed Trades", color: "text-neon-purple" },
             ].map((s) => (
               <div key={s.label} className="text-center">
                 <p className={`text-4xl font-black ${s.color} tabular-nums`}>
@@ -124,11 +128,12 @@ export default async function HomePage() {
       <section className="border-y border-bg-border bg-bg-surface/50">
         <div className="max-w-5xl mx-auto px-4 py-4 flex flex-wrap items-center justify-center gap-6">
           {[
-            { icon: ShieldCheck, text: "Escrow Protected", color: "text-neon-green" },
+            { icon: ShieldCheck, text: "M-Pesa Escrow", color: "text-neon-green" },
             { icon: CheckCircle, text: "Verified Sellers", color: "text-neon-blue" },
-            { icon: Star, text: "Rated Transactions", color: "text-neon-yellow" },
-            { icon: Zap, text: "Instant Transfer", color: "text-neon-purple" },
-            { icon: Users, text: "Dispute Resolution", color: "text-neon-orange" },
+            { icon: Swords, text: "Wager Challenges", color: "text-neon-orange" },
+            { icon: Trophy, text: "Live Tournaments", color: "text-neon-yellow" },
+            { icon: TrendingUp, text: "Rank Push Service", color: "text-neon-purple" },
+            { icon: Users, text: "Dispute Resolution", color: "text-neon-red" },
           ].map((b) => (
             <div key={b.text} className="flex items-center gap-1.5 text-sm text-text-muted">
               <b.icon size={14} className={b.color} />
@@ -138,15 +143,135 @@ export default async function HomePage() {
         </div>
       </section>
 
+      {/* ── What You Can Do on Eshabiki ── */}
+      <section className="max-w-7xl mx-auto w-full px-4 sm:px-6 py-20">
+        <div className="text-center mb-12">
+          <h2 className="text-3xl sm:text-4xl font-black mb-3">
+            What You Can Do on{" "}
+            <span className="gradient-text">Eshabiki</span>
+          </h2>
+          <p className="text-text-muted text-lg max-w-xl mx-auto">
+            Five ways to play, compete, and earn — all under one roof.
+          </p>
+        </div>
+
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+          {/* Marketplace */}
+          <div className="bg-bg-elevated border border-bg-border rounded-2xl p-6 listing-card-hover flex flex-col gap-4 group">
+            <div className="w-12 h-12 rounded-2xl bg-neon-green/10 border border-neon-green/25 flex items-center justify-center">
+              <Store size={22} className="text-neon-green" />
+            </div>
+            <div className="flex-1">
+              <h3 className="font-bold text-lg mb-2">Marketplace</h3>
+              <p className="text-sm text-text-muted leading-relaxed">
+                Buy or sell eFootball accounts safely. Every transaction is held in M-Pesa escrow until you confirm — guaranteed refund if anything goes wrong.
+              </p>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-neon-green font-semibold tracking-wide">ESCROW PROTECTED</span>
+              <Link href="/listings">
+                <Button size="sm" className="glow-green h-8 px-4 text-xs">
+                  Browse Accounts <ChevronRight size={13} />
+                </Button>
+              </Link>
+            </div>
+          </div>
+
+          {/* Challenges */}
+          <div className="bg-bg-elevated border border-bg-border rounded-2xl p-6 listing-card-hover flex flex-col gap-4 group">
+            <div className="w-12 h-12 rounded-2xl bg-neon-orange/10 border border-neon-orange/25 flex items-center justify-center">
+              <Swords size={22} className="text-neon-orange" />
+            </div>
+            <div className="flex-1">
+              <h3 className="font-bold text-lg mb-2">Challenges</h3>
+              <p className="text-sm text-text-muted leading-relaxed">
+                Post or accept wager-based 1v1 eFootball matches. Both players put up a stake — winner takes the full prize pot. Think you&apos;re the best? Prove it.
+              </p>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-neon-orange font-semibold tracking-wide">WINNER TAKES ALL</span>
+              <Link href="/challenges">
+                <Button size="sm" variant="outline" className="h-8 px-4 text-xs border-neon-orange/40 text-neon-orange hover:bg-neon-orange/10">
+                  View Challenges <ChevronRight size={13} />
+                </Button>
+              </Link>
+            </div>
+          </div>
+
+          {/* Shop */}
+          <div className="bg-bg-elevated border border-bg-border rounded-2xl p-6 listing-card-hover flex flex-col gap-4 group">
+            <div className="w-12 h-12 rounded-2xl bg-neon-purple/10 border border-neon-purple/25 flex items-center justify-center">
+              <ShoppingBag size={22} className="text-neon-purple" />
+            </div>
+            <div className="flex-1">
+              <h3 className="font-bold text-lg mb-2">Shop</h3>
+              <p className="text-sm text-text-muted leading-relaxed">
+                Pick up coins, digital items, and in-game goods directly on the platform. Fast delivery, M-Pesa payments, no middleman hassle.
+              </p>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-neon-purple font-semibold tracking-wide">INSTANT DELIVERY</span>
+              <Link href="/shop">
+                <Button size="sm" variant="outline" className="h-8 px-4 text-xs border-neon-purple/40 text-neon-purple hover:bg-neon-purple/10">
+                  Visit Shop <ChevronRight size={13} />
+                </Button>
+              </Link>
+            </div>
+          </div>
+
+          {/* Tournaments */}
+          <div className="bg-bg-elevated border border-bg-border rounded-2xl p-6 listing-card-hover flex flex-col gap-4 group">
+            <div className="w-12 h-12 rounded-2xl bg-neon-yellow/10 border border-neon-yellow/25 flex items-center justify-center">
+              <Trophy size={22} className="text-neon-yellow" />
+            </div>
+            <div className="flex-1">
+              <h3 className="font-bold text-lg mb-2">Tournaments</h3>
+              <p className="text-sm text-text-muted leading-relaxed">
+                Compete in community-run eFootball tournaments. Register, battle through the brackets, and claim your spot at the top of East African eFootball.
+              </p>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-neon-yellow font-semibold tracking-wide">COMMUNITY EVENTS</span>
+              <Link href="/tournaments">
+                <Button size="sm" variant="outline" className="h-8 px-4 text-xs border-neon-yellow/40 text-neon-yellow hover:bg-neon-yellow/10">
+                  See Tournaments <ChevronRight size={13} />
+                </Button>
+              </Link>
+            </div>
+          </div>
+
+          {/* Rank Push */}
+          <div className="bg-bg-elevated border border-bg-border rounded-2xl p-6 listing-card-hover flex flex-col gap-4 group sm:col-span-2 lg:col-span-1">
+            <div className="w-12 h-12 rounded-2xl bg-neon-blue/10 border border-neon-blue/25 flex items-center justify-center">
+              <TrendingUp size={22} className="text-neon-blue" />
+            </div>
+            <div className="flex-1">
+              <h3 className="font-bold text-lg mb-2">Rank Push</h3>
+              <p className="text-sm text-text-muted leading-relaxed">
+                Stuck in a division? Get professional help climbing the ranks. Our vetted boosters push your account to the next division — fast, safe, and guaranteed.
+              </p>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-neon-blue font-semibold tracking-wide">VETTED BOOSTERS</span>
+              <Link href="/rank-push">
+                <Button size="sm" variant="outline" className="h-8 px-4 text-xs border-neon-blue/40 text-neon-blue hover:bg-neon-blue/10">
+                  Push My Rank <ChevronRight size={13} />
+                </Button>
+              </Link>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* ── Featured Listings ── */}
       {featured.length > 0 && (
-        <section className="max-w-7xl mx-auto w-full px-4 sm:px-6 py-16">
+        <section className="max-w-7xl mx-auto w-full px-4 sm:px-6 py-16 border-t border-bg-border">
           <div className="flex items-center justify-between mb-8">
             <div>
               <h2 className="text-2xl font-bold">
-                Featured <span className="text-neon-green">Accounts</span>
+                Marketplace: Featured <span className="text-neon-green">Accounts</span>
               </h2>
-              <p className="text-sm text-text-muted mt-1">Top picks from verified sellers</p>
+              <p className="text-sm text-text-muted mt-1">Top picks from verified sellers — escrow protected</p>
             </div>
             <Link
               href="/listings"
@@ -164,21 +289,25 @@ export default async function HomePage() {
         </section>
       )}
 
-      {/* ── How it works ── */}
+      {/* ── How it works (Marketplace) ── */}
       <section className="max-w-5xl mx-auto w-full px-4 sm:px-6 py-16">
         <div className="text-center mb-12">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-neon-green/30 bg-neon-green/5 text-neon-green text-xs font-semibold mb-4 tracking-wide">
+            <Store size={11} />
+            MARKETPLACE
+          </div>
           <h2 className="text-3xl font-bold mb-3">
-            How <span className="gradient-text">Eshabiki</span> Works
+            How the <span className="gradient-text">Escrow</span> Works
           </h2>
           <p className="text-text-muted">
-            Safe, simple, and secure in 4 steps
+            Buy any eFootball account safely in 4 steps — your money is never at risk
           </p>
         </div>
 
         <div className="grid md:grid-cols-4 gap-4">
           {[
             { step: "01", icon: Gamepad2, color: "text-neon-green", border: "border-neon-green/30", bg: "bg-neon-green/5", title: "Browse Listings", desc: "Find the perfect eFootball account with detailed stats and screenshots." },
-            { step: "02", icon: ShieldCheck, color: "text-neon-blue", border: "border-neon-blue/30", bg: "bg-neon-blue/5", title: "Pay in Escrow", desc: "Your payment is held securely — the seller never gets it until you're happy." },
+            { step: "02", icon: ShieldCheck, color: "text-neon-blue", border: "border-neon-blue/30", bg: "bg-neon-blue/5", title: "Pay in Escrow", desc: "Your M-Pesa payment is held securely — the seller never gets it until you're happy." },
             { step: "03", icon: Zap, color: "text-neon-purple", border: "border-neon-purple/30", bg: "bg-neon-purple/5", title: "Receive Account", desc: "The seller delivers encrypted credentials directly through the platform." },
             { step: "04", icon: Trophy, color: "text-neon-yellow", border: "border-neon-yellow/30", bg: "bg-neon-yellow/5", title: "Confirm & Done", desc: "Confirm it works and funds release to the seller. Dispute if anything's wrong." },
           ].map((item, i) => (
@@ -211,8 +340,8 @@ export default async function HomePage() {
           </h2>
           <div className="grid md:grid-cols-3 gap-5">
             {[
-              { icon: ShieldCheck, color: "neon-green", title: "Zero Scam Risk", desc: "Escrow holds your money until you confirm the account works — if anything goes wrong, you get a full refund." },
-              { icon: Gamepad2, color: "neon-blue", title: "Built for eFootball", desc: "List squad OVR, division rank, coin balance, GP, and featured players. We speak the game's language." },
+              { icon: ShieldCheck, color: "neon-green", title: "Zero Scam Risk", desc: "Escrow holds your money until you confirm the account works — if anything goes wrong, you get a full refund. No exceptions." },
+              { icon: Gamepad2, color: "neon-blue", title: "Built for eFootball", desc: "List squad OVR, division rank, coin balance, GP, and featured players. We speak the game's language fluently." },
               { icon: Users, color: "neon-purple", title: "Admin-Backed Disputes", desc: "Every dispute is reviewed by a real admin who makes a fair, informed decision — not an algorithm." },
             ].map((f) => (
               <div key={f.title} className="bg-bg-elevated border border-bg-border rounded-2xl p-6 listing-card-hover">
@@ -251,8 +380,12 @@ export default async function HomePage() {
               a: "All payments are made via M-Pesa (NCBA STK Push). You receive a prompt on your phone, enter your PIN, and the transaction is complete. No cards or bank transfers needed.",
             },
             {
-              q: "Can I challenge other players to eFootball matches?",
-              a: "Yes — Eshabiki has a challenges section where you can post or accept wager-based 1v1 eFootball matches. Both players pay the wager, the winner takes the prize pot.",
+              q: "How do Challenges work?",
+              a: "Post or accept a 1v1 challenge in the Challenges section. Both players deposit a wager via M-Pesa. You play the match and submit the result. Once verified, the winner receives the full prize pot. Disputes are handled by our admin team.",
+            },
+            {
+              q: "How do Tournaments work?",
+              a: "Tournaments are community events organised on Eshabiki. Register before the deadline, pay any entry fee via M-Pesa, and compete through the bracket. Results and standings are managed on the platform. Watch the Tournaments page for upcoming events.",
             },
           ].map(({ q, a }) => (
             <details
@@ -269,7 +402,7 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* ── CTA ── */}
+      {/* ── Final CTA ── */}
       <section className="max-w-5xl mx-auto w-full px-4 sm:px-6 py-16">
         <div className="neon-border rounded-2xl bg-bg-elevated p-10 text-center relative overflow-hidden">
           <div className="absolute inset-0 gaming-grid opacity-50 pointer-events-none" />
@@ -277,20 +410,24 @@ export default async function HomePage() {
           <div className="relative z-10">
             <Gamepad2 size={40} className="mx-auto mb-4 text-neon-green" />
             <h2 className="text-3xl font-black mb-3">
-              Ready to trade safely?
+              Your eFootball journey starts here.
             </h2>
-            <p className="text-text-muted mb-8 max-w-md mx-auto">
-              Join the most trusted eFootball marketplace. Free to join, safe to trade.
+            <p className="text-text-muted mb-2 max-w-lg mx-auto">
+              Trade accounts. Win wagers. Dominate tournaments. Push your rank.
+              Everything you need — one platform, one community.
+            </p>
+            <p className="text-neon-green text-sm font-semibold mb-8">
+              Free to join. M-Pesa protected. Built for Kenya.
             </p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
-              <Link href="/listings">
+              <Link href="/register">
                 <Button size="lg" className="glow-green">
-                  Shop Now <ArrowRight size={16} />
+                  Join the Community <ArrowRight size={16} />
                 </Button>
               </Link>
-              <Link href="/register">
+              <Link href="/listings">
                 <Button size="lg" variant="outline">
-                  Create Account
+                  Browse Marketplace
                 </Button>
               </Link>
             </div>
@@ -308,7 +445,7 @@ export default async function HomePage() {
               "@type": "WebSite",
               name: "Eshabiki",
               url: "https://eshabiki.com",
-              description: "Kenya's #1 platform to buy and sell eFootball accounts safely.",
+              description: "East Africa's #1 eFootball platform — marketplace, challenges, tournaments, rank push, and shop.",
               potentialAction: {
                 "@type": "SearchAction",
                 target: "https://eshabiki.com/listings?q={search_term_string}",
@@ -321,7 +458,7 @@ export default async function HomePage() {
               name: "Eshabiki",
               url: "https://eshabiki.com",
               logo: "https://eshabiki.com/logo.svg",
-              description: "Kenya's safest eFootball account marketplace with M-Pesa escrow payments.",
+              description: "Kenya's full eFootball ecosystem with M-Pesa escrow payments, wager challenges, tournaments, and rank push services.",
               areaServed: "KE",
             },
             {
@@ -358,6 +495,22 @@ export default async function HomePage() {
                   acceptedAnswer: {
                     "@type": "Answer",
                     text: "All payments are made via M-Pesa (NCBA STK Push). You receive a prompt on your phone, enter your PIN, and the transaction is complete.",
+                  },
+                },
+                {
+                  "@type": "Question",
+                  name: "How do Challenges work?",
+                  acceptedAnswer: {
+                    "@type": "Answer",
+                    text: "Post or accept a 1v1 challenge. Both players deposit a wager via M-Pesa. Play the match, submit the result, and the winner receives the full prize pot.",
+                  },
+                },
+                {
+                  "@type": "Question",
+                  name: "How do Tournaments work?",
+                  acceptedAnswer: {
+                    "@type": "Answer",
+                    text: "Register for community tournaments on Eshabiki, pay any entry fee via M-Pesa, and compete through the bracket. Results and standings are managed on the platform.",
                   },
                 },
               ],
