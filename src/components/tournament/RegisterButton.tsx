@@ -26,7 +26,15 @@ export function RegisterButton({ slug, tournamentId, entryFee, isRegistered, isO
     try {
       const res = await fetch(`/api/tournaments/${slug}/register`, { method: "POST" });
       const data = await res.json();
-      if (!res.ok) { setError(data.error ?? "Failed to register"); setState("idle"); return; }
+      if (!res.ok) {
+        if (res.status === 401) {
+          router.push(`/login?callbackUrl=/tournaments/${slug}`);
+          return;
+        }
+        setError(data.error ?? "Failed to register");
+        setState("idle");
+        return;
+      }
       setState("done"); router.refresh();
     } catch { setError("Network error"); setState("idle"); }
   }

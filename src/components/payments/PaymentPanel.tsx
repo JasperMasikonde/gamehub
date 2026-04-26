@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import Link from "next/link";
 import { Smartphone, QrCode, Loader2, CheckCircle, XCircle, ChevronDown, ChevronUp, RefreshCw, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { formatCurrency } from "@/lib/utils/format";
@@ -85,7 +86,16 @@ export function PaymentPanel({
         body: JSON.stringify({ phone: rawPhone, amount, purpose, entityId, metadata }),
       });
       const data = await res.json();
-      if (!res.ok) { setErrorMsg(data.error ?? "Failed to initiate payment"); setState("idle"); return; }
+      if (!res.ok) {
+        if (res.status === 401) {
+          setState("idle");
+          setErrorMsg("__not_logged_in__");
+          return;
+        }
+        setErrorMsg(data.error ?? "Failed to initiate payment");
+        setState("idle");
+        return;
+      }
 
       setPaymentId(data.paymentId);
       setState("polling");
@@ -295,7 +305,24 @@ export function PaymentPanel({
             className="w-full px-3 py-2.5 rounded-xl bg-bg-elevated border border-bg-border text-text-primary placeholder:text-text-muted text-sm focus:outline-none focus:border-neon-green/50 transition-colors"
           />
         </div>
-        {errorMsg && <p className="text-xs text-neon-red">{errorMsg}</p>}
+        {errorMsg === "__not_logged_in__" ? (
+          <div className="flex items-start gap-2.5 px-3 py-2.5 rounded-xl bg-neon-yellow/8 border border-neon-yellow/25 text-sm">
+            <span className="text-neon-yellow shrink-0 mt-0.5">⚠</span>
+            <span className="text-text-primary">
+              You need to be logged in to pay.{" "}
+              <Link href="/login" className="text-neon-blue underline underline-offset-2 font-semibold hover:text-neon-blue/80">
+                Sign in
+              </Link>
+              {" "}or{" "}
+              <Link href="/register" className="text-neon-blue underline underline-offset-2 font-semibold hover:text-neon-blue/80">
+                create an account
+              </Link>
+              {" "}to continue.
+            </span>
+          </div>
+        ) : errorMsg ? (
+          <p className="text-xs text-neon-red">{errorMsg}</p>
+        ) : null}
         <Button
           variant="primary"
           className="w-full glow-green"
