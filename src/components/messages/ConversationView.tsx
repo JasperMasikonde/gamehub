@@ -32,16 +32,48 @@ interface OtherUser {
   role: string;
 }
 
+function Avatar({ user, size = 8 }: { user: Pick<OtherUser, "avatarUrl" | "username">; size?: number }) {
+  const px = size * 4;
+  return (
+    <div
+      className="rounded-full bg-bg-elevated border border-bg-border flex items-center justify-center overflow-hidden shrink-0"
+      style={{ width: px, height: px }}
+    >
+      {user.avatarUrl ? (
+        <img src={user.avatarUrl} alt={user.username} className="w-full h-full object-cover" />
+      ) : (
+        <User size={px * 0.45} className="text-text-muted" />
+      )}
+    </div>
+  );
+}
+
+function formatTime(date: Date | string) {
+  return new Date(date).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+}
+
+function formatDate(date: Date | string) {
+  const d = new Date(date);
+  const now = new Date();
+  if (d.toDateString() === now.toDateString()) return "Today";
+  const yesterday = new Date(now); yesterday.setDate(now.getDate() - 1);
+  if (d.toDateString() === yesterday.toDateString()) return "Yesterday";
+  return d.toLocaleDateString([], { weekday: "short", month: "short", day: "numeric" });
+}
+
 export function ConversationView({
   initialMessages,
   otherUser,
   myId,
   backHref = "/messages",
+  heightOffset = 64,
 }: {
   initialMessages: Message[];
   otherUser: OtherUser;
   myId: string;
   backHref?: string;
+  /** Pixels to subtract from 100dvh. Defaults to 64 (standard navbar). */
+  heightOffset?: number;
 }) {
   const { socket, refreshUnread } = useSocket();
   const [messages, setMessages] = useState<Message[]>(initialMessages);
@@ -52,15 +84,12 @@ export function ConversationView({
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Scroll to bottom when messages change
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  // Listen for new messages on the socket
   useEffect(() => {
     if (!socket) return;
-
     const handler = async (payload: NewMessagePayload) => {
       if (payload.senderId !== otherUser.id) return;
       const res = await fetch(`/api/messages/${otherUser.id}`);
@@ -70,7 +99,6 @@ export function ConversationView({
       }
       refreshUnread();
     };
-
     socket.on("new_message", handler);
     return () => { socket.off("new_message", handler); };
   }, [socket, otherUser.id, refreshUnread]);
@@ -78,11 +106,7 @@ export function ConversationView({
   const handleImageSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const raw = e.target.files?.[0];
     if (!raw) return;
-
-    // Show preview immediately using the original file
-    const localUrl = URL.createObjectURL(raw);
-    setPendingImage({ url: localUrl, uploading: true });
-
+    setPendingImage({ url: URL.createObjectURL(raw), uploading: true });
     try {
       const file = await compressImage(raw);
       const uploadRes = await fetch("/api/uploads", {
@@ -92,25 +116,17 @@ export function ConversationView({
       });
       if (!uploadRes.ok) throw new Error("Upload init failed");
       const { uploadUrl, publicUrl } = await uploadRes.json();
-
-      await fetch(uploadUrl, {
-        method: "PUT",
-        headers: { "Content-Type": file.type },
-        body: file,
-      });
-
+      await fetch(uploadUrl, { method: "PUT", headers: { "Content-Type": file.type }, body: file });
       setPendingImage({ url: publicUrl, uploading: false });
     } catch {
       setPendingImage(null);
     }
-    // Reset file input
     e.target.value = "";
   };
 
   const sendMessage = useCallback(async () => {
     const text = content.trim();
     if ((!text && !pendingImage) || sending || pendingImage?.uploading) return;
-
     setSending(true);
     try {
       const res = await fetch("/api/messages", {
@@ -127,6 +143,8 @@ export function ConversationView({
         setMessages((prev) => [...prev, data.message]);
         setContent("");
         setPendingImage(null);
+        // Reset textarea height
+        if (inputRef.current) inputRef.current.style.height = "44px";
         inputRef.current?.focus();
       }
     } finally {
@@ -137,16 +155,8 @@ export function ConversationView({
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
-      sendMessage();
+      void sendMessage();
     }
-  };
-
-  const formatTime = (date: Date | string) => {
-    return new Date(date).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-  };
-
-  const formatDate = (date: Date | string) => {
-    return new Date(date).toLocaleDateString([], { month: "short", day: "numeric" });
   };
 
   // Group messages by date
@@ -154,137 +164,152 @@ export function ConversationView({
   for (const msg of messages) {
     const d = formatDate(msg.createdAt);
     const last = grouped[grouped.length - 1];
-    if (last && last.date === d) {
-      last.messages.push(msg);
-    } else {
-      grouped.push({ date: d, messages: [msg] });
-    }
+    if (last && last.date === d) last.messages.push(msg);
+    else grouped.push({ date: d, messages: [msg] });
   }
 
+  const isAdmin = otherUser.role === "ADMIN";
+
   return (
-    <div className="flex flex-col" style={{ height: 'calc(100dvh - 64px)' }}>
-      {/* Header */}
-      <div className="border-b border-bg-border bg-bg-surface/80 backdrop-blur px-4 py-3 flex items-center gap-3 shrink-0">
-        <Link href={backHref} className="text-text-muted hover:text-text-primary transition-colors">
+    <div className="flex flex-col" style={{ height: `calc(100dvh - ${heightOffset}px)` }}>
+
+      {/* ── Header ─────────────────────────────────────────────────────────── */}
+      <div className="shrink-0 border-b border-bg-border bg-bg-surface px-4 py-3 flex items-center gap-3">
+        <Link href={backHref} className="text-text-muted hover:text-text-primary transition-colors p-1 -ml-1 rounded-lg">
           <ArrowLeft size={18} />
         </Link>
 
-        <div className="w-9 h-9 rounded-full bg-bg-elevated border border-bg-border flex items-center justify-center overflow-hidden">
-          {otherUser.avatarUrl ? (
-            <img src={otherUser.avatarUrl} alt={otherUser.username} className="w-full h-full object-cover" />
-          ) : (
-            <User size={16} className="text-text-muted" />
-          )}
-        </div>
+        <Avatar user={otherUser} size={9} />
 
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1.5 min-w-0">
             <span className="font-semibold text-sm truncate">
               {otherUser.displayName ?? otherUser.username}
             </span>
-            {otherUser.role === "ADMIN" && (
-              <ShieldCheck size={13} className="text-neon-red shrink-0" />
+            {isAdmin && (
+              <span className="shrink-0 flex items-center gap-0.5 text-[10px] font-semibold text-neon-red bg-neon-red/10 border border-neon-red/20 px-1.5 py-0.5 rounded-full">
+                <ShieldCheck size={10} /> Admin
+              </span>
             )}
           </div>
-          <p className="text-xs text-text-muted">@{otherUser.username}</p>
+          <p className="text-xs text-text-muted truncate">@{otherUser.username}</p>
         </div>
       </div>
 
-      {/* Messages */}
-      <div className="flex-1 overflow-y-auto min-h-0 px-4 py-4 space-y-4">
+      {/* ── Message list ────────────────────────────────────────────────────── */}
+      <div className="flex-1 overflow-y-auto min-h-0 px-4 py-5 space-y-5">
         {messages.length === 0 && (
-          <div className="text-center text-text-muted text-sm py-10">
-            No messages yet. Say hi!
+          <div className="flex flex-col items-center justify-center h-full gap-2 text-text-muted">
+            <p className="text-sm">No messages yet.</p>
+            <p className="text-xs">Say hello 👋</p>
           </div>
         )}
 
         {grouped.map(({ date, messages: dayMsgs }) => (
-          <div key={date}>
-            <div className="text-center text-xs text-text-muted my-3">
-              <span className="px-3 py-1 rounded-full bg-bg-elevated border border-bg-border">
+          <div key={date} className="space-y-2">
+
+            {/* Date divider */}
+            <div className="flex items-center gap-3 py-1">
+              <div className="flex-1 h-px bg-bg-border" />
+              <span className="text-[10px] font-semibold text-text-muted uppercase tracking-wide shrink-0">
                 {date}
               </span>
+              <div className="flex-1 h-px bg-bg-border" />
             </div>
 
-            <div className="space-y-2">
-              {dayMsgs.map((msg) => {
-                const isMe = msg.senderId === myId;
-                return (
-                  <div
-                    key={msg.id}
-                    className={cn("flex gap-2", isMe ? "justify-end" : "justify-start")}
-                  >
-                    {!isMe && (
-                      <div className="w-7 h-7 rounded-full bg-bg-elevated border border-bg-border flex items-center justify-center overflow-hidden shrink-0 mt-auto">
-                        {otherUser.avatarUrl ? (
-                          <img src={otherUser.avatarUrl} alt="" className="w-full h-full object-cover" />
-                        ) : (
-                          <User size={13} className="text-text-muted" />
-                        )}
-                      </div>
-                    )}
-                    <div className={cn("max-w-[80%]", isMe ? "items-end" : "items-start", "flex flex-col gap-0.5")}>
-                      <div
-                        className={cn(
-                          "rounded-2xl text-sm leading-relaxed",
-                          isMe
-                            ? "bg-neon-blue/20 border border-neon-blue/30 text-text-primary rounded-br-sm"
-                            : "bg-bg-elevated border border-bg-border text-text-primary rounded-bl-sm",
-                          msg.imageUrl && !msg.content ? "p-1" : "px-3.5 py-2.5"
-                        )}
-                      >
-                        {msg.imageUrl && (
-                          <a href={msg.imageUrl} target="_blank" rel="noopener noreferrer">
-                            <img
-                              src={msg.imageUrl}
-                              alt="Shared image"
-                              className="max-w-full rounded-xl object-cover cursor-pointer hover:opacity-90 transition-opacity"
-                              style={{ maxHeight: "240px" }}
-                            />
-                          </a>
-                        )}
-                        {msg.content && (
-                          <p className={cn("break-words", msg.imageUrl ? "mt-2 px-2 pb-1" : "")}>
-                            {msg.content}
-                          </p>
-                        )}
-                      </div>
-                      <span className="text-[10px] text-text-muted px-1">
-                        {formatTime(msg.createdAt)}
-                      </span>
+            {/* Messages */}
+            {dayMsgs.map((msg, idx) => {
+              const isMe = msg.senderId === myId;
+              const prevMsg = idx > 0 ? dayMsgs[idx - 1] : null;
+              const isGrouped = prevMsg?.senderId === msg.senderId;
+
+              return (
+                <div
+                  key={msg.id}
+                  className={cn(
+                    "flex items-end gap-2",
+                    isMe ? "flex-row-reverse" : "flex-row",
+                    isGrouped ? "mt-0.5" : "mt-3"
+                  )}
+                >
+                  {/* Avatar — only show on last in group or single message */}
+                  {!isMe && (
+                    <div className="shrink-0 w-7">
+                      {!isGrouped && <Avatar user={otherUser} size={7} />}
                     </div>
+                  )}
+
+                  {/* Bubble + time */}
+                  <div className={cn("flex flex-col gap-1 min-w-0", isMe ? "items-end" : "items-start")} style={{ maxWidth: "72%" }}>
+                    <div
+                      className={cn(
+                        "rounded-2xl text-sm leading-relaxed",
+                        isMe
+                          ? "bg-neon-blue/15 border border-neon-blue/25 text-text-primary rounded-br-md"
+                          : "bg-bg-elevated border border-bg-border text-text-primary rounded-bl-md",
+                        msg.imageUrl && !msg.content ? "p-1.5" : "px-4 py-2.5"
+                      )}
+                    >
+                      {msg.imageUrl && (
+                        <a href={msg.imageUrl} target="_blank" rel="noopener noreferrer" className="block">
+                          <img
+                            src={msg.imageUrl}
+                            alt="Shared image"
+                            className={cn(
+                              "rounded-xl object-cover cursor-pointer hover:opacity-90 transition-opacity w-full",
+                              msg.content ? "mb-2" : ""
+                            )}
+                            style={{ maxHeight: "220px" }}
+                          />
+                        </a>
+                      )}
+                      {msg.content && (
+                        <p
+                          className="whitespace-pre-wrap"
+                          style={{ overflowWrap: "anywhere" }}
+                        >
+                          {msg.content}
+                        </p>
+                      )}
+                    </div>
+                    <span className="text-[10px] text-text-muted px-1 tabular-nums">
+                      {formatTime(msg.createdAt)}
+                    </span>
                   </div>
-                );
-              })}
-            </div>
+                </div>
+              );
+            })}
           </div>
         ))}
 
         <div ref={bottomRef} />
       </div>
 
-      {/* Input */}
-      <div className="border-t border-bg-border bg-bg-surface/80 backdrop-blur px-3 py-3 shrink-0" style={{ paddingBottom: 'max(12px, env(safe-area-inset-bottom))' }}>
+      {/* ── Input bar ───────────────────────────────────────────────────────── */}
+      <div
+        className="shrink-0 border-t border-bg-border bg-bg-surface px-3 py-3"
+        style={{ paddingBottom: "max(12px, env(safe-area-inset-bottom))" }}
+      >
         {/* Image preview */}
         {pendingImage && (
-          <div className="mb-2 relative inline-block">
+          <div className="mb-2.5 inline-block relative">
             <img
               src={pendingImage.url}
               alt="Preview"
               className={cn(
-                "h-20 w-32 object-cover rounded-lg border border-bg-border",
-                pendingImage.uploading && "opacity-50"
+                "h-20 w-32 object-cover rounded-xl border border-bg-border",
+                pendingImage.uploading && "opacity-40"
               )}
             />
             {pendingImage.uploading && (
-              <div className="absolute inset-0 flex items-center justify-center text-xs text-text-muted">
+              <div className="absolute inset-0 flex items-center justify-center text-xs text-text-muted font-medium">
                 Uploading…
               </div>
             )}
             {!pendingImage.uploading && (
               <button
                 onClick={() => setPendingImage(null)}
-                className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-neon-red text-white flex items-center justify-center"
+                className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-neon-red text-white flex items-center justify-center shadow"
               >
                 <X size={10} />
               </button>
@@ -300,38 +325,50 @@ export function ConversationView({
             className="hidden"
             onChange={handleImageSelect}
           />
+
+          {/* Attach image button */}
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
-            className="w-11 h-11 rounded-xl bg-bg-elevated border border-bg-border text-text-muted flex items-center justify-center hover:border-neon-blue/40 hover:text-neon-blue transition-colors shrink-0 touch-manipulation"
+            className="w-10 h-10 rounded-xl bg-bg-elevated border border-bg-border text-text-muted flex items-center justify-center hover:border-neon-blue/40 hover:text-neon-blue transition-colors shrink-0 touch-manipulation"
             title="Attach image"
           >
-            <ImagePlus size={16} />
+            <ImagePlus size={15} />
           </button>
 
-          <textarea
-            ref={inputRef}
-            value={content}
-            onChange={(e) => {
-              setContent(e.target.value);
-              // Auto-grow
-              e.target.style.height = "42px";
-              e.target.style.height = `${Math.min(e.target.scrollHeight, 120)}px`;
-            }}
-            onKeyDown={handleKeyDown}
-            placeholder="Message…"
-            rows={1}
-            className="flex-1 resize-none bg-bg-elevated border border-bg-border rounded-xl px-3.5 py-2.5 text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:border-neon-blue/40 transition-colors overflow-y-auto"
-            style={{ minHeight: "42px", maxHeight: "120px" }}
-          />
+          {/* Textarea */}
+          <div className="flex-1 min-w-0 relative">
+            <textarea
+              ref={inputRef}
+              value={content}
+              onChange={(e) => {
+                setContent(e.target.value);
+                e.target.style.height = "44px";
+                e.target.style.height = `${Math.min(e.target.scrollHeight, 140)}px`;
+              }}
+              onKeyDown={handleKeyDown}
+              placeholder="Message…"
+              rows={1}
+              className="w-full resize-none bg-bg-elevated border border-bg-border rounded-xl px-4 py-2.5 text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:border-neon-blue/40 transition-colors overflow-y-auto"
+              style={{ minHeight: "44px", maxHeight: "140px" }}
+            />
+          </div>
+
+          {/* Send button */}
           <button
-            onClick={sendMessage}
+            onClick={() => void sendMessage()}
             disabled={(!content.trim() && !pendingImage) || sending || pendingImage?.uploading}
-            className="w-11 h-11 rounded-xl bg-neon-blue/20 border border-neon-blue/30 text-neon-blue flex items-center justify-center hover:bg-neon-blue/30 disabled:opacity-40 disabled:cursor-not-allowed transition-colors shrink-0 touch-manipulation"
+            className={cn(
+              "w-10 h-10 rounded-xl flex items-center justify-center shrink-0 touch-manipulation transition-all",
+              content.trim() || pendingImage
+                ? "bg-neon-blue/20 border border-neon-blue/40 text-neon-blue hover:bg-neon-blue/30"
+                : "bg-bg-elevated border border-bg-border text-text-muted opacity-40 cursor-not-allowed"
+            )}
           >
-            <Send size={16} />
+            <Send size={15} className={sending ? "animate-pulse" : ""} />
           </button>
         </div>
+        <p className="text-[10px] text-text-muted mt-1.5 px-1">Enter to send · Shift+Enter for new line</p>
       </div>
     </div>
   );
