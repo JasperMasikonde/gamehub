@@ -74,23 +74,31 @@ export async function debitWallet({
   const amt = Number(amount);
 
   return prisma.$transaction(async (tx) => {
-    const wallet = await getOrCreateWallet(userId);
+    // Ensure wallet row exists
+    await tx.wallet.upsert({
+      where: { userId },
+      update: {},
+      create: { userId, balance: 0 },
+    });
 
-    if (Number(wallet.balance) < amt) {
+    // Atomic check-and-decrement: only succeeds if balance >= amt
+    const result = await tx.wallet.updateMany({
+      where: { userId, balance: { gte: amt } },
+      data: { balance: { decrement: amt } },
+    });
+
+    if (result.count === 0) {
       throw new Error("Insufficient wallet balance");
     }
 
-    const updated = await tx.wallet.update({
-      where: { userId },
-      data: { balance: { decrement: amt } },
-    });
+    const wallet = await tx.wallet.findUnique({ where: { userId } });
 
     return tx.walletTransaction.create({
       data: {
         userId,
         type,
         amount: amt,
-        balanceAfter: updated.balance,
+        balanceAfter: wallet!.balance,
         description,
         challengeId,
         payoutId,

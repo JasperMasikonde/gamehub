@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { resolveSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
-import { debitWallet } from "@/lib/wallet";
+import { debitWallet, creditWallet } from "@/lib/wallet";
 import { createNotification } from "@/lib/notifications";
 import { emitToast, emitChallengeUpdate } from "@/lib/socket-server";
 
@@ -40,13 +40,19 @@ export async function POST(
     if (challenge.status !== "PENDING_HOST_PAYMENT")
       return NextResponse.json({ error: "Challenge is not awaiting host payment" }, { status: 400 });
 
-    await debitWallet({
-      userId,
-      amount: Number(challenge.wagerAmount),
-      type: "CHALLENGE_WAGER",
-      description: `Host wager for challenge #${id.slice(-8)} (KES ${Number(challenge.wagerAmount).toFixed(2)})`,
-      challengeId: id,
-    });
+    try {
+      await debitWallet({
+        userId,
+        amount: Number(challenge.wagerAmount),
+        type: "CHALLENGE_WAGER",
+        description: `Host wager for challenge #${id.slice(-8)} (KES ${Number(challenge.wagerAmount).toFixed(2)})`,
+        challengeId: id,
+      });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Payment failed";
+      const status = msg === "Insufficient wallet balance" ? 400 : 500;
+      return NextResponse.json({ error: msg }, { status });
+    }
 
     const updated = await prisma.challenge.update({
       where: { id },
@@ -67,13 +73,19 @@ export async function POST(
 
   const wagerNum = Number(challenge.wagerAmount);
 
-  await debitWallet({
-    userId,
-    amount: wagerNum,
-    type: "CHALLENGE_WAGER",
-    description: `Challenger wager for challenge #${id.slice(-8)} (KES ${wagerNum.toFixed(2)})`,
-    challengeId: id,
-  });
+  try {
+    await debitWallet({
+      userId,
+      amount: wagerNum,
+      type: "CHALLENGE_WAGER",
+      description: `Challenger wager for challenge #${id.slice(-8)} (KES ${wagerNum.toFixed(2)})`,
+      challengeId: id,
+    });
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : "Payment failed";
+    const status = msg === "Insufficient wallet balance" ? 400 : 500;
+    return NextResponse.json({ error: msg }, { status });
+  }
 
   // Race-safe update — only proceed if still OPEN
   const result = await prisma.challenge.updateMany({
@@ -83,7 +95,6 @@ export async function POST(
 
   if (result.count === 0) {
     // Refund immediately — challenge was taken by someone else
-    const { creditWallet } = await import("@/lib/wallet");
     await creditWallet({
       userId,
       amount: wagerNum,
