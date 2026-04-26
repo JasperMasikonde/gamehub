@@ -91,7 +91,7 @@ export function ChallengeChat({
     if (!socket) return;
     socket.emit("join-challenge", challengeId);
 
-    socket.on("challenge_message", (payload: ChatMessage) => {
+    const handleMessage = (payload: ChatMessage) => {
       setMessages((prev) => {
         if (prev.some((m) => m.id === payload.id)) return prev;
         return [...prev, payload];
@@ -100,10 +100,11 @@ export function ChallengeChat({
       if (payload.messageType === "MATCH_CODE_REQUEST" && payload.senderId !== myId) {
         setShowCodeInput(true);
       }
-    });
+    };
 
-    return () => { socket.off("challenge_message"); };
-  }, [socket, challengeId]);
+    socket.on("challenge_message", handleMessage);
+    return () => { socket.off("challenge_message", handleMessage); };
+  }, [socket, challengeId, myId]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -135,6 +136,19 @@ export function ChallengeChat({
         body: JSON.stringify(type === "MATCH_CODE" ? { type, code } : { type }),
       });
       if (res.ok) {
+        const data = await res.json() as { message: DbMessage };
+        const newMsg: ChatMessage = {
+          id: data.message.id,
+          senderId: data.message.senderId,
+          senderUsername: data.message.sender.displayName ?? data.message.sender.username,
+          messageType: data.message.messageType,
+          content: data.message.content,
+          createdAt: typeof data.message.createdAt === "string"
+            ? data.message.createdAt
+            : new Date(data.message.createdAt).toISOString(),
+        };
+        // Add immediately from HTTP response; socket event will be deduped by ID
+        setMessages(prev => prev.some(m => m.id === newMsg.id) ? prev : [...prev, newMsg]);
         playSendSound();
         if (type === "MATCH_CODE") {
           setCodeInput("");
@@ -142,7 +156,7 @@ export function ChallengeChat({
           setCodeError("");
         }
       } else {
-        const data = await res.json().catch(() => ({}));
+        const data = await res.json().catch(() => ({})) as { error?: string };
         if (type === "MATCH_CODE") setCodeError(data.error ?? "Failed to send code");
       }
     } finally {
