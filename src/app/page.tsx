@@ -31,6 +31,7 @@ import { ListingCard } from "@/components/listings/ListingCard";
 import { AnnouncementBar } from "@/components/banners/AnnouncementBar";
 import { HeroBanner } from "@/components/banners/HeroBanner";
 import { FeatureBanner } from "@/components/banners/FeatureBanner";
+import { OpenChallengeTeaser } from "@/components/challenges/OpenChallengeTeaser";
 import { prisma } from "@/lib/prisma";
 import {
   Gamepad2, ShieldCheck, Zap, Trophy, ArrowRight,
@@ -87,6 +88,21 @@ export default async function HomePage() {
 
   const heroBanner = promoBanners.find(b => b.variant === "HERO") ?? null;
   const featureBanners = promoBanners.filter(b => b.variant === "FEATURE");
+
+  // Random open challenge teaser
+  const now = new Date();
+  const openCount = await prisma.challenge.count({
+    where: { status: "OPEN", expiresAt: { gt: now } },
+  }).catch(() => 0);
+  const spotlightChallenge = openCount > 0
+    ? await prisma.challenge.findFirst({
+        where: { status: "OPEN", expiresAt: { gt: now } },
+        skip: Math.floor(Math.random() * openCount),
+        include: {
+          host: { select: { username: true, displayName: true, avatarUrl: true } },
+        },
+      }).catch(() => null)
+    : null;
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -161,8 +177,8 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* ── Promo Banners ── */}
-      {(heroBanner || featureBanners.length > 0) && (
+      {/* ── Promo Banners + Challenge Teaser ── */}
+      {(heroBanner || featureBanners.length > 0 || spotlightChallenge) && (
         <section className="max-w-7xl mx-auto w-full px-4 sm:px-6 pb-10 space-y-4">
           {heroBanner && (
             <HeroBanner
@@ -202,6 +218,9 @@ export default async function HomePage() {
                 />
               ))}
             </div>
+          )}
+          {spotlightChallenge && (
+            <OpenChallengeTeaser challenge={spotlightChallenge} totalOpen={openCount} />
           )}
         </section>
       )}
