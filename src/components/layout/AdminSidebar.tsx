@@ -27,6 +27,7 @@ import {
   BookOpen,
   Receipt,
   Settings,
+  Megaphone,
 } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 import type { AdminPermission } from "@prisma/client";
@@ -63,6 +64,7 @@ const shopLinks: NavLink[] = [
 
 const tournamentLinks: NavLink[] = [
   { href: "/admin/tournaments", label: "Tournaments", icon: Trophy, exact: true, permission: "MANAGE_TOURNAMENTS" },
+  { href: "/admin/banners", label: "Banners", icon: Megaphone, permission: "MANAGE_TOURNAMENTS" },
   { href: "/admin/fees", label: "Platform Fees", icon: DollarSign, exact: true, permission: "MANAGE_FEES" },
 ];
 

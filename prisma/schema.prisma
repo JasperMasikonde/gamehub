@@ -666,6 +666,41 @@ model SiteConfig {
 }
 
 // ─────────────────────────────────────────────
+// PROMO BANNERS
+// ─────────────────────────────────────────────
+
+model PromoBanner {
+  id           String        @id @default(cuid())
+  isActive     Boolean       @default(false)
+  variant      BannerVariant @default(HERO)
+  title        String
+  subtitle     String?       @db.Text
+  badgeText    String?
+  ctaLabel     String        @default("View Tournament")
+  ctaUrl       String        @default("/tournaments")
+  accentColor  BannerColor   @default(GREEN)
+  countdownTo  DateTime?
+  tournamentId String?
+  tournament   Tournament?   @relation(fields: [tournamentId], references: [id], onDelete: SetNull)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+}
+
+enum BannerVariant {
+  ANNOUNCEMENT
+  HERO
+  FEATURE
+}
+
+enum BannerColor {
+  GREEN
+  BLUE
+  PURPLE
+  YELLOW
+  RED
+}
+
+// ─────────────────────────────────────────────
 // PLATFORM FEES
 // ─────────────────────────────────────────────
 
@@ -718,6 +753,7 @@ model Tournament {
   matches         TournamentMatch[]
   groups          TournamentGroup[]
   messages        TournamentMessage[]
+  banners         PromoBanner[]
   createdAt       DateTime                @default(now())
   updatedAt       DateTime                @updatedAt
 

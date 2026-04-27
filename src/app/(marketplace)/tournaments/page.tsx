@@ -14,6 +14,8 @@ import Link from "next/link";
 import { Trophy, Users, Calendar, Zap } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 import { RealtimeRefresh } from "@/components/escrow/RealtimeRefresh";
+import { HeroBanner } from "@/components/banners/HeroBanner";
+import { FeatureBanner } from "@/components/banners/FeatureBanner";
 
 const STATUS_COLORS: Record<string, string> = {
   REGISTRATION_OPEN: "bg-neon-blue/10 text-neon-blue border-neon-blue/20",
@@ -26,33 +28,98 @@ const STATUS_LABELS: Record<string, string> = {
 };
 
 export default async function TournamentsPage() {
-  const tournaments = await prisma.tournament.findMany({
-    where: { status: { not: "DRAFT" } },
-    include: { _count: { select: { participants: true } } },
-    orderBy: [{ status: "asc" }, { createdAt: "desc" }],
-  });
+  const [tournaments, activeBanners] = await Promise.all([
+    prisma.tournament.findMany({
+      where: { status: { not: "DRAFT" } },
+      include: { _count: { select: { participants: true } } },
+      orderBy: [{ status: "asc" }, { createdAt: "desc" }],
+    }),
+    prisma.promoBanner.findMany({
+      where: { isActive: true, variant: { in: ["HERO", "FEATURE"] } },
+      orderBy: { createdAt: "desc" },
+      include: {
+        tournament: {
+          select: {
+            game: true,
+            prizePool: true,
+            startDate: true,
+            _count: { select: { participants: true } },
+          },
+        },
+      },
+    }),
+  ]);
 
   const live = tournaments.filter(t => t.status === "IN_PROGRESS" || t.status === "REGISTRATION_OPEN");
   const past = tournaments.filter(t => t.status === "COMPLETED" || t.status === "CANCELLED");
 
+  const heroBanner = activeBanners.find(b => b.variant === "HERO");
+  const featureBanners = activeBanners.filter(b => b.variant === "FEATURE");
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-10 space-y-10">
       <RealtimeRefresh events={["tournaments_list_update", "tournament_update"]} />
-      {/* Hero */}
-      <div className="relative rounded-3xl overflow-hidden bg-gradient-to-br from-bg-surface via-bg-elevated to-purple-500/5 border border-bg-border p-8 sm:p-12">
-        <div className="relative z-10">
-          <div className="flex items-center gap-2 mb-4">
-            <Zap size={16} className="text-purple-400" />
-            <span className="text-xs font-semibold text-purple-400 uppercase tracking-widest">Competitive</span>
+
+      {/* Hero Banner (admin-managed) or default hero */}
+      {heroBanner ? (
+        <HeroBanner
+          title={heroBanner.title}
+          subtitle={heroBanner.subtitle}
+          badgeText={heroBanner.badgeText}
+          ctaLabel={heroBanner.ctaLabel}
+          ctaUrl={heroBanner.ctaUrl}
+          accentColor={heroBanner.accentColor}
+          countdownTo={heroBanner.countdownTo ? new Date(heroBanner.countdownTo).toISOString() : null}
+          tournament={heroBanner.tournament ? {
+            name: heroBanner.tournament.game,
+            game: heroBanner.tournament.game,
+            prizePool: Number(heroBanner.tournament.prizePool),
+            participantCount: heroBanner.tournament._count.participants,
+            startDate: heroBanner.tournament.startDate,
+          } : null}
+        />
+      ) : (
+        <div className="relative rounded-3xl overflow-hidden bg-gradient-to-br from-bg-surface via-bg-elevated to-purple-500/5 border border-bg-border p-8 sm:p-12">
+          <div className="relative z-10">
+            <div className="flex items-center gap-2 mb-4">
+              <Zap size={16} className="text-purple-400" />
+              <span className="text-xs font-semibold text-purple-400 uppercase tracking-widest">Competitive</span>
+            </div>
+            <h1 className="text-3xl sm:text-5xl font-black leading-tight">
+              Tournaments<br />
+              <span className="text-purple-400">&amp; Leagues</span>
+            </h1>
+            <p className="text-text-muted mt-4 max-w-md">Compete in organized tournaments. League round-robins and knockout brackets — prove you&apos;re the best.</p>
           </div>
-          <h1 className="text-3xl sm:text-5xl font-black leading-tight">
-            Tournaments<br />
-            <span className="text-purple-400">& Leagues</span>
-          </h1>
-          <p className="text-text-muted mt-4 max-w-md">Compete in organized tournaments. League round-robins and knockout brackets — prove you&apos;re the best.</p>
+          <div className="absolute right-0 top-0 w-72 h-72 rounded-full bg-purple-500/5 blur-3xl pointer-events-none" />
         </div>
-        <div className="absolute right-0 top-0 w-72 h-72 rounded-full bg-purple-500/5 blur-3xl pointer-events-none" />
-      </div>
+      )}
+
+      {/* Feature banners grid (shown above tournament listings) */}
+      {featureBanners.length > 0 && (
+        <div className={cn(
+          "grid gap-4",
+          featureBanners.length === 1 ? "grid-cols-1 max-w-sm" : "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"
+        )}>
+          {featureBanners.map(b => (
+            <FeatureBanner
+              key={b.id}
+              title={b.title}
+              subtitle={b.subtitle}
+              badgeText={b.badgeText}
+              ctaLabel={b.ctaLabel}
+              ctaUrl={b.ctaUrl}
+              accentColor={b.accentColor}
+              countdownTo={b.countdownTo ? new Date(b.countdownTo).toISOString() : null}
+              tournament={b.tournament ? {
+                game: b.tournament.game,
+                prizePool: Number(b.tournament.prizePool),
+                participantCount: b.tournament._count.participants,
+              } : null}
+            />
+          ))}
+        </div>
+      )}
 
       {live.length > 0 && (
         <section>
