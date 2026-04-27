@@ -9,10 +9,15 @@ export default async function MarketplaceLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const bar = await prisma.promoBanner.findFirst({
-    where: { isActive: true, variant: "ANNOUNCEMENT" },
-    orderBy: { createdAt: "desc" },
-  });
+  let bar = null;
+  try {
+    bar = await prisma.promoBanner.findFirst({
+      where: { isActive: true, variant: "ANNOUNCEMENT" },
+      orderBy: { createdAt: "desc" },
+    });
+  } catch {
+    // DB unreachable at build time — render without banner
+  }
 
   return (
     <div className="min-h-screen flex flex-col">

@@ -33,7 +33,7 @@ export default async function TournamentsPage() {
       where: { status: { not: "DRAFT" } },
       include: { _count: { select: { participants: true } } },
       orderBy: [{ status: "asc" }, { createdAt: "desc" }],
-    }),
+    }).catch(() => []),
     prisma.promoBanner.findMany({
       where: { isActive: true, variant: { in: ["HERO", "FEATURE"] } },
       orderBy: { createdAt: "desc" },
@@ -47,7 +47,7 @@ export default async function TournamentsPage() {
           },
         },
       },
-    }),
+    }).catch(() => []),
   ]);
 
   const live = tournaments.filter(t => t.status === "IN_PROGRESS" || t.status === "REGISTRATION_OPEN");
