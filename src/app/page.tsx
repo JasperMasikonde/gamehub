@@ -89,11 +89,14 @@ export default async function HomePage() {
   const heroBanner = promoBanners.find(b => b.variant === "HERO") ?? null;
   const featureBanners = promoBanners.filter(b => b.variant === "FEATURE");
 
-  // Random open challenge teaser
+  // Random open challenge teaser — only when admin has it enabled
   const now = new Date();
-  const openCount = await prisma.challenge.count({
-    where: { status: "OPEN", expiresAt: { gt: now } },
-  }).catch(() => 0);
+  const siteConfig = await prisma.siteConfig.findUnique({ where: { id: "singleton" } }).catch(() => null);
+  const spotlightEnabled = siteConfig?.showChallengeSpotlight ?? true;
+
+  const openCount = spotlightEnabled
+    ? await prisma.challenge.count({ where: { status: "OPEN", expiresAt: { gt: now } } }).catch(() => 0)
+    : 0;
   const spotlightChallenge = openCount > 0
     ? await prisma.challenge.findFirst({
         where: { status: "OPEN", expiresAt: { gt: now } },

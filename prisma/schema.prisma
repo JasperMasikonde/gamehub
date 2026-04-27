@@ -662,6 +662,8 @@ model SiteConfig {
   matchCodeHint    String   @default("8 digits, e.g. 12345678 or 1234-5678")
   // Admin receives email notifications at this address for key events
   adminNotificationEmail String?
+  // Homepage features
+  showChallengeSpotlight Boolean @default(true)
   updatedAt        DateTime @updatedAt
 }
 

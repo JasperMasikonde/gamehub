@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { AdminNotificationEmailForm } from "@/components/admin/AdminNotificationEmailForm";
+import { ChallengeSpotlightToggle } from "@/components/admin/ChallengeSpotlightToggle";
 import { Settings } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/Card";
 
@@ -8,6 +9,7 @@ export const dynamic = "force-dynamic";
 export default async function AdminSettingsPage() {
   const config = await prisma.siteConfig.findUnique({ where: { id: "singleton" } });
   const adminNotificationEmail = config?.adminNotificationEmail ?? null;
+  const showChallengeSpotlight = config?.showChallengeSpotlight ?? true;
 
   return (
     <div className="flex flex-col gap-6 max-w-xl">
@@ -22,6 +24,13 @@ export default async function AdminSettingsPage() {
       <Card>
         <CardContent>
           <AdminNotificationEmailForm currentEmail={adminNotificationEmail} />
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardContent>
+          <h2 className="text-sm font-semibold mb-4">Homepage Features</h2>
+          <ChallengeSpotlightToggle enabled={showChallengeSpotlight} />
         </CardContent>
       </Card>
 
