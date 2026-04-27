@@ -29,6 +29,8 @@ import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { ListingCard } from "@/components/listings/ListingCard";
 import { AnnouncementBar } from "@/components/banners/AnnouncementBar";
+import { HeroBanner } from "@/components/banners/HeroBanner";
+import { FeatureBanner } from "@/components/banners/FeatureBanner";
 import { prisma } from "@/lib/prisma";
 import {
   Gamepad2, ShieldCheck, Zap, Trophy, ArrowRight,
@@ -60,14 +62,31 @@ async function getFeaturedListings() {
 }
 
 export default async function HomePage() {
-  const [stats, featured, bar] = await Promise.all([
+  const [stats, featured, bar, promoBanners] = await Promise.all([
     getStats(),
     getFeaturedListings(),
     prisma.promoBanner.findFirst({
       where: { isActive: true, variant: "ANNOUNCEMENT" },
       orderBy: { createdAt: "desc" },
     }).catch(() => null),
+    prisma.promoBanner.findMany({
+      where: { isActive: true, variant: { in: ["HERO", "FEATURE"] } },
+      orderBy: { createdAt: "desc" },
+      include: {
+        tournament: {
+          select: {
+            game: true,
+            prizePool: true,
+            startDate: true,
+            _count: { select: { participants: true } },
+          },
+        },
+      },
+    }).catch(() => []),
   ]);
+
+  const heroBanner = promoBanners.find(b => b.variant === "HERO") ?? null;
+  const featureBanners = promoBanners.filter(b => b.variant === "FEATURE");
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -141,6 +160,51 @@ export default async function HomePage() {
           </div>
         </div>
       </section>
+
+      {/* ── Promo Banners ── */}
+      {(heroBanner || featureBanners.length > 0) && (
+        <section className="max-w-7xl mx-auto w-full px-4 sm:px-6 pb-10 space-y-4">
+          {heroBanner && (
+            <HeroBanner
+              title={heroBanner.title}
+              subtitle={heroBanner.subtitle}
+              badgeText={heroBanner.badgeText}
+              ctaLabel={heroBanner.ctaLabel}
+              ctaUrl={heroBanner.ctaUrl}
+              accentColor={heroBanner.accentColor}
+              countdownTo={heroBanner.countdownTo ? new Date(heroBanner.countdownTo).toISOString() : null}
+              tournament={heroBanner.tournament ? {
+                name: heroBanner.tournament.game,
+                game: heroBanner.tournament.game,
+                prizePool: Number(heroBanner.tournament.prizePool),
+                participantCount: heroBanner.tournament._count.participants,
+                startDate: heroBanner.tournament.startDate,
+              } : null}
+            />
+          )}
+          {featureBanners.length > 0 && (
+            <div className={`grid gap-4 ${featureBanners.length === 1 ? "grid-cols-1 max-w-sm" : "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"}`}>
+              {featureBanners.map(b => (
+                <FeatureBanner
+                  key={b.id}
+                  title={b.title}
+                  subtitle={b.subtitle}
+                  badgeText={b.badgeText}
+                  ctaLabel={b.ctaLabel}
+                  ctaUrl={b.ctaUrl}
+                  accentColor={b.accentColor}
+                  countdownTo={b.countdownTo ? new Date(b.countdownTo).toISOString() : null}
+                  tournament={b.tournament ? {
+                    game: b.tournament.game,
+                    prizePool: Number(b.tournament.prizePool),
+                    participantCount: b.tournament._count.participants,
+                  } : null}
+                />
+              ))}
+            </div>
+          )}
+        </section>
+      )}
 
       {/* ── Trust badges ── */}
       <section className="border-y border-bg-border bg-bg-surface/50">
