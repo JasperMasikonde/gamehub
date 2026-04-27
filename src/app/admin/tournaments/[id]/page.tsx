@@ -11,7 +11,9 @@ import { AdminAddParticipant } from "@/components/admin/AdminAddParticipant";
 import { AdvanceGameweekButton } from "@/components/admin/AdvanceGameweekButton";
 import { AdvancePhaseButton } from "@/components/admin/AdvancePhaseButton";
 import { RealtimeRefresh } from "@/components/escrow/RealtimeRefresh";
+import { TournamentShareButton } from "@/components/admin/TournamentShareButton";
 import { cn } from "@/lib/utils/cn";
+import type { FixtureMatch, StandingRow } from "@/components/admin/TournamentShareCards";
 
 const TYPE_LABEL: Record<string, string> = {
   KNOCKOUT: "Knockout",
@@ -87,6 +89,44 @@ export default async function AdminTournamentDetailPage({
   // Stats
   const completedCount = tournament.matches.filter(m => m.status === "COMPLETED" || m.status === "WALKOVER").length;
   const totalMatches = tournament.matches.length;
+
+  // ── Share card data ────────────────────────────────────────────────────────
+  const shareFixtures: FixtureMatch[] = displayedMatches.map(m => ({
+    id: m.id,
+    player1Name: m.player1?.displayName ?? m.player1?.username ?? "TBD",
+    player2Name: m.player2?.displayName ?? m.player2?.username ?? "TBD",
+    player1Score: m.player1Score,
+    player2Score: m.player2Score,
+    status: m.status,
+    scheduledAt: m.scheduledAt?.toISOString() ?? null,
+  }));
+
+  // Compute standings (league/CL only)
+  const shareStandings: StandingRow[] = (() => {
+    if (isKnockout) return [];
+    const rows: Record<string, StandingRow & { userId: string }> = {};
+    for (const p of tournament.participants) {
+      rows[p.userId] = {
+        userId: p.userId,
+        name: p.user.displayName ?? p.user.username,
+        played: 0, wins: 0, draws: 0, losses: 0, gf: 0, ga: 0, pts: 0,
+      };
+    }
+    for (const m of tournament.matches) {
+      if (m.status !== "COMPLETED" || !m.player1Id || !m.player2Id) continue;
+      const r1 = rows[m.player1Id]; const r2 = rows[m.player2Id];
+      if (!r1 || !r2) continue;
+      r1.played++; r2.played++;
+      r1.gf += m.player1Score ?? 0; r1.ga += m.player2Score ?? 0;
+      r2.gf += m.player2Score ?? 0; r2.ga += m.player1Score ?? 0;
+      if (m.winnerId === m.player1Id)      { r1.wins++; r1.pts += 3; r2.losses++; }
+      else if (m.winnerId === m.player2Id) { r2.wins++; r2.pts += 3; r1.losses++; }
+      else                                 { r1.draws++; r1.pts++; r2.draws++; r2.pts++; }
+    }
+    return Object.values(rows)
+      .sort((a, b) => b.pts - a.pts || (b.gf - b.ga) - (a.gf - a.ga) || b.gf - a.gf)
+      .map(({ userId: _uid, ...rest }) => rest);
+  })();
 
   return (
     <div className="space-y-6">
@@ -203,11 +243,23 @@ export default async function AdminTournamentDetailPage({
                 {hasGameweeks && selectedGw ? `Matchday ${selectedGw} — ` : ""}Matches
               </h2>
             </div>
-            {hasGameweeks && selectedGw && (
-              <span className="text-xs text-text-muted">
-                {displayedMatches.filter(m => m.status === "COMPLETED" || m.status === "WALKOVER").length}/{displayedMatches.length} done
-              </span>
-            )}
+            <div className="flex items-center gap-3">
+              {hasGameweeks && selectedGw && (
+                <span className="text-xs text-text-muted">
+                  {displayedMatches.filter(m => m.status === "COMPLETED" || m.status === "WALKOVER").length}/{displayedMatches.length} done
+                </span>
+              )}
+              {shareFixtures.length > 0 && (
+                <TournamentShareButton
+                  tournamentName={tournament.name}
+                  game={tournament.game}
+                  gameweek={selectedGw}
+                  fixtures={shareFixtures}
+                  standings={shareStandings}
+                  hasStandings={!isKnockout && shareStandings.length > 0}
+                />
+              )}
+            </div>
           </div>
 
           {tournament.matches.length === 0 ? (
