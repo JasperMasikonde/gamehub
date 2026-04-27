@@ -10,7 +10,9 @@ export function ChallengeSpotlightToggle({ enabled }: { enabled: boolean }) {
   const [error, setError] = useState("");
 
   async function toggle() {
-    setLoading(true); setError("");
+    if (loading) return;
+    setLoading(true);
+    setError("");
     try {
       const res = await fetch("/api/admin/config/challenge-spotlight", {
         method: "PATCH",
@@ -20,57 +22,75 @@ export function ChallengeSpotlightToggle({ enabled }: { enabled: boolean }) {
       const data = await res.json();
       if (!res.ok) { setError(data.error ?? "Failed to update"); return; }
       setActive(data.showChallengeSpotlight);
-    } catch { setError("Network error."); }
-    finally { setLoading(false); }
+    } catch {
+      setError("Network error.");
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
     <div className="space-y-3">
-      <div className="flex items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2">
+        <Swords size={16} className="text-neon-red" />
+        <h2 className="text-base font-semibold">Challenge Spotlight</h2>
+      </div>
+
+      <p className="text-xs text-text-muted leading-relaxed">
+        When enabled, a <strong>randomly selected open challenge</strong> is shown on the homepage to attract challengers. Rotates on every page load. Hidden automatically when no open challenges exist.
+      </p>
+
+      <button
+        type="button"
+        onClick={toggle}
+        disabled={loading}
+        className={cn(
+          "w-full flex items-center justify-between gap-4 px-4 py-3 rounded-xl border transition-colors cursor-pointer",
+          active
+            ? "bg-neon-red/5 border-neon-red/20 hover:bg-neon-red/10"
+            : "bg-bg-elevated border-bg-border hover:border-bg-border/80"
+        )}
+      >
+        <div className="flex items-center gap-3 min-w-0">
           <div className={cn(
-            "w-9 h-9 rounded-xl border flex items-center justify-center shrink-0 transition-colors",
-            active ? "bg-neon-red/10 border-neon-red/25 text-neon-red" : "bg-bg-elevated border-bg-border text-text-muted"
+            "w-8 h-8 rounded-lg border flex items-center justify-center shrink-0 transition-colors",
+            active
+              ? "bg-neon-red/10 border-neon-red/25 text-neon-red"
+              : "bg-bg-surface border-bg-border text-text-muted"
           )}>
-            <Swords size={16} />
+            <Swords size={14} />
           </div>
-          <div>
-            <p className="text-sm font-semibold">Open Challenge Spotlight</p>
-            <p className="text-xs text-text-muted">
-              Shows a randomly selected open challenge on the homepage to attract challengers.
+          <div className="text-left min-w-0">
+            <p className={cn("text-sm font-semibold", active ? "text-text-primary" : "text-text-muted")}>
+              {active ? "Spotlight is live" : "Spotlight is off"}
+            </p>
+            <p className="text-xs text-text-muted truncate">
+              {active ? "Visitors see a random open challenge on the homepage" : "No challenge card shown on the homepage"}
             </p>
           </div>
         </div>
 
-        <button
-          onClick={toggle}
-          disabled={loading}
-          className={cn(
-            "w-12 h-6 rounded-full relative transition-colors shrink-0",
-            active ? "bg-neon-red" : "bg-bg-border",
-            loading && "opacity-60"
-          )}
-          aria-label={active ? "Disable challenge spotlight" : "Enable challenge spotlight"}
-        >
+        {/* Toggle track */}
+        <div className={cn(
+          "w-10 h-5 rounded-full relative shrink-0 transition-colors",
+          active ? "bg-neon-red" : "bg-bg-border"
+        )}>
           {loading ? (
-            <Loader2 size={12} className="absolute inset-0 m-auto animate-spin text-white" />
+            <Loader2 size={11} className="absolute inset-0 m-auto animate-spin text-white" />
           ) : (
             <span className={cn(
-              "absolute top-1 w-4 h-4 rounded-full bg-white transition-transform",
-              active ? "translate-x-7" : "translate-x-1"
+              "absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform duration-200",
+              active ? "translate-x-5" : "translate-x-0.5"
             )} />
           )}
-        </button>
-      </div>
+        </div>
+      </button>
 
-      <p className={cn(
-        "text-xs font-semibold",
-        active ? "text-neon-red" : "text-text-muted"
-      )}>
-        {active ? "ON — visitors can see open challenges on the homepage" : "OFF — challenge spotlight is hidden from the homepage"}
-      </p>
-
-      {error && <p className="text-xs text-neon-red">{error}</p>}
+      {error && (
+        <p className="text-xs text-neon-red bg-neon-red/10 border border-neon-red/20 rounded-lg px-3 py-1.5">
+          {error}
+        </p>
+      )}
     </div>
   );
 }
