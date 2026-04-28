@@ -51,12 +51,14 @@ export function ChallengeChat({
   status,
   timeAgreed,
   initialMessages,
+  opponentName,
 }: {
   challengeId: string;
   myId: string;
   status: string;
   timeAgreed: boolean;
   initialMessages: DbMessage[];
+  opponentName: string;
 }) {
   const { socket, playSendSound } = useSocket();
   const [messages, setMessages] = useState<ChatMessage[]>(
@@ -69,6 +71,7 @@ export function ChallengeChat({
       createdAt: m.createdAt,
     }))
   );
+  const [opponentOnline, setOpponentOnline] = useState<boolean | null>(null);
   const [codeInput, setCodeInput] = useState("");
   const [showCodeInput, setShowCodeInput] = useState(false);
   const [sending, setSending] = useState(false);
@@ -101,9 +104,17 @@ export function ChallengeChat({
         setShowCodeInput(true);
       }
     };
+    const handleOnline  = () => setOpponentOnline(true);
+    const handleOffline = () => setOpponentOnline(false);
 
     socket.on("challenge_message", handleMessage);
-    return () => { socket.off("challenge_message", handleMessage); };
+    socket.on("opponent_online",   handleOnline);
+    socket.on("opponent_offline",  handleOffline);
+    return () => {
+      socket.off("challenge_message", handleMessage);
+      socket.off("opponent_online",   handleOnline);
+      socket.off("opponent_offline",  handleOffline);
+    };
   }, [socket, challengeId, myId]);
 
   useEffect(() => {
@@ -180,6 +191,29 @@ export function ChallengeChat({
 
   return (
     <div className="flex flex-col" style={{ minHeight: "22rem" }}>
+      {/* Presence bar */}
+      <div className="flex items-center gap-2 px-4 py-2 border-b border-border">
+        <span
+          className={cn(
+            "w-2 h-2 rounded-full shrink-0 transition-colors",
+            opponentOnline === true
+              ? "bg-neon-green shadow-[0_0_6px_rgba(0,255,135,0.7)]"
+              : opponentOnline === false
+              ? "bg-text-muted"
+              : "bg-text-muted/40 animate-pulse"
+          )}
+        />
+        <span className="text-xs text-text-muted">
+          {opponentName}
+          {" — "}
+          {opponentOnline === true
+            ? <span className="text-neon-green font-medium">Online</span>
+            : opponentOnline === false
+            ? <span>Offline</span>
+            : <span className="italic">checking…</span>}
+        </span>
+      </div>
+
       {/* Messages */}
       <div className="flex-1 overflow-y-auto space-y-3 p-4" style={{ maxHeight: "20rem" }}>
         {messages.length === 0 && timeAgreed && (

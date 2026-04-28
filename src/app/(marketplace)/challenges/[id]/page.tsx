@@ -392,6 +392,11 @@ export default async function ChallengeDetailPage({
               status={challenge.status}
               timeAgreed={!!challenge.scheduledAt}
               initialMessages={serializedMessages}
+              opponentName={
+                isHost
+                  ? (challenge.challenger?.displayName ?? challenge.challenger?.username ?? "Opponent")
+                  : (challenge.host.displayName ?? challenge.host.username)
+              }
             />
           </CardContent>
         </Card>

@@ -46,6 +46,7 @@ app.prepare().then(() => {
     socket.on("authenticate", (userId: string) => {
       if (typeof userId === "string" && userId.length > 0) {
         socket.join(`user:${userId}`);
+        socket.data.userId = userId;
       }
     });
 
@@ -58,6 +59,14 @@ app.prepare().then(() => {
     socket.on("join-challenge", (challengeId: string) => {
       if (typeof challengeId === "string" && challengeId.length > 0) {
         socket.join(`challenge:${challengeId}`);
+        socket.data.challengeId = challengeId;
+        // Tell anyone already in the room that this player is online
+        socket.to(`challenge:${challengeId}`).emit("opponent_online", { challengeId });
+        // If others were already here, tell the joining player their opponent is online
+        const room = io.sockets.adapter.rooms.get(`challenge:${challengeId}`);
+        if (room && room.size > 1) {
+          socket.emit("opponent_online", { challengeId });
+        }
       }
     });
 
@@ -69,7 +78,10 @@ app.prepare().then(() => {
     });
 
     socket.on("disconnect", () => {
-      // rooms cleaned up automatically by socket.io
+      const challengeId = socket.data?.challengeId as string | undefined;
+      if (challengeId) {
+        socket.to(`challenge:${challengeId}`).emit("opponent_offline", { challengeId });
+      }
     });
   });
 
