@@ -34,7 +34,7 @@ export function MatchCompletionBanner({ payout, challengeId }: Props) {
       .then((d) => {
         if (!d) return;
         setBalance(Number(d.balance));
-        setAmount(Math.max(0, Number(d.balance)).toFixed(2));
+        // Do NOT override amount — keep it pre-filled to the challenge payout
       })
       .catch(() => {});
 
