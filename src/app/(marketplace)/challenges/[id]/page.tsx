@@ -128,12 +128,7 @@ export default async function ChallengeDetailPage({
     : null;
   const resultWindowMinutes = siteConfig?.challengeResultWindowMinutes ?? 60;
 
-  // For winner payout banner: find any admin to link "chat with admin"
   const isWinner = challenge.status === "COMPLETED" && challenge.winnerId === session.user.id;
-  const adminUser = isWinner
-    ? await prisma.user.findFirst({ where: { role: "ADMIN", isSuperAdmin: false }, select: { id: true } })
-      ?? await prisma.user.findFirst({ where: { isSuperAdmin: true }, select: { id: true } })
-    : null;
   const winnerPayout = isWinner
     ? Number(challenge.wagerAmount) * 2
       - (challenge.platformFee ? Number(challenge.platformFee) : 0)
@@ -308,12 +303,10 @@ export default async function ChallengeDetailPage({
       )}
 
       {/* Winner payout countdown — shown only to the winner */}
-      {isWinner && challenge.completedAt && adminUser && (
+      {isWinner && (
         <MatchCompletionBanner
-          completedAt={challenge.completedAt.toISOString()}
           payout={winnerPayout}
-          adminUserId={adminUser.id}
-          challengeId={id}
+          winnerName={challenge.winner?.displayName ?? challenge.winner?.username ?? ""}
         />
       )}
 
