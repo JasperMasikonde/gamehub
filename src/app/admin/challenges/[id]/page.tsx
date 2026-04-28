@@ -6,7 +6,7 @@ import { ChallengeResolvePanel } from "@/components/admin/ChallengeResolvePanel"
 import { ChallengeRemovePanel } from "@/components/admin/ChallengeRemovePanel";
 import { AdminWalletAdjustPanel } from "@/components/admin/AdminWalletAdjustPanel";
 import { AdminQuickMessage } from "@/components/admin/AdminQuickMessage";
-import { Swords, Trophy, AlertTriangle, User, MessageCircle } from "lucide-react";
+import { Swords, Trophy, AlertTriangle, User, MessageCircle, KeyRound, Gamepad2 } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 import Link from "next/link";
 
@@ -288,26 +288,60 @@ export default async function AdminChallengeDetailPage({
       )}
 
       {/* Chat log */}
-      {challenge.messages.length > 0 && (
-        <Card>
-          <CardHeader><h2 className="text-sm font-semibold">Match Chat Log</h2></CardHeader>
-          <CardContent>
-            <div className="flex flex-col gap-3 max-h-80 overflow-y-auto">
-              {challenge.messages.map((m) => (
-                <div key={m.id} className="flex gap-2 text-sm">
-                  <span className="font-semibold shrink-0 text-text-primary">
-                    {m.sender.displayName ?? m.sender.username}:
-                  </span>
-                  <span className="text-text-subtle break-words">{m.content}</span>
-                  <span className="text-xs text-text-muted ml-auto shrink-0">
-                    {new Date(m.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-                  </span>
-                </div>
-              ))}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <h2 className="text-sm font-semibold">Match Code Chat</h2>
+            <span className="text-xs text-text-muted">{challenge.messages.length} message{challenge.messages.length !== 1 ? "s" : ""}</span>
+          </div>
+        </CardHeader>
+        <CardContent className="p-0">
+          {challenge.messages.length === 0 ? (
+            <p className="text-xs text-text-muted text-center py-6 italic">No chat activity yet.</p>
+          ) : (
+            <div className="flex flex-col divide-y divide-bg-border max-h-96 overflow-y-auto">
+              {challenge.messages.map((m) => {
+                const name = m.sender.displayName ?? m.sender.username;
+                const time = new Date(m.createdAt).toLocaleString("en-KE", {
+                  day: "numeric", month: "short", hour: "2-digit", minute: "2-digit",
+                });
+                if (m.messageType === "MATCH_CODE_REQUEST") {
+                  return (
+                    <div key={m.id} className="flex items-center gap-3 px-4 py-3">
+                      <div className="w-7 h-7 rounded-full bg-neon-purple/10 border border-neon-purple/20 flex items-center justify-center shrink-0">
+                        <KeyRound size={12} className="text-neon-purple" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs text-text-primary">
+                          <span className="font-semibold">{name}</span>
+                          <span className="text-text-muted"> requested the match code</span>
+                        </p>
+                        <p className="text-[10px] text-text-muted mt-0.5">{time}</p>
+                      </div>
+                    </div>
+                  );
+                }
+                return (
+                  <div key={m.id} className="flex items-center gap-3 px-4 py-3">
+                    <div className="w-7 h-7 rounded-full bg-neon-green/10 border border-neon-green/20 flex items-center justify-center shrink-0">
+                      <Gamepad2 size={12} className="text-neon-green" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs text-text-muted mb-1">
+                        <span className="font-semibold text-text-primary">{name}</span> shared their match code
+                      </p>
+                      <code className="font-mono text-sm font-bold text-neon-green bg-neon-green/10 border border-neon-green/20 px-2 py-0.5 rounded-lg tracking-wider">
+                        {m.content}
+                      </code>
+                      <p className="text-[10px] text-text-muted mt-1">{time}</p>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
-          </CardContent>
-        </Card>
-      )}
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }
