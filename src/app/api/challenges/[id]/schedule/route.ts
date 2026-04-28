@@ -45,8 +45,11 @@ export async function PATCH(
   // ── PROPOSE ─────────────────────────────────────────────────────────────
   if (parsed.data.action === "propose") {
     const proposedAt = new Date(parsed.data.scheduledAt);
-    if (proposedAt <= new Date())
+    const now = new Date();
+    if (proposedAt <= now)
       return NextResponse.json({ error: "Proposed time must be in the future" }, { status: 400 });
+    if (proposedAt > new Date(now.getTime() + 12 * 60 * 60 * 1000))
+      return NextResponse.json({ error: "Match time must be within the next 12 hours" }, { status: 400 });
 
     const updated = await prisma.challenge.update({
       where: { id },

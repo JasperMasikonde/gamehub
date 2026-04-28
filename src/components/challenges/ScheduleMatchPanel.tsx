@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { CheckCircle, Clock, RotateCcw, ChevronDown, ChevronUp, Zap } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 import { Button } from "@/components/ui/Button";
@@ -33,232 +33,88 @@ function fmtShort(iso: string) {
   });
 }
 
-function fmtDayLabel(d: Date): string {
-  const now = new Date();
-  if (d.toDateString() === now.toDateString()) return "Today";
-  const tom = new Date(now); tom.setDate(tom.getDate() + 1);
-  if (d.toDateString() === tom.toDateString()) return "Tomorrow";
-  return d.toLocaleDateString("en-KE", { weekday: "short", day: "numeric", month: "short" });
-}
-
-// ── Time slot data ────────────────────────────────────────────────────────────
-
-interface Slot { label: string; h: number; m: number }
-
-function fmtSlotLabel(h: number, m: number): string {
-  const period = h < 12 ? "AM" : "PM";
-  const h12 = h % 12 === 0 ? 12 : h % 12;
-  return m === 0 ? `${h12} ${period}` : `${h12}:${String(m).padStart(2, "0")}`;
-}
-
-function getDateOptions(): Date[] {
-  const dates: Date[] = [];
-  const now = new Date();
-  for (let i = 0; i < 5; i++) {
-    const d = new Date(now);
-    d.setDate(d.getDate() + i);
-    d.setHours(0, 0, 0, 0);
-    dates.push(d);
-  }
-  return dates;
-}
-
-// Generate slots in 10-min increments anchored to matchedAt's minute offset.
-// Only returns slots after both matchedAt+10min and now+1hr.
-function availableSlotsFor(date: Date, matchedAt: Date): Slot[] {
-  const cutoff = Math.max(
-    matchedAt.getTime() + 10 * 60 * 1000,
-    Date.now() + 60 * 60 * 1000,
-  );
-  const minuteOffset = matchedAt.getMinutes() % 10;
-  const slots: Slot[] = [];
-  for (let h = 0; h < 24; h++) {
-    for (let step = 0; step < 6; step++) {
-      const m = (minuteOffset + step * 10) % 60;
-      const slotDate = new Date(date);
-      slotDate.setHours(h, m, 0, 0);
-      if (slotDate.getTime() > cutoff) {
-        slots.push({ label: fmtSlotLabel(h, m), h, m });
-        if (slots.length === 24) return slots;
-      }
-    }
-  }
-  return slots;
-}
-
-function buildISO(date: Date, slot: Slot): string {
-  const d = new Date(date);
-  d.setHours(slot.h, slot.m, 0, 0);
-  return d.toISOString();
-}
-
-function buildCustomISO(date: Date, timeStr: string): string | null {
-  const [hStr, mStr] = timeStr.split(":");
-  const h = parseInt(hStr, 10);
-  const m = parseInt(mStr, 10);
-  if (isNaN(h) || isNaN(m)) return null;
-  const d = new Date(date);
-  d.setHours(h, m, 0, 0);
-  return d.toISOString();
-}
-
-// ── Inner time-picker ─────────────────────────────────────────────────────────
+// ── Time picker — datetime-local within 12 hrs ────────────────────────────────
 
 interface PickerProps {
   onPropose: (iso: string) => void;
   loading: boolean;
   error: string;
-  matchedAt: Date;
   ctaLabel?: string;
 }
 
-function TimePicker({ onPropose, loading, error, matchedAt, ctaLabel = "Propose this time" }: PickerProps) {
-  const dates = getDateOptions();
-  const [selDate, setSelDate] = useState<Date>(dates[0]);
-  const [selSlot, setSelSlot] = useState<Slot | null>(null);
-  const [customTime, setCustomTime] = useState("");
-  const [customError, setCustomError] = useState("");
+function toLocalDatetimeValue(d: Date): string {
+  // Format: YYYY-MM-DDTHH:MM (local time, no timezone) for datetime-local input
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
 
-  function pickDate(d: Date) {
-    setSelDate(d);
-    setCustomError("");
-    if (selSlot) {
-      const still = availableSlotsFor(d, matchedAt).find(s => s.h === selSlot.h && s.m === selSlot.m);
-      if (!still) setSelSlot(null);
-    }
-    if (customTime) {
-      const iso = buildCustomISO(d, customTime);
-      if (iso && new Date(iso).getTime() <= Date.now() + 60 * 60 * 1000) {
-        setCustomError("That time has passed — pick a later time.");
-      }
-    }
-  }
+function TimePicker({ onPropose, loading, error, ctaLabel = "Propose this time" }: PickerProps) {
+  const [value, setValue] = useState("");
+  const [localError, setLocalError] = useState("");
 
-  function pickSlot(s: Slot) {
-    setSelSlot(prev => (prev?.h === s.h && prev?.m === s.m ? null : s));
-    setCustomTime("");
-    setCustomError("");
-  }
+  const minDate = new Date(Date.now() + 5 * 60 * 1000);       // 5 min from now
+  const maxDate = new Date(Date.now() + 12 * 60 * 60 * 1000); // 12 hrs from now
+  const minStr = toLocalDatetimeValue(minDate);
+  const maxStr = toLocalDatetimeValue(maxDate);
 
-  function handleCustomChange(val: string) {
-    setCustomTime(val);
-    setSelSlot(null);
-    setCustomError("");
-    if (val) {
-      const iso = buildCustomISO(selDate, val);
-      if (!iso || new Date(iso).getTime() <= Date.now() + 60 * 60 * 1000) {
-        setCustomError("Must be at least 1 hour from now.");
-      }
+  function handleChange(val: string) {
+    setValue(val);
+    setLocalError("");
+    if (!val) return;
+    const selected = new Date(val);
+    if (selected <= new Date()) {
+      setLocalError("That time has already passed.");
+    } else if (selected > maxDate) {
+      setLocalError("Must be within the next 12 hours.");
     }
   }
 
-  const slots = availableSlotsFor(selDate, matchedAt);
-
-  const previewISO = selSlot
-    ? buildISO(selDate, selSlot)
-    : customTime && !customError
-      ? buildCustomISO(selDate, customTime)
-      : null;
+  const canSubmit = !!value && !localError;
 
   return (
-    <div className="space-y-5">
-      {/* Day row */}
+    <div className="space-y-4">
       <div>
-        <p className="text-xs font-semibold text-text-muted uppercase tracking-wide mb-2.5">Day</p>
-        <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none -mx-1 px-1">
-          {dates.map((d, i) => {
-            const hasTimes = availableSlotsFor(d, matchedAt).length > 0;
-            const isSel = d.toDateString() === selDate.toDateString();
-            return (
-              <button
-                key={i}
-                disabled={!hasTimes}
-                onClick={() => hasTimes && pickDate(d)}
-                className={cn(
-                  "shrink-0 px-4 py-2.5 rounded-2xl border text-sm font-semibold transition-all active:scale-95",
-                  isSel
-                    ? "bg-neon-blue border-neon-blue text-bg-primary shadow-[0_0_12px_rgba(0,212,255,0.35)]"
-                    : hasTimes
-                    ? "bg-bg-elevated border-bg-border text-text-primary hover:border-neon-blue/40"
-                    : "bg-bg-elevated border-bg-border text-text-muted opacity-30 cursor-not-allowed"
-                )}
-              >
-                {fmtDayLabel(d)}
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Time grid */}
-      <div>
-        <p className="text-xs font-semibold text-text-muted uppercase tracking-wide mb-2.5">Time</p>
-        {slots.length === 0 ? (
-          <p className="text-sm text-text-muted italic">No slots left today — pick another day.</p>
-        ) : (
-          <div className="grid grid-cols-4 gap-2">
-            {slots.map(s => {
-              const isSel = selSlot?.h === s.h && selSlot?.m === s.m;
-              return (
-                <button
-                  key={`${s.h}-${s.m}`}
-                  onClick={() => pickSlot(s)}
-                  className={cn(
-                    "py-3 rounded-2xl border text-sm font-bold transition-all active:scale-95",
-                    isSel
-                      ? "bg-neon-green border-neon-green text-bg-primary shadow-[0_0_12px_rgba(0,255,135,0.35)]"
-                      : "bg-bg-elevated border-bg-border text-text-primary hover:border-neon-green/40"
-                  )}
-                >
-                  {s.label}
-                </button>
-              );
-            })}
-          </div>
+        <p className="text-xs text-text-muted mb-2 leading-relaxed">
+          Pick any time within the next <span className="font-semibold text-text-primary">12 hours</span>.
+        </p>
+        <input
+          type="datetime-local"
+          value={value}
+          onChange={e => handleChange(e.target.value)}
+          min={minStr}
+          max={maxStr}
+          className={cn(
+            "w-full px-4 py-3.5 rounded-2xl border bg-bg-elevated text-sm font-semibold text-text-primary",
+            "focus:outline-none transition-colors",
+            localError
+              ? "border-neon-red"
+              : value && !localError
+              ? "border-neon-green text-neon-green"
+              : "border-bg-border focus:border-neon-green/60"
+          )}
+        />
+        {localError && (
+          <p className="mt-1.5 text-xs text-neon-red">{localError}</p>
+        )}
+        {!localError && !value && (
+          <p className="mt-1.5 text-xs text-text-muted/60">
+            Up to {fmtShort(maxDate.toISOString())}
+          </p>
         )}
       </div>
 
-      {/* Custom time */}
-      <div>
-        <p className="text-xs font-semibold text-text-muted uppercase tracking-wide mb-2">Custom time</p>
-        <div className="flex items-center gap-3">
-          <input
-            type="time"
-            value={customTime}
-            onChange={e => handleCustomChange(e.target.value)}
-            className={cn(
-              "flex-1 min-w-0 px-4 py-3 rounded-2xl border bg-bg-elevated text-sm font-semibold text-text-primary",
-              "focus:outline-none transition-colors",
-              customTime && !customError
-                ? "border-neon-green text-neon-green"
-                : customError
-                ? "border-neon-red"
-                : "border-bg-border focus:border-neon-green/60"
-            )}
-          />
-          {customTime && !customError && (
-            <button
-              onClick={() => { setCustomTime(""); setCustomError(""); }}
-              className="text-xs text-text-muted hover:text-text-primary shrink-0"
-            >
-              Clear
-            </button>
-          )}
-        </div>
-        {customError && <p className="mt-1.5 text-xs text-neon-red">{customError}</p>}
-      </div>
-
-      {/* Preview + CTA */}
-      {previewISO && (
-        <div className="space-y-3 pt-1">
+      {canSubmit && (
+        <div className="space-y-2">
           <div className="flex items-center justify-center gap-2 py-2.5 rounded-2xl bg-bg-surface border border-bg-border">
             <Clock size={13} className="text-text-muted" />
-            <span className="text-sm font-semibold text-text-primary">{fmtShort(previewISO)}</span>
+            <span className="text-sm font-semibold text-text-primary">
+              {fmtShort(new Date(value).toISOString())}
+            </span>
           </div>
           <Button
             className="w-full h-12 text-sm font-bold glow-green"
             variant="primary"
-            onClick={() => onPropose(previewISO)}
+            onClick={() => onPropose(new Date(value).toISOString())}
             loading={loading}
           >
             {ctaLabel}
@@ -281,11 +137,8 @@ export function ScheduleMatchPanel({
   scheduledAt: initScheduledAt,
   resultDeadlineAt: initDeadlineAt,
   resultWindowMinutes,
-  matchedAt: matchedAtISO,
   opponentName,
 }: Props) {
-  // Fall back to now if matchedAt is unavailable (legacy challenges)
-  const matchedAt = matchedAtISO ? new Date(matchedAtISO) : new Date();
   const [proposedMatchTime, setProposedMatchTime] = useState(initProposed);
   const [proposedByHost, setProposedByHost]       = useState(initProposedByHost);
   const [scheduledAt, setScheduledAt]             = useState(initScheduledAt);
@@ -293,6 +146,15 @@ export function ScheduleMatchPanel({
   const [showPicker, setShowPicker]               = useState(false);
   const [loading, setLoading]                     = useState(false);
   const [error, setError]                         = useState("");
+
+  // Sync state when server pushes fresh props via router.refresh()
+  useEffect(() => {
+    setProposedMatchTime(initProposed);
+    setProposedByHost(initProposedByHost);
+    setScheduledAt(initScheduledAt);
+    setResultDeadlineAt(initDeadlineAt);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initProposed, initProposedByHost, initScheduledAt, initDeadlineAt]);
 
   const hours = Math.floor(resultWindowMinutes / 60);
   const mins  = resultWindowMinutes % 60;
@@ -302,13 +164,13 @@ export function ScheduleMatchPanel({
     ((isHost && proposedByHost === true) || (!isHost && proposedByHost === false));
   const theyMadeProposal = proposedMatchTime !== null && !iMadeProposal;
 
-  async function apiCall(action: string, scheduledAt?: string) {
+  async function apiCall(action: string, iso?: string) {
     setLoading(true); setError("");
     try {
       const res = await fetch(`/api/challenges/${challengeId}/schedule`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(action === "propose" ? { action, scheduledAt } : { action }),
+        body: JSON.stringify(action === "propose" ? { action, scheduledAt: iso } : { action }),
       });
       if (!res.ok) {
         const j = await res.json().catch(() => ({})) as { error?: string };
@@ -363,12 +225,13 @@ export function ScheduleMatchPanel({
         </div>
         {showPicker && (
           <div className="border-t border-neon-green/15 px-4 py-4">
-            <p className="text-xs text-text-muted mb-4">Proposing a new time will require {opponentName} to accept again.</p>
+            <p className="text-xs text-text-muted mb-4">
+              Proposing a new time will require {opponentName} to accept again.
+            </p>
             <TimePicker
               onPropose={iso => void apiCall("propose", iso)}
               loading={loading}
               error={error}
-              matchedAt={matchedAt}
               ctaLabel="Propose new time"
             />
           </div>
@@ -423,7 +286,6 @@ export function ScheduleMatchPanel({
               onPropose={iso => void apiCall("propose", iso)}
               loading={loading}
               error={error}
-              matchedAt={matchedAt}
               ctaLabel="Send counter-proposal"
             />
           </div>
@@ -461,7 +323,6 @@ export function ScheduleMatchPanel({
               onPropose={iso => void apiCall("propose", iso)}
               loading={loading}
               error={error}
-              matchedAt={matchedAt}
               ctaLabel="Update my proposal"
             />
           </div>
@@ -486,7 +347,6 @@ export function ScheduleMatchPanel({
           onPropose={iso => void apiCall("propose", iso)}
           loading={loading}
           error={error}
-          matchedAt={matchedAt}
           ctaLabel={`Propose to ${opponentName}`}
         />
       </div>
