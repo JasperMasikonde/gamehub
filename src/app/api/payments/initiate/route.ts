@@ -25,8 +25,15 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
   }
 
-  if (!["escrow", "challenge", "challenge_host", "tournament", "shop", "rank_push"].includes(purpose)) {
+  if (!["escrow", "challenge", "challenge_host", "tournament", "shop", "rank_push", "wallet_deposit"].includes(purpose)) {
     return NextResponse.json({ error: "Invalid purpose" }, { status: 400 });
+  }
+
+  // For wallet deposits, always use the authenticated user's ID as the entity
+  // so users cannot deposit into another user's wallet by spoofing entityId
+  const resolvedEntityId = purpose === "wallet_deposit" ? session.user.id : entityId;
+  if (!resolvedEntityId) {
+    return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
   }
 
   let normPhone: string;
@@ -42,7 +49,7 @@ export async function POST(req: NextRequest) {
   }
 
   // Build a short reference (NCBA max 20 chars)
-  const accountRef = `GH${purpose.slice(0, 4).toUpperCase()}${entityId.slice(-8)}`;
+  const accountRef = `GH${purpose.slice(0, 4).toUpperCase()}${resolvedEntityId.slice(-8)}`;
 
   try {
     const stkRes = await initiateSTKPush(normPhone, amountNum, accountRef);
@@ -63,7 +70,7 @@ export async function POST(req: NextRequest) {
         referenceId: accountRef,
         status: "PENDING",
         purpose,
-        entityId,
+        entityId: resolvedEntityId,
         metadata: metadata ? JSON.stringify(metadata) : null,
       },
     });

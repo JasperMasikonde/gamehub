@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import { Wallet, ArrowDownCircle, ArrowUpCircle, Clock, CheckCircle, XCircle, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { PayoutRequestForm } from "./PayoutRequestForm";
+import { DepositPanel } from "./DepositPanel";
 import type { WalletTxType, PayoutStatus } from "@prisma/client";
 
 interface WalletTx {
@@ -26,6 +27,7 @@ interface PayoutRequest {
 }
 
 const txIcon: Record<WalletTxType, React.ReactNode> = {
+  DEPOSIT: <ArrowDownCircle size={15} className="text-neon-green" />,
   CHALLENGE_WIN: <ArrowDownCircle size={15} className="text-neon-green" />,
   CHALLENGE_WAGER: <ArrowUpCircle size={15} className="text-neon-red" />,
   PAYOUT: <ArrowUpCircle size={15} className="text-neon-yellow" />,
@@ -48,6 +50,7 @@ export function WalletCard() {
   const [transactions, setTransactions] = useState<WalletTx[]>([]);
   const [payouts, setPayouts] = useState<PayoutRequest[]>([]);
   const [showPayoutForm, setShowPayoutForm] = useState(false);
+  const [showDepositPanel, setShowDepositPanel] = useState(false);
   const [loading, setLoading] = useState(true);
 
   const load = useCallback(async () => {
@@ -96,16 +99,23 @@ export function WalletCard() {
         <div className="mt-2 text-3xl font-bold text-neon-blue">
           KES {balance?.toLocaleString("en-KE", { minimumFractionDigits: 2 }) ?? "0.00"}
         </div>
-        <div className="mt-4">
+        <div className="mt-4 flex flex-wrap gap-2">
+          <Button
+            size="sm"
+            variant="primary"
+            onClick={() => { setShowDepositPanel((v) => !v); setShowPayoutForm(false); }}
+          >
+            Deposit
+          </Button>
           {hasPendingPayout ? (
-            <p className="text-xs text-neon-yellow flex items-center gap-1">
+            <p className="text-xs text-neon-yellow flex items-center gap-1 self-center">
               <Clock size={12} /> A payout request is pending
             </p>
           ) : (
             <Button
               size="sm"
               variant="outline"
-              onClick={() => setShowPayoutForm((v) => !v)}
+              onClick={() => { setShowPayoutForm((v) => !v); setShowDepositPanel(false); }}
               disabled={(balance ?? 0) <= 0}
             >
               Request Payout
@@ -113,6 +123,13 @@ export function WalletCard() {
           )}
         </div>
       </div>
+
+      {showDepositPanel && (
+        <DepositPanel
+          onSuccess={() => { setShowDepositPanel(false); void load(); }}
+          onCancel={() => setShowDepositPanel(false)}
+        />
+      )}
 
       {showPayoutForm && (
         <PayoutRequestForm
@@ -186,7 +203,7 @@ export function WalletCard() {
           <h3 className="text-sm font-semibold text-text-primary mb-3">Transaction History</h3>
           <div className="flex flex-col gap-3">
             {transactions.map((tx) => {
-              const isCredit = ["CHALLENGE_WIN", "ADMIN_ADJUSTMENT", "SALE_CREDIT", "REFUND_CREDIT", "RANK_PUSH_CREDIT", "TOURNAMENT_WIN"].includes(tx.type);
+              const isCredit = ["DEPOSIT", "CHALLENGE_WIN", "ADMIN_ADJUSTMENT", "SALE_CREDIT", "REFUND_CREDIT", "RANK_PUSH_CREDIT", "TOURNAMENT_WIN"].includes(tx.type);
               return (
                 <div key={tx.id} className="flex items-start gap-3">
                   <div className="mt-0.5">{txIcon[tx.type]}</div>

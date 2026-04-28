@@ -152,6 +152,7 @@ enum PaymentStatus {
 }
 
 enum WalletTxType {
+  DEPOSIT             // credited when user deposits via M-Pesa
   CHALLENGE_WIN       // credited when you win a challenge
   CHALLENGE_WAGER     // debited when you pay wager from wallet
   PAYOUT              // debited when a payout is processed

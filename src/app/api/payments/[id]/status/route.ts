@@ -51,7 +51,7 @@ export async function GET(
     });
 
     try {
-      await fulfillPayment(payment.purpose, payment.entityId, session.user.id, payment.metadata ?? null);
+      await fulfillPayment(payment.purpose, payment.entityId, session.user.id, Number(payment.amount), payment.metadata ?? null);
     } catch (err) {
       console.error("[payments/status] fulfillPayment error:", err);
     }
@@ -69,9 +69,25 @@ async function fulfillPayment(
   purpose: string,
   entityId: string,
   userId: string,
+  amount: number,
   metadataJson: string | null
 ) {
   const metadata = metadataJson ? JSON.parse(metadataJson) : {};
+
+  if (purpose === "wallet_deposit") {
+    const { creditWallet } = await import("@/lib/wallet");
+    const { emitToast } = await import("@/lib/socket-server");
+    await creditWallet({ userId, amount, type: "DEPOSIT", description: "M-Pesa wallet deposit" });
+    emitToast(userId, {
+      type: "success",
+      title: "Deposit confirmed!",
+      message: `KES ${amount.toLocaleString("en-KE", { minimumFractionDigits: 2 })} added to your wallet.`,
+      linkUrl: "/dashboard/wallet",
+      linkLabel: "View wallet →",
+      duration: 10000,
+    });
+    return;
+  }
 
   if (purpose === "escrow") {
     await transitionTransaction(entityId, "IN_ESCROW", userId);

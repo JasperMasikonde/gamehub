@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { transitionTransaction } from "@/lib/escrow";
 import { createNotification } from "@/lib/notifications";
 import { emitToast, emitChallengeUpdate, emitTournamentUpdate } from "@/lib/socket-server";
+import { creditWallet } from "@/lib/wallet";
 
 /**
  * NCBA C2B Callback
@@ -17,7 +18,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
-  // NCBA callback payload fields
   const transactionId = body.TransactionID as string | undefined;
   const resultCode = String(body.ResultCode ?? body.ResponseCode ?? "");
   const resultDesc = body.ResultDesc as string | undefined;
@@ -31,11 +31,9 @@ export async function POST(req: NextRequest) {
   });
 
   if (!payment) {
-    // Unknown transaction — acknowledge so NCBA doesn't retry
     return NextResponse.json({ ResultCode: "0", ResultDesc: "Accepted" });
   }
 
-  // Skip if already finalised
   if (payment.status === "COMPLETED" || payment.status === "FAILED") {
     return NextResponse.json({ ResultCode: "0", ResultDesc: "Accepted" });
   }
@@ -47,7 +45,13 @@ export async function POST(req: NextRequest) {
     });
 
     try {
-      await fulfillPayment(payment.purpose, payment.entityId, payment.userId, payment.metadata ?? null);
+      await fulfillPayment(
+        payment.purpose,
+        payment.entityId,
+        payment.userId,
+        Number(payment.amount),
+        payment.metadata ?? null,
+      );
     } catch (err) {
       console.error("[payments/callback] fulfillPayment error:", err);
     }
@@ -58,7 +62,6 @@ export async function POST(req: NextRequest) {
     });
   }
 
-  // NCBA expects this acknowledgement format
   return NextResponse.json({ ResultCode: "0", ResultDesc: "Accepted" });
 }
 
@@ -66,9 +69,23 @@ async function fulfillPayment(
   purpose: string,
   entityId: string,
   userId: string,
-  metadataJson: string | null
+  amount: number,
+  metadataJson: string | null,
 ) {
   const metadata = metadataJson ? JSON.parse(metadataJson) : {};
+
+  if (purpose === "wallet_deposit") {
+    await creditWallet({ userId, amount, type: "DEPOSIT", description: "M-Pesa wallet deposit" });
+    emitToast(userId, {
+      type: "success",
+      title: "Deposit confirmed!",
+      message: `KES ${amount.toLocaleString("en-KE", { minimumFractionDigits: 2 })} added to your wallet.`,
+      linkUrl: "/dashboard/wallet",
+      linkLabel: "View wallet →",
+      duration: 10000,
+    });
+    return;
+  }
 
   if (purpose === "escrow") {
     await transitionTransaction(entityId, "IN_ESCROW", userId);
@@ -85,13 +102,16 @@ async function fulfillPayment(
   }
 
   if (purpose === "challenge") {
-    const { challengerSquadUrl, hostId, whatsappNumber } = metadata as { challengerSquadUrl: string; hostId: string; whatsappNumber?: string };
-    // Use updateMany with a status guard so only one challenger wins the race
+    const { challengerSquadUrl, hostId, whatsappNumber } = metadata as {
+      challengerSquadUrl: string;
+      hostId: string;
+      whatsappNumber?: string;
+    };
     const result = await prisma.challenge.updateMany({
       where: { id: entityId, status: "OPEN" },
       data: { challengerId: userId, challengerSquadUrl, status: "ACTIVE", matchedAt: new Date() },
     });
-    if (result.count === 0) return; // another challenger already claimed it
+    if (result.count === 0) return;
     if (whatsappNumber) {
       await prisma.user.update({ where: { id: userId }, data: { whatsappNumber } });
     }
@@ -128,18 +148,12 @@ async function fulfillPayment(
   }
 
   if (purpose === "shop") {
-    await prisma.shopOrder.update({
-      where: { id: entityId },
-      data: { status: "PAID" },
-    });
+    await prisma.shopOrder.update({ where: { id: entityId }, data: { status: "PAID" } });
     return;
   }
 
   if (purpose === "rank_push") {
-    await prisma.rankPushOrder.update({
-      where: { id: entityId },
-      data: { status: "IN_PROGRESS" },
-    });
+    await prisma.rankPushOrder.update({ where: { id: entityId }, data: { status: "IN_PROGRESS" } });
     const order = await prisma.rankPushOrder.findUnique({
       where: { id: entityId },
       select: { providerId: true, clientId: true },
