@@ -282,38 +282,55 @@ export default async function AdminTournamentDetailPage({
                         {isKnockout ? roundLabel(round) : `Round ${round}`}
                       </div>
                     )}
-                    {roundMatches.map(match => {
-                      // Find group name for CL
-                      const groupName = isCL ? tournament.groups.find(g => g.id === match.groupId)?.name : null;
-                      return (
-                        <div key={match.id} className="p-4 border-b border-bg-border last:border-0">
-                          {(groupName || match.leg) && (
-                            <div className="flex items-center gap-2 mb-2">
-                              {groupName && <span className="text-[10px] border border-bg-border text-text-muted rounded px-1.5 py-0.5">{groupName}</span>}
-                              {match.leg && tournament.homeAndAway && (
-                                <span className="text-[10px] border border-bg-border text-text-muted rounded px-1.5 py-0.5">Leg {match.leg}</span>
-                              )}
-                            </div>
-                          )}
-                          <TournamentMatchScore
-                            tournamentId={id}
-                            matchId={match.id}
-                            player1={match.player1}
-                            player2={match.player2}
-                            currentP1Score={match.player1Score}
-                            currentP2Score={match.player2Score}
-                            currentWinnerId={match.winnerId}
-                            status={match.status}
-                            player1SquadKey={match.player1Id ? squadMap.get(match.player1Id) ?? null : null}
-                            player2SquadKey={match.player2Id ? squadMap.get(match.player2Id) ?? null : null}
-                            player1TeamName={match.player1Id ? teamNameMap.get(match.player1Id) ?? null : null}
-                            player2TeamName={match.player2Id ? teamNameMap.get(match.player2Id) ?? null : null}
-                            player1ResultKey={match.player1ResultKey}
-                            player2ResultKey={match.player2ResultKey}
-                          />
-                        </div>
-                      );
-                    })}
+                    {roundMatches
+                      // When H&A, hide standalone leg 2 rows — they render inside their leg 1 card
+                      .filter(match => !tournament.homeAndAway || match.leg !== 2)
+                      .map(match => {
+                        // Find group name for CL
+                        const groupName = isCL ? tournament.groups.find(g => g.id === match.groupId)?.name : null;
+                        // Find companion leg 2 for this leg 1 match (same two players, reversed, same round/group/gameweek)
+                        const leg2 = tournament.homeAndAway && match.leg === 1
+                          ? roundMatches.find(m2 =>
+                              m2.leg === 2 &&
+                              m2.player1Id === match.player2Id &&
+                              m2.player2Id === match.player1Id
+                            ) ?? null
+                          : null;
+                        return (
+                          <div key={match.id} className="p-4 border-b border-bg-border last:border-0">
+                            {groupName && (
+                              <div className="flex items-center gap-2 mb-2">
+                                <span className="text-[10px] border border-bg-border text-text-muted rounded px-1.5 py-0.5">{groupName}</span>
+                                {tournament.homeAndAway && (
+                                  <span className="text-[10px] border border-bg-border text-text-muted rounded px-1.5 py-0.5">H&A</span>
+                                )}
+                              </div>
+                            )}
+                            <TournamentMatchScore
+                              tournamentId={id}
+                              matchId={match.id}
+                              player1={match.player1}
+                              player2={match.player2}
+                              currentP1Score={match.player1Score}
+                              currentP2Score={match.player2Score}
+                              currentWinnerId={match.winnerId}
+                              status={match.status}
+                              player1SquadKey={match.player1Id ? squadMap.get(match.player1Id) ?? null : null}
+                              player2SquadKey={match.player2Id ? squadMap.get(match.player2Id) ?? null : null}
+                              player1TeamName={match.player1Id ? teamNameMap.get(match.player1Id) ?? null : null}
+                              player2TeamName={match.player2Id ? teamNameMap.get(match.player2Id) ?? null : null}
+                              player1ResultKey={match.player1ResultKey}
+                              player2ResultKey={match.player2ResultKey}
+                              leg2MatchId={leg2?.id ?? null}
+                              leg2P1Score={leg2?.player1Score ?? null}
+                              leg2P2Score={leg2?.player2Score ?? null}
+                              leg2Status={leg2?.status ?? null}
+                              leg2Player1ResultKey={leg2?.player1ResultKey ?? null}
+                              leg2Player2ResultKey={leg2?.player2ResultKey ?? null}
+                            />
+                          </div>
+                        );
+                      })}
                   </div>
                 );
               })}

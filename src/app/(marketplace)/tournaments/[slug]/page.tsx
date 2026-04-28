@@ -83,18 +83,37 @@ export default async function TournamentDetailPage({
   // My pending matches — only the currently open matchday (admin-gated).
   // Knockout matches have no gameweek, so they are always shown when pending.
   // League/CL matches are hidden until the admin opens that matchday (currentGameweek > 0).
-  const myPendingMatches = isLive && userId
+  const allMyPendingMatches = isLive && userId
     ? tournament.matches.filter(m => {
         if (m.status === "COMPLETED" || m.status === "WALKOVER") return false;
         if (m.player1Id !== userId && m.player2Id !== userId) return false;
         if (m.gameweek !== null) {
-          // League / CL: only the gameweek the admin has explicitly opened
           return tournament.currentGameweek > 0 && m.gameweek === tournament.currentGameweek;
         }
-        // Knockout (no gameweek): always show pending rounds
         return true;
       })
     : [];
+
+  // For home & away tournaments, show only one card per tie (leg 1).
+  // The leg 2 result upload is handled inside the leg 1 card.
+  const myPendingMatches = tournament.homeAndAway
+    ? allMyPendingMatches.filter(m => m.leg !== 2)
+    : allMyPendingMatches;
+
+  // Map each leg 1 match to its leg 2 companion (for result upload)
+  const companionMap = new Map<string, typeof tournament.matches[0]>();
+  if (tournament.homeAndAway) {
+    for (const m of myPendingMatches) {
+      if (m.leg === 1) {
+        const companion = tournament.matches.find(c =>
+          c.leg === 2 &&
+          c.player1Id === m.player2Id &&
+          c.player2Id === m.player1Id
+        );
+        if (companion) companionMap.set(m.id, companion);
+      }
+    }
+  }
 
   // Fetch group chat messages (only for registered participants)
   let chatMessages: {
@@ -234,6 +253,17 @@ export default async function TournamentDetailPage({
             const myResultKey = isMe1 ? m.player1ResultKey : m.player2ResultKey;
             const opponentResultKey = isMe1 ? m.player2ResultKey : m.player1ResultKey;
             const opponentId = isMe1 ? m.player2Id : m.player1Id;
+
+            // Companion leg 2: in DB, leg2.player1 = original player2, leg2.player2 = original player1
+            const companion = companionMap.get(m.id) ?? null;
+            const awayLegMatchId = companion?.id ?? null;
+            const awayLegMyResultKey = companion
+              ? (isMe1 ? companion.player2ResultKey : companion.player1ResultKey)
+              : null;
+            const awayLegOpponentResultKey = companion
+              ? (isMe1 ? companion.player1ResultKey : companion.player2ResultKey)
+              : null;
+
             return (
               <MatchPrepCard
                 key={m.id}
@@ -251,6 +281,9 @@ export default async function TournamentDetailPage({
                 scheduledAt={m.scheduledAt?.toISOString() ?? null}
                 leg={m.leg}
                 homeAndAway={tournament.homeAndAway}
+                awayLegMatchId={awayLegMatchId}
+                awayLegMyResultKey={awayLegMyResultKey}
+                awayLegOpponentResultKey={awayLegOpponentResultKey}
                 gameweek={m.gameweek}
                 gameweekDeadline={tournament.gameweekDeadline?.toISOString() ?? null}
               />

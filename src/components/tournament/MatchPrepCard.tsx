@@ -26,6 +26,10 @@ interface Props {
   // home/away
   leg: number | null;
   homeAndAway: boolean;
+  // Away leg companion (only populated on leg 1 card when homeAndAway is true)
+  awayLegMatchId?: string | null;
+  awayLegMyResultKey?: string | null;
+  awayLegOpponentResultKey?: string | null;
   // gameweek
   gameweek: number | null;
   gameweekDeadline: string | null;
@@ -36,11 +40,14 @@ export function MatchPrepCard({
   mySquadSubmitted, opponentSquadSubmitted,
   myResultKey, opponentResultKey,
   proposedMatchTime, proposedById, scheduledAt,
-  leg, homeAndAway, gameweek, gameweekDeadline,
+  leg, homeAndAway,
+  awayLegMatchId, awayLegMyResultKey, awayLegOpponentResultKey,
+  gameweek, gameweekDeadline,
 }: Props) {
   const timeAgreed = !!scheduledAt;
   const squadReady = mySquadSubmitted && opponentSquadSubmitted;
-  const resultDone = !!myResultKey;
+  const hasBothLegs = homeAndAway && !!awayLegMatchId;
+  const resultDone = hasBothLegs ? !!myResultKey && !!awayLegMyResultKey : !!myResultKey;
   const amHome = homeAndAway && leg !== null && ((leg === 1 && isPlayer1) || (leg === 2 && !isPlayer1));
 
   return (
@@ -128,23 +135,58 @@ export function MatchPrepCard({
 
         <div className="border-t border-bg-border" />
 
-        {/* Step 2 — Submit result screenshot */}
+        {/* Step 2 — Submit result screenshot(s) */}
         <div className="flex items-start gap-3">
-          <div className={`w-8 h-8 rounded-full border flex items-center justify-center shrink-0 ${myResultKey ? "bg-neon-green/10 border-neon-green/20" : "bg-bg-surface border-bg-border"}`}>
-            <Trophy size={14} className={myResultKey ? "text-neon-green" : "text-text-muted"} />
+          <div className={`w-8 h-8 rounded-full border flex items-center justify-center shrink-0 ${resultDone ? "bg-neon-green/10 border-neon-green/20" : "bg-bg-surface border-bg-border"}`}>
+            <Trophy size={14} className={resultDone ? "text-neon-green" : "text-text-muted"} />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium">Submit match result</p>
+            <p className="text-sm font-medium">Submit match result{hasBothLegs ? "s" : ""}</p>
             <p className="text-xs text-text-muted mt-0.5 leading-relaxed">
-              After playing, upload a screenshot so the admin can verify and record the result.
+              {hasBothLegs
+                ? "Upload a screenshot for each leg so the admin can verify both results."
+                : "After playing, upload a screenshot so the admin can verify and record the result."}
             </p>
-            <div className="mt-2.5">
-              <ResultScreenshotUpload slug={slug} matchId={matchId} currentKey={myResultKey} />
-            </div>
-            <div className={`flex items-center gap-2 mt-2 px-3 py-2 rounded-xl border text-xs ${opponentResultKey ? "border-neon-green/20 bg-neon-green/5 text-neon-green" : "border-bg-border bg-bg-surface text-text-muted"}`}>
-              {opponentResultKey ? <CheckCircle size={10} /> : <Clock size={10} />}
-              Opponent result: {opponentResultKey ? "submitted ✓" : "not yet submitted"}
-            </div>
+
+            {hasBothLegs ? (
+              <div className="mt-2.5 space-y-3">
+                {/* Home leg */}
+                <div>
+                  <p className="text-[10px] font-semibold text-text-muted mb-1.5 flex items-center gap-1">
+                    {amHome ? <><Home size={9} /> Home leg result</> : <><Plane size={9} /> Away leg result</>}
+                  </p>
+                  <ResultScreenshotUpload slug={slug} matchId={matchId} currentKey={myResultKey} />
+                </div>
+                {/* Away leg */}
+                <div>
+                  <p className="text-[10px] font-semibold text-text-muted mb-1.5 flex items-center gap-1">
+                    {amHome ? <><Plane size={9} /> Away leg result</> : <><Home size={9} /> Home leg result</>}
+                  </p>
+                  <ResultScreenshotUpload slug={slug} matchId={awayLegMatchId!} currentKey={awayLegMyResultKey ?? null} />
+                </div>
+                {/* Opponent status — both legs */}
+                <div className="space-y-1">
+                  <div className={`flex items-center gap-2 px-3 py-2 rounded-xl border text-xs ${opponentResultKey ? "border-neon-green/20 bg-neon-green/5 text-neon-green" : "border-bg-border bg-bg-surface text-text-muted"}`}>
+                    {opponentResultKey ? <CheckCircle size={10} /> : <Clock size={10} />}
+                    Opponent {amHome ? "away" : "home"} leg: {opponentResultKey ? "submitted ✓" : "not yet submitted"}
+                  </div>
+                  <div className={`flex items-center gap-2 px-3 py-2 rounded-xl border text-xs ${awayLegOpponentResultKey ? "border-neon-green/20 bg-neon-green/5 text-neon-green" : "border-bg-border bg-bg-surface text-text-muted"}`}>
+                    {awayLegOpponentResultKey ? <CheckCircle size={10} /> : <Clock size={10} />}
+                    Opponent {amHome ? "home" : "away"} leg: {awayLegOpponentResultKey ? "submitted ✓" : "not yet submitted"}
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <>
+                <div className="mt-2.5">
+                  <ResultScreenshotUpload slug={slug} matchId={matchId} currentKey={myResultKey} />
+                </div>
+                <div className={`flex items-center gap-2 mt-2 px-3 py-2 rounded-xl border text-xs ${opponentResultKey ? "border-neon-green/20 bg-neon-green/5 text-neon-green" : "border-bg-border bg-bg-surface text-text-muted"}`}>
+                  {opponentResultKey ? <CheckCircle size={10} /> : <Clock size={10} />}
+                  Opponent result: {opponentResultKey ? "submitted ✓" : "not yet submitted"}
+                </div>
+              </>
+            )}
           </div>
         </div>
       </div>
