@@ -4,6 +4,7 @@ import "./globals.css";
 import { SessionProvider } from "@/components/providers/SessionProvider";
 import { SocketProvider } from "@/components/providers/SocketProvider";
 import NextTopLoader from "nextjs-toploader";
+import { auth } from "@/lib/auth";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 
@@ -59,11 +60,13 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const session = await auth();
+
   return (
     <html lang="en" className={`${inter.variable} h-full`}>
       <body className="min-h-full flex flex-col bg-bg-primary text-text-primary antialiased">
@@ -74,7 +77,7 @@ export default function RootLayout({
           easing="ease"
           speed={200}
         />
-        <SessionProvider>
+        <SessionProvider session={session}>
           <SocketProvider>{children}</SocketProvider>
         </SessionProvider>
       </body>

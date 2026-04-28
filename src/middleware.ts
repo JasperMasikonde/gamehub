@@ -10,11 +10,14 @@ const ipRequests = new Map<string, { count: number; resetAt: number }>();
 let lastCleanup = Date.now();
 
 function getRateLimit(pathname: string): { limit: number; windowMs: number } {
+  // Strict limit only on actual sign-in/callback — not session reads
+  if (pathname === "/api/auth/signin" || pathname.startsWith("/api/auth/callback"))
+    return { limit: 30, windowMs: 60_000 };
   if (pathname.startsWith("/api/auth"))
-    return { limit: 30, windowMs: 60_000 };   // 30/min — brute-force guard
+    return { limit: 300, windowMs: 60_000 };  // session reads — shared IPs / CG-NAT safe
   if (pathname.startsWith("/api/"))
-    return { limit: 500, windowMs: 60_000 };  // 500/min for API routes
-  return { limit: 600, windowMs: 60_000 };    // 600/min for page routes
+    return { limit: 500, windowMs: 60_000 };
+  return { limit: 600, windowMs: 60_000 };
 }
 
 function checkRateLimit(req: NextRequest): NextResponse | null {
@@ -38,7 +41,8 @@ function checkRateLimit(req: NextRequest): NextResponse | null {
   const { limit, windowMs } = getRateLimit(pathname);
 
   // Bucket key groups auth / api / pages separately per IP
-  const bucket = pathname.startsWith("/api/auth")
+  const isStrictAuth = pathname === "/api/auth/signin" || pathname.startsWith("/api/auth/callback");
+  const bucket = isStrictAuth
     ? "auth"
     : pathname.startsWith("/api/")
     ? "api"

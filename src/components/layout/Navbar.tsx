@@ -54,7 +54,7 @@ export function Navbar() {
 
           {/* Right side */}
           <div className="hidden md:flex items-center gap-2">
-            {session?.user ? (
+            {status === "authenticated" && session?.user ? (
               <>
                 {session.user.role === "ADMIN" && (
                   <Link href="/admin">
@@ -107,7 +107,7 @@ export function Navbar() {
                   </div>
                 </div>
               </>
-            ) : (
+            ) : status === "unauthenticated" ? (
               <>
                 <Link href="/login">
                   <Button variant="ghost" size="sm">
@@ -120,12 +120,12 @@ export function Navbar() {
                   </Button>
                 </Link>
               </>
-            )}
+            ) : null /* loading — render nothing to avoid flash */}
           </div>
 
           {/* Mobile right: icons + hamburger */}
           <div className="md:hidden flex items-center gap-1">
-            {session?.user && (
+            {status === "authenticated" && session?.user && (
               <>
                 <NavWalletBadge />
                 <CartIcon />
