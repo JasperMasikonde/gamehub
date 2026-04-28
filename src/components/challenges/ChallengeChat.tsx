@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useSocket } from "@/components/providers/SocketProvider";
-import { Send, Copy, CheckCheck, KeyRound, Gamepad2, Lock, Bell } from "lucide-react";
+import { Send, Copy, CheckCheck, KeyRound, Gamepad2, Lock, Bell, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 import { Button } from "@/components/ui/Button";
 
@@ -112,6 +112,20 @@ export function ChallengeChat({
 
   const isLocked = LOCKED_STATUSES.includes(status);
 
+  // Last request I sent that the opponent hasn't yet answered with a MATCH_CODE
+  const lastPendingRequestId = (() => {
+    const myRequests = messages.filter(
+      m => m.messageType === "MATCH_CODE_REQUEST" && m.senderId === myId
+    );
+    if (myRequests.length === 0) return null;
+    const last = myRequests[myRequests.length - 1];
+    const answered = messages.some(
+      m => m.messageType === "MATCH_CODE" && m.senderId !== myId && m.createdAt > last.createdAt
+    );
+    return answered ? null : last.id;
+  })();
+  const waitingForOpponentCode = lastPendingRequestId !== null;
+
   const validateCode = (value: string): boolean => {
     try {
       if (!new RegExp(codePattern.pattern).test(value)) {
@@ -179,9 +193,9 @@ export function ChallengeChat({
 
           if (m.messageType === "MATCH_CODE_REQUEST") {
             if (isMe) {
-              // Sender view — compact confirmation
+              const isPending = m.id === lastPendingRequestId;
               return (
-                <div key={m.id} className="flex justify-center">
+                <div key={m.id} className="flex flex-col items-center gap-2">
                   <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-neon-purple/10 border border-neon-purple/20 text-neon-purple text-xs font-medium">
                     <KeyRound size={12} />
                     You requested the match code
@@ -189,6 +203,12 @@ export function ChallengeChat({
                       · {new Date(m.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                     </span>
                   </div>
+                  {isPending && (
+                    <div className="flex items-center gap-1.5 text-[11px] text-text-muted animate-pulse">
+                      <Loader2 size={11} className="animate-spin" />
+                      Waiting for opponent to share their code…
+                    </div>
+                  )}
                 </div>
               );
             }
@@ -319,16 +339,23 @@ export function ChallengeChat({
             </div>
           ) : (
             <div className="flex gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                className="flex-1 border-neon-purple/40 text-neon-purple hover:bg-neon-purple/10"
-                onClick={() => void send("MATCH_CODE_REQUEST")}
-                loading={sending}
-              >
-                <KeyRound size={13} />
-                Request Match Code
-              </Button>
+              {waitingForOpponentCode ? (
+                <div className="flex-1 flex items-center gap-2 px-3 py-2 rounded-xl border border-neon-purple/20 bg-neon-purple/5 text-xs text-neon-purple/80">
+                  <Loader2 size={12} className="animate-spin shrink-0" />
+                  <span>Wait — opponent is sharing their code…</span>
+                </div>
+              ) : (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="flex-1 border-neon-purple/40 text-neon-purple hover:bg-neon-purple/10"
+                  onClick={() => void send("MATCH_CODE_REQUEST")}
+                  loading={sending}
+                >
+                  <KeyRound size={13} />
+                  Request Match Code
+                </Button>
+              )}
               <Button
                 variant="outline"
                 size="sm"
