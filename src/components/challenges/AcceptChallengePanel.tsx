@@ -244,7 +244,7 @@ export function AcceptChallengePanel({
       <div>
         <p className="text-xs font-medium text-text-primary mb-2">
           <MessageCircle size={11} className="inline mr-1 text-neon-green" />
-          WhatsApp number
+          WhatsApp number <span className="text-neon-red">*</span>
           {savedWhatsapp && <span className="ml-2 text-text-muted font-normal">(saved)</span>}
         </p>
         <Input
@@ -252,6 +252,7 @@ export function AcceptChallengePanel({
           value={whatsapp}
           onChange={(e) => setWhatsapp(e.target.value)}
           placeholder="e.g. 0712 345 678"
+          required
         />
         <p className="text-[11px] text-text-muted mt-1">
           We&apos;ll notify you on WhatsApp when the match is confirmed.
@@ -267,6 +268,7 @@ export function AcceptChallengePanel({
         className="w-full"
         onClick={() => {
           if (!squadUpload) { setError("Upload your squad screenshot first"); return; }
+          if (!whatsapp.trim()) { setError("WhatsApp number is required"); return; }
           setError("");
           setShowPayment(true);
         }}

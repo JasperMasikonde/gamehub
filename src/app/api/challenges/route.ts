@@ -10,7 +10,7 @@ const createSchema = z.object({
   wagerAmount: z.coerce.number().positive(),
   description: z.string().max(500).optional(),
   hostSquadUrl: z.string().min(1, "Squad screenshot is required"),
-  whatsappNumber: z.string().max(20).optional(),
+  whatsappNumber: z.string().min(9, "WhatsApp number is required").max(20),
 });
 
 // GET /api/challenges — list open challenges
@@ -74,9 +74,7 @@ export async function POST(req: NextRequest) {
     },
   });
 
-  if (whatsappNumber) {
-    await prisma.user.update({ where: { id: session.user.id }, data: { whatsappNumber } });
-  }
+  await prisma.user.update({ where: { id: session.user.id }, data: { whatsappNumber } });
 
   // Notify admins of new challenge (optional awareness)
   emitToAdmins({

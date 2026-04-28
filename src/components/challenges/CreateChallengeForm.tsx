@@ -78,13 +78,14 @@ export function CreateChallengeForm({ savedWhatsapp }: { savedWhatsapp: string |
     if (!squadUpload) { setError("Squad screenshot is required"); return; }
     const w = parseFloat(wager);
     if (!w || w <= 0) { setError("Enter a valid wager amount"); return; }
+    if (!whatsapp.trim()) { setError("WhatsApp number is required"); return; }
 
     setLoading(true);
     try {
       const res = await fetch("/api/challenges", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ format, wagerAmount: w, description, hostSquadUrl: squadUpload.url, whatsappNumber: whatsapp.trim() || undefined }),
+        body: JSON.stringify({ format, wagerAmount: w, description, hostSquadUrl: squadUpload.url, whatsappNumber: whatsapp.trim() }),
       });
       const data = await res.json();
       if (!res.ok) { setError(data.error ?? "Failed to create challenge"); return; }
@@ -236,7 +237,7 @@ export function CreateChallengeForm({ savedWhatsapp }: { savedWhatsapp: string |
       <div>
         <label className="block text-sm font-medium mb-1.5">
           <MessageCircle size={13} className="inline mr-1 text-neon-green" />
-          WhatsApp number
+          WhatsApp number <span className="text-neon-red">*</span>
           {savedWhatsapp && <span className="ml-2 text-xs text-text-muted font-normal">(saved)</span>}
         </label>
         <Input
@@ -244,6 +245,7 @@ export function CreateChallengeForm({ savedWhatsapp }: { savedWhatsapp: string |
           value={whatsapp}
           onChange={(e) => setWhatsapp(e.target.value)}
           placeholder="e.g. 0712 345 678"
+          required
         />
         <p className="text-xs text-text-muted mt-1">
           We&apos;ll message you on WhatsApp when an opponent accepts your challenge.
