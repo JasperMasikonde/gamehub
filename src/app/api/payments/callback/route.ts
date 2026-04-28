@@ -85,13 +85,16 @@ async function fulfillPayment(
   }
 
   if (purpose === "challenge") {
-    const { challengerSquadUrl, hostId } = metadata as { challengerSquadUrl: string; hostId: string };
+    const { challengerSquadUrl, hostId, whatsappNumber } = metadata as { challengerSquadUrl: string; hostId: string; whatsappNumber?: string };
     // Use updateMany with a status guard so only one challenger wins the race
     const result = await prisma.challenge.updateMany({
       where: { id: entityId, status: "OPEN" },
-      data: { challengerId: userId, challengerSquadUrl, status: "ACTIVE" },
+      data: { challengerId: userId, challengerSquadUrl, status: "ACTIVE", matchedAt: new Date() },
     });
     if (result.count === 0) return; // another challenger already claimed it
+    if (whatsappNumber) {
+      await prisma.user.update({ where: { id: userId }, data: { whatsappNumber } });
+    }
     if (hostId) {
       await createNotification(hostId, "CHALLENGE_ACCEPTED", {
         title: "Challenge accepted!",

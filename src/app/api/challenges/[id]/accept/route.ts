@@ -7,6 +7,7 @@ import { emitToast, emitChallengeUpdate } from "@/lib/socket-server";
 
 const acceptSchema = z.object({
   challengerSquadUrl: z.string().min(1, "Squad screenshot is required"),
+  whatsappNumber: z.string().max(20).optional(),
 });
 
 export async function POST(
@@ -31,7 +32,7 @@ export async function POST(
     return NextResponse.json({ error: first ?? "Invalid input" }, { status: 400 });
   }
 
-  const { challengerSquadUrl } = parsed.data;
+  const { challengerSquadUrl, whatsappNumber } = parsed.data;
 
   const updated = await prisma.challenge.update({
     where: { id },
@@ -39,8 +40,13 @@ export async function POST(
       challengerId: session.user.id,
       challengerSquadUrl,
       status: "ACTIVE",
+      matchedAt: new Date(),
     },
   });
+
+  if (whatsappNumber) {
+    await prisma.user.update({ where: { id: session.user.id }, data: { whatsappNumber } });
+  }
 
   // Notify host
   await createNotification(challenge.hostId, "CHALLENGE_ACCEPTED", {

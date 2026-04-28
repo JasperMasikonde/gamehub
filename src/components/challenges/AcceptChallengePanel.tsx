@@ -2,8 +2,9 @@
 
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Swords, Camera, Upload, Loader2, X, Trophy, Wallet, CreditCard } from "lucide-react";
+import { Swords, Camera, Upload, Loader2, X, Trophy, Wallet, CreditCard, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/Button";
+import { Input } from "@/components/ui/Input";
 import { PaymentPanel } from "@/components/payments/PaymentPanel";
 import { WalletPayButton } from "@/components/wallet/WalletPayButton";
 import { formatCurrency } from "@/lib/utils/format";
@@ -15,12 +16,14 @@ export function AcceptChallengePanel({
   format,
   hostId,
   isLoggedIn,
+  savedWhatsapp,
 }: {
   challengeId: string;
   wagerAmount: string;
   format: string;
   hostId: string;
   isLoggedIn: boolean;
+  savedWhatsapp: string | null;
 }) {
   const router = useRouter();
   const [squadUpload, setSquadUpload] = useState<{ url: string; previewUrl: string } | null>(null);
@@ -29,6 +32,7 @@ export function AcceptChallengePanel({
   const [showPayment, setShowPayment] = useState(false);
   const [payMethod, setPayMethod] = useState<"wallet" | "mpesa">("wallet");
   const [feeInfo, setFeeInfo] = useState<{ fee: number | null; transactionFee?: number; totalFee?: number } | null>(null);
+  const [whatsapp, setWhatsapp] = useState(savedWhatsapp ?? "");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Redirect to login if not authenticated
@@ -124,6 +128,7 @@ export function AcceptChallengePanel({
             wagerAmount={Number(wagerAmount)}
             role="challenger"
             challengerSquadUrl={squadUpload.url}
+            whatsappNumber={whatsapp.trim() || undefined}
             onSuccess={() => router.push(`/challenges/${challengeId}`)}
           />
         ) : (
@@ -131,7 +136,7 @@ export function AcceptChallengePanel({
             purpose="challenge"
             entityId={challengeId}
             amount={Number(wagerAmount)}
-            metadata={{ challengerSquadUrl: squadUpload.url, hostId }}
+            metadata={{ challengerSquadUrl: squadUpload.url, hostId, whatsappNumber: whatsapp.trim() || undefined }}
             onSuccess={() => router.push(`/challenges/${challengeId}`)}
             returnUrl={`/challenges/${challengeId}`}
             returnLabel="Back to challenge"
@@ -233,6 +238,24 @@ export function AcceptChallengePanel({
               : <><Upload size={18} /><span className="text-xs font-medium">Tap to upload squad screenshot</span></>}
           </button>
         )}
+      </div>
+
+      {/* WhatsApp */}
+      <div>
+        <p className="text-xs font-medium text-text-primary mb-2">
+          <MessageCircle size={11} className="inline mr-1 text-neon-green" />
+          WhatsApp number
+          {savedWhatsapp && <span className="ml-2 text-text-muted font-normal">(saved)</span>}
+        </p>
+        <Input
+          type="tel"
+          value={whatsapp}
+          onChange={(e) => setWhatsapp(e.target.value)}
+          placeholder="e.g. 0712 345 678"
+        />
+        <p className="text-[11px] text-text-muted mt-1">
+          We&apos;ll notify you on WhatsApp when the match is confirmed.
+        </p>
       </div>
 
       {error && (

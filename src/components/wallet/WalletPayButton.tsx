@@ -11,10 +11,11 @@ interface Props {
   wagerAmount: number;
   role: "host" | "challenger";
   challengerSquadUrl?: string;
+  whatsappNumber?: string;
   onSuccess: () => void;
 }
 
-export function WalletPayButton({ challengeId, wagerAmount, role, challengerSquadUrl, onSuccess }: Props) {
+export function WalletPayButton({ challengeId, wagerAmount, role, challengerSquadUrl, whatsappNumber, onSuccess }: Props) {
   const [balance, setBalance] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [paying, setPaying] = useState(false);
@@ -36,6 +37,7 @@ export function WalletPayButton({ challengeId, wagerAmount, role, challengerSqua
     setError("");
     const body: Record<string, unknown> = { role };
     if (role === "challenger" && challengerSquadUrl) body.challengerSquadUrl = challengerSquadUrl;
+    if (whatsappNumber) body.whatsappNumber = whatsappNumber;
 
     try {
       const res = await fetch(`/api/challenges/${challengeId}/pay-from-wallet`, {

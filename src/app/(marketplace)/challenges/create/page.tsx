@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
 import { CreateChallengeForm } from "@/components/challenges/CreateChallengeForm";
 import { Swords } from "lucide-react";
 import { Card, CardContent, CardHeader } from "@/components/ui/Card";
@@ -7,6 +8,11 @@ import { Card, CardContent, CardHeader } from "@/components/ui/Card";
 export default async function CreateChallengePage() {
   const session = await auth();
   if (!session?.user) redirect("/login");
+
+  const user = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: { whatsappNumber: true },
+  });
 
   return (
     <div className="max-w-xl mx-auto px-4 py-10">
@@ -22,7 +28,7 @@ export default async function CreateChallengePage() {
 
       <Card>
         <CardContent>
-          <CreateChallengeForm />
+          <CreateChallengeForm savedWhatsapp={user?.whatsappNumber ?? null} />
         </CardContent>
       </Card>
     </div>

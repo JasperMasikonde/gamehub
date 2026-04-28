@@ -11,6 +11,7 @@ const schema = z.object({
    *  "challenger" → pay challenger wager (OPEN → ACTIVE)   */
   role: z.enum(["host", "challenger"]),
   challengerSquadUrl: z.string().optional(), // required when role=challenger
+  whatsappNumber: z.string().max(20).optional(),
 });
 
 export async function POST(
@@ -28,7 +29,7 @@ export async function POST(
     return NextResponse.json({ error: first ?? "Invalid input" }, { status: 400 });
   }
 
-  const { role, challengerSquadUrl } = parsed.data;
+  const { role, challengerSquadUrl, whatsappNumber } = parsed.data;
   const userId = session.user.id;
 
   const challenge = await prisma.challenge.findUnique({ where: { id } });
@@ -90,7 +91,7 @@ export async function POST(
   // Race-safe update — only proceed if still OPEN
   const result = await prisma.challenge.updateMany({
     where: { id, status: "OPEN" },
-    data: { challengerId: userId, challengerSquadUrl, status: "ACTIVE" },
+    data: { challengerId: userId, challengerSquadUrl, status: "ACTIVE", matchedAt: new Date() },
   });
 
   if (result.count === 0) {
@@ -106,6 +107,10 @@ export async function POST(
   }
 
   const updated = await prisma.challenge.findUnique({ where: { id } });
+
+  if (whatsappNumber) {
+    await prisma.user.update({ where: { id: userId }, data: { whatsappNumber } });
+  }
 
   // Notify host
   await createNotification(challenge.hostId, "CHALLENGE_ACCEPTED", {

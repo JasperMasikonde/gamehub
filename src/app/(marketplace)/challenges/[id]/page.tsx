@@ -159,6 +159,10 @@ export default async function ChallengeDetailPage({
   // Wallet balance for party members — shown as a helper so they know their balance
   const walletBalance = isParty ? await getWalletBalance(session.user.id) : null;
 
+  const currentUser = isParty
+    ? await prisma.user.findUnique({ where: { id: session.user.id }, select: { whatsappNumber: true } })
+    : null;
+
   return (
     <div className="max-w-2xl mx-auto px-4 py-10 flex flex-col gap-5">
       <RealtimeRefresh events={["challenge_update"]} />
@@ -185,6 +189,7 @@ export default async function ChallengeDetailPage({
             format={challenge.format}
             hostId={challenge.hostId}
             isLoggedIn={!!session?.user}
+            savedWhatsapp={currentUser?.whatsappNumber ?? null}
           />
         </div>
       )}
@@ -342,6 +347,7 @@ export default async function ChallengeDetailPage({
           scheduledAt={challenge.scheduledAt?.toISOString() ?? null}
           resultDeadlineAt={challenge.resultDeadlineAt?.toISOString() ?? null}
           resultWindowMinutes={resultWindowMinutes}
+          matchedAt={challenge.matchedAt?.toISOString() ?? null}
           opponentName={
             isHost
               ? (challenge.challenger?.displayName ?? challenge.challenger?.username ?? "Opponent")

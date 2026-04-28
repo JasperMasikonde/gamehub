@@ -10,6 +10,7 @@ const createSchema = z.object({
   wagerAmount: z.coerce.number().positive(),
   description: z.string().max(500).optional(),
   hostSquadUrl: z.string().min(1, "Squad screenshot is required"),
+  whatsappNumber: z.string().max(20).optional(),
 });
 
 // GET /api/challenges — list open challenges
@@ -37,7 +38,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: first ?? "Invalid input" }, { status: 400 });
   }
 
-  const { format, wagerAmount, description, hostSquadUrl } = parsed.data;
+  const { format, wagerAmount, description, hostSquadUrl, whatsappNumber } = parsed.data;
 
   const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
 
@@ -72,6 +73,10 @@ export async function POST(req: NextRequest) {
       transactionFee: feeRule ? feeRule.transactionFee : null,
     },
   });
+
+  if (whatsappNumber) {
+    await prisma.user.update({ where: { id: session.user.id }, data: { whatsappNumber } });
+  }
 
   // Notify admins of new challenge (optional awareness)
   emitToAdmins({

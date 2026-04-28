@@ -13,6 +13,7 @@ interface Props {
   scheduledAt: string | null;
   resultDeadlineAt: string | null;
   resultWindowMinutes: number;
+  matchedAt: string | null;
   opponentName: string;
 }
 
@@ -42,22 +43,13 @@ function fmtDayLabel(d: Date): string {
 
 // ── Time slot data ────────────────────────────────────────────────────────────
 
-const ALL_SLOTS = [
-  { label: "12 PM", h: 12, m: 0 },
-  { label: "2 PM",  h: 14, m: 0 },
-  { label: "4 PM",  h: 16, m: 0 },
-  { label: "5 PM",  h: 17, m: 0 },
-  { label: "6 PM",  h: 18, m: 0 },
-  { label: "6:30",  h: 18, m: 30 },
-  { label: "7 PM",  h: 19, m: 0 },
-  { label: "7:30",  h: 19, m: 30 },
-  { label: "8 PM",  h: 20, m: 0 },
-  { label: "8:30",  h: 20, m: 30 },
-  { label: "9 PM",  h: 21, m: 0 },
-  { label: "10 PM", h: 22, m: 0 },
-] as const;
+interface Slot { label: string; h: number; m: number }
 
-type Slot = (typeof ALL_SLOTS)[number];
+function fmtSlotLabel(h: number, m: number): string {
+  const period = h < 12 ? "AM" : "PM";
+  const h12 = h % 12 === 0 ? 12 : h % 12;
+  return m === 0 ? `${h12} ${period}` : `${h12}:${String(m).padStart(2, "0")}`;
+}
 
 function getDateOptions(): Date[] {
   const dates: Date[] = [];
@@ -71,14 +63,27 @@ function getDateOptions(): Date[] {
   return dates;
 }
 
-function availableSlotsFor(date: Date): Slot[] {
-  const isToday = date.toDateString() === new Date().toDateString();
-  if (!isToday) return [...ALL_SLOTS];
-  const cutoff = Date.now() + 60 * 60 * 1000;
-  return ALL_SLOTS.filter(s => {
-    const t = new Date(date); t.setHours(s.h, s.m, 0, 0);
-    return t.getTime() > cutoff;
-  });
+// Generate slots in 10-min increments anchored to matchedAt's minute offset.
+// Only returns slots after both matchedAt+10min and now+1hr.
+function availableSlotsFor(date: Date, matchedAt: Date): Slot[] {
+  const cutoff = Math.max(
+    matchedAt.getTime() + 10 * 60 * 1000,
+    Date.now() + 60 * 60 * 1000,
+  );
+  const minuteOffset = matchedAt.getMinutes() % 10;
+  const slots: Slot[] = [];
+  for (let h = 0; h < 24; h++) {
+    for (let step = 0; step < 6; step++) {
+      const m = (minuteOffset + step * 10) % 60;
+      const slotDate = new Date(date);
+      slotDate.setHours(h, m, 0, 0);
+      if (slotDate.getTime() > cutoff) {
+        slots.push({ label: fmtSlotLabel(h, m), h, m });
+        if (slots.length === 24) return slots;
+      }
+    }
+  }
+  return slots;
 }
 
 function buildISO(date: Date, slot: Slot): string {
@@ -103,10 +108,11 @@ interface PickerProps {
   onPropose: (iso: string) => void;
   loading: boolean;
   error: string;
+  matchedAt: Date;
   ctaLabel?: string;
 }
 
-function TimePicker({ onPropose, loading, error, ctaLabel = "Propose this time" }: PickerProps) {
+function TimePicker({ onPropose, loading, error, matchedAt, ctaLabel = "Propose this time" }: PickerProps) {
   const dates = getDateOptions();
   const [selDate, setSelDate] = useState<Date>(dates[0]);
   const [selSlot, setSelSlot] = useState<Slot | null>(null);
@@ -117,7 +123,7 @@ function TimePicker({ onPropose, loading, error, ctaLabel = "Propose this time" 
     setSelDate(d);
     setCustomError("");
     if (selSlot) {
-      const still = availableSlotsFor(d).find(s => s.h === selSlot.h && s.m === selSlot.m);
+      const still = availableSlotsFor(d, matchedAt).find(s => s.h === selSlot.h && s.m === selSlot.m);
       if (!still) setSelSlot(null);
     }
     if (customTime) {
@@ -146,7 +152,7 @@ function TimePicker({ onPropose, loading, error, ctaLabel = "Propose this time" 
     }
   }
 
-  const slots = availableSlotsFor(selDate);
+  const slots = availableSlotsFor(selDate, matchedAt);
 
   const previewISO = selSlot
     ? buildISO(selDate, selSlot)
@@ -161,7 +167,7 @@ function TimePicker({ onPropose, loading, error, ctaLabel = "Propose this time" 
         <p className="text-xs font-semibold text-text-muted uppercase tracking-wide mb-2.5">Day</p>
         <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none -mx-1 px-1">
           {dates.map((d, i) => {
-            const hasTimes = availableSlotsFor(d).length > 0;
+            const hasTimes = availableSlotsFor(d, matchedAt).length > 0;
             const isSel = d.toDateString() === selDate.toDateString();
             return (
               <button
@@ -275,8 +281,11 @@ export function ScheduleMatchPanel({
   scheduledAt: initScheduledAt,
   resultDeadlineAt: initDeadlineAt,
   resultWindowMinutes,
+  matchedAt: matchedAtISO,
   opponentName,
 }: Props) {
+  // Fall back to now if matchedAt is unavailable (legacy challenges)
+  const matchedAt = matchedAtISO ? new Date(matchedAtISO) : new Date();
   const [proposedMatchTime, setProposedMatchTime] = useState(initProposed);
   const [proposedByHost, setProposedByHost]       = useState(initProposedByHost);
   const [scheduledAt, setScheduledAt]             = useState(initScheduledAt);
@@ -359,6 +368,7 @@ export function ScheduleMatchPanel({
               onPropose={iso => void apiCall("propose", iso)}
               loading={loading}
               error={error}
+              matchedAt={matchedAt}
               ctaLabel="Propose new time"
             />
           </div>
@@ -413,6 +423,7 @@ export function ScheduleMatchPanel({
               onPropose={iso => void apiCall("propose", iso)}
               loading={loading}
               error={error}
+              matchedAt={matchedAt}
               ctaLabel="Send counter-proposal"
             />
           </div>
@@ -450,6 +461,7 @@ export function ScheduleMatchPanel({
               onPropose={iso => void apiCall("propose", iso)}
               loading={loading}
               error={error}
+              matchedAt={matchedAt}
               ctaLabel="Update my proposal"
             />
           </div>
@@ -474,6 +486,7 @@ export function ScheduleMatchPanel({
           onPropose={iso => void apiCall("propose", iso)}
           loading={loading}
           error={error}
+          matchedAt={matchedAt}
           ctaLabel={`Propose to ${opponentName}`}
         />
       </div>

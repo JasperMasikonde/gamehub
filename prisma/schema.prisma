@@ -197,6 +197,7 @@ model User {
   isRankPusher     Boolean     @default(false)
 
   bio              String?
+  whatsappNumber   String?
 
   totalSales     Int   @default(0)
   totalPurchases Int   @default(0)
@@ -493,6 +494,7 @@ model Challenge {
   resultDeadlineAt  DateTime?
 
   expiresAt   DateTime
+  matchedAt   DateTime?   // set when challenger joins and challenge becomes ACTIVE
   completedAt DateTime?
 
   messages ChallengeMessage[]

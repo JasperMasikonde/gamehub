@@ -2,18 +2,19 @@
 
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Swords, Banknote, Camera, Upload, Loader2, X, ArrowRight, FileText, Trophy } from "lucide-react";
+import { Swords, Banknote, Camera, Upload, Loader2, X, ArrowRight, FileText, Trophy, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Textarea } from "@/components/ui/Textarea";
 import { cn } from "@/lib/utils/cn";
 import { formatCurrency } from "@/lib/utils/format";
 
-export function CreateChallengeForm() {
+export function CreateChallengeForm({ savedWhatsapp }: { savedWhatsapp: string | null }) {
   const router = useRouter();
   const [format, setFormat] = useState<"BEST_OF_3" | "BEST_OF_5">("BEST_OF_3");
   const [wager, setWager] = useState("");
   const [description, setDescription] = useState("");
+  const [whatsapp, setWhatsapp] = useState(savedWhatsapp ?? "");
   const [squadUpload, setSquadUpload] = useState<{ url: string; previewUrl: string } | null>(null);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
@@ -83,7 +84,7 @@ export function CreateChallengeForm() {
       const res = await fetch("/api/challenges", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ format, wagerAmount: w, description, hostSquadUrl: squadUpload.url }),
+        body: JSON.stringify({ format, wagerAmount: w, description, hostSquadUrl: squadUpload.url, whatsappNumber: whatsapp.trim() || undefined }),
       });
       const data = await res.json();
       if (!res.ok) { setError(data.error ?? "Failed to create challenge"); return; }
@@ -229,6 +230,24 @@ export function CreateChallengeForm() {
           rows={3}
           maxLength={500}
         />
+      </div>
+
+      {/* WhatsApp */}
+      <div>
+        <label className="block text-sm font-medium mb-1.5">
+          <MessageCircle size={13} className="inline mr-1 text-neon-green" />
+          WhatsApp number
+          {savedWhatsapp && <span className="ml-2 text-xs text-text-muted font-normal">(saved)</span>}
+        </label>
+        <Input
+          type="tel"
+          value={whatsapp}
+          onChange={(e) => setWhatsapp(e.target.value)}
+          placeholder="e.g. 0712 345 678"
+        />
+        <p className="text-xs text-text-muted mt-1">
+          We&apos;ll message you on WhatsApp when an opponent accepts your challenge.
+        </p>
       </div>
 
       {/* Info */}
