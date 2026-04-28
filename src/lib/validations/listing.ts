@@ -9,11 +9,11 @@ export const createListingSchema = z.object({
   platform: z.nativeEnum(Platform, { error: "Select a platform" }),
   region: z.string().optional(),
   division: z.string().optional(),
-  accountLevel: z.number({ error: "Enter a valid account level" }).int().positive("Account level must be a positive number").optional(),
+  accountLevel: z.number({ error: "Enter a valid account level" }).int().min(1, "Account level must be at least 1").max(500, "Account level can't exceed 500 — enter your actual in-game account level, not GP or rank points").optional(),
   coins: z.number({ error: "Enter a valid coin amount" }).int().min(0, "Coins can't be negative").optional(),
   gpAmount: z.number({ error: "Enter a valid GP amount" }).int().min(0, "GP can't be negative").optional(),
   featuredPlayers: z.array(z.string()).max(20, "You can list up to 20 featured players").default([]),
-  overallRating: z.number({ error: "Enter a valid rating" }).int().min(1, "Rating must be at least 1").max(99, "Rating can't exceed 99").optional(),
+  overallRating: z.number({ error: "Enter a valid rating" }).int().min(50, "Squad overall rating must be at least 50").max(99, "Rating can't exceed 99").optional(),
   imageKeys: z.array(z.string()).min(1, "At least one image is required").max(8, "You can upload up to 8 images"),
 });
 

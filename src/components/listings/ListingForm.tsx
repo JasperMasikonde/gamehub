@@ -129,21 +129,27 @@ export function ListingForm() {
           {...register("division")}
         />
 
-        <Input
-          type="number"
-          label="Account Level"
-          placeholder="e.g. 55"
-          error={errors.accountLevel?.message}
-          {...register("accountLevel", { valueAsNumber: true })}
-        />
+        <div>
+          <Input
+            type="number"
+            label="Account Level"
+            placeholder="e.g. 55"
+            error={errors.accountLevel?.message}
+            {...register("accountLevel", { valueAsNumber: true })}
+          />
+          <p className="text-xs text-text-muted mt-1">Your in-game account level (1–500). Not GP or rank points.</p>
+        </div>
 
-        <Input
-          type="number"
-          label="Squad Overall Rating"
-          placeholder="e.g. 90"
-          error={errors.overallRating?.message}
-          {...register("overallRating", { valueAsNumber: true })}
-        />
+        <div>
+          <Input
+            type="number"
+            label="Squad Overall Rating"
+            placeholder="e.g. 90"
+            error={errors.overallRating?.message}
+            {...register("overallRating", { valueAsNumber: true })}
+          />
+          <p className="text-xs text-text-muted mt-1">Average squad rating (50–99).</p>
+        </div>
 
         <Input
           type="number"
