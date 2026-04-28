@@ -3,7 +3,7 @@ import { resolveSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { querySTKPush } from "@/lib/ncba";
 import { transitionTransaction } from "@/lib/escrow";
-import { emitToast, emitChallengeUpdate, emitTournamentUpdate } from "@/lib/socket-server";
+import { emitToast, emitChallengeUpdate, emitTournamentUpdate, emitWalletUpdate } from "@/lib/socket-server";
 import { createNotification } from "@/lib/notifications";
 
 export async function GET(
@@ -76,8 +76,8 @@ async function fulfillPayment(
 
   if (purpose === "wallet_deposit") {
     const { creditWallet } = await import("@/lib/wallet");
-    const { emitToast } = await import("@/lib/socket-server");
-    await creditWallet({ userId, amount, type: "DEPOSIT", description: "M-Pesa wallet deposit" });
+    const tx = await creditWallet({ userId, amount, type: "DEPOSIT", description: "M-Pesa wallet deposit" });
+    emitWalletUpdate(userId, Number(tx.balanceAfter));
     emitToast(userId, {
       type: "success",
       title: "Deposit confirmed!",
