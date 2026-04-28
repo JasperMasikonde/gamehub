@@ -46,14 +46,12 @@ export default async function AdminConversationPage({
   const { messages, otherUser } = await getData(session.user.id, otherUserId);
 
   return (
-    // -m-6 removes the layout padding; heightOffset matches the admin top bar (44px desktop, 64px mobile nav)
-    <div className="-m-6 -mt-4 md:-mt-0">
+    <div className="-m-6 -mt-4 md:-mt-0 flex flex-col" style={{ height: "calc(100vh - 44px)" }}>
       <ConversationView
         initialMessages={messages}
         otherUser={otherUser!}
         myId={session.user.id}
         backHref="/admin/messages"
-        heightOffset={44}
       />
     </div>
   );

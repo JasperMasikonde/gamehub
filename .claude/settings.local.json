@@ -103,7 +103,23 @@
       "Bash(~/.npm-global/bin/svgexport public/logo-icon.svg logo-icon-1024.png 1024:1024)",
       "Bash(~/.npm-global/bin/svgexport public/logo-icon.svg logo-icon-256.png 256:256)",
       "Bash(~/.npm-global/bin/svgexport public/logo.svg logo-1500x300.png 1500:300)",
-      "Bash(jq)"
+      "Bash(jq)",
+      "Bash(sed -n '264,310p' /home/jasper/gamehub/prisma/schema.prisma)",
+      "Bash(sed -n '573,615p' /home/jasper/gamehub/prisma/schema.prisma)",
+      "Bash(sed -n '640,680p' /home/jasper/gamehub/prisma/schema.prisma)",
+      "Bash(sed -n '783,810p' /home/jasper/gamehub/prisma/schema.prisma)",
+      "Bash(echo \"Exit: $?\")",
+      "Bash(psql:*)",
+      "Bash(docker exec gamehub_postgres:*)",
+      "Bash(docker exec gamehub_db_dev:*)",
+      "Bash(git -C /home/jasper/gamehub add prisma/schema.prisma src/lib/socket-server.ts src/app/api/tournaments/\\\\[slug\\\\]/matches/\\\\[matchId\\\\]/schedule/route.ts src/app/api/tournaments/\\\\[slug\\\\]/messages/route.ts src/app/api/admin/tournaments/\\\\[id\\\\]/advance-gameweek/route.ts src/app/api/admin/tournaments/\\\\[id\\\\]/advance-phase/route.ts src/app/api/admin/tournaments/route.ts src/app/api/admin/tournaments/\\\\[id\\\\]/route.ts src/app/api/admin/tournaments/\\\\[id\\\\]/start/route.ts src/components/admin/TournamentForm.tsx src/components/admin/TournamentMatchScore.tsx src/components/admin/AdvanceGameweekButton.tsx src/components/admin/AdvancePhaseButton.tsx src/components/tournament/MatchPrepCard.tsx src/components/tournament/TournamentMatchSchedule.tsx src/components/tournament/TournamentGroupChat.tsx src/components/tournament/CLGroupStandings.tsx src/app/\\\\\\(marketplace\\\\\\)/tournaments/\\\\[slug\\\\]/page.tsx src/app/admin/tournaments/\\\\[id\\\\]/page.tsx src/app/admin/tournaments/\\\\[id\\\\]/edit/page.tsx)",
+      "Bash(git -C /home/jasper/gamehub status --short)",
+      "Bash(git *)",
+      "Bash(python3 *)",
+      "Bash(gh run *)",
+      "Bash(sshpass *)",
+      "Bash(rm /home/jasper/gamehub/src/app/\\\\\\(marketplace\\\\\\)/messages/\\\\[userId\\\\]/page.tsx)",
+      "Bash(rmdir /home/jasper/gamehub/src/app/\\\\\\(marketplace\\\\\\)/messages/\\\\[userId\\\\]/)"
     ]
   }
 }

@@ -202,7 +202,7 @@ export function ChallengeChat({
           </div>
           <span
             className={cn(
-              "absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-bg-card",
+              "absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-bg-elevated",
               opponentOnline === true
                 ? "bg-neon-green shadow-[0_0_6px_rgba(0,255,135,0.8)]"
                 : opponentOnline === false

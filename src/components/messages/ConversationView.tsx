@@ -66,14 +66,11 @@ export function ConversationView({
   otherUser,
   myId,
   backHref = "/messages",
-  heightOffset = 64,
 }: {
   initialMessages: Message[];
   otherUser: OtherUser;
   myId: string;
   backHref?: string;
-  /** Pixels to subtract from 100dvh. Defaults to 64 (standard navbar). */
-  heightOffset?: number;
 }) {
   const { socket, refreshUnread } = useSocket();
   const [messages, setMessages] = useState<Message[]>(initialMessages);
@@ -171,7 +168,7 @@ export function ConversationView({
   const isAdmin = otherUser.role === "ADMIN";
 
   return (
-    <div className="flex flex-col" style={{ height: `calc(100dvh - ${heightOffset}px)` }}>
+    <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
 
       {/* ── Header ─────────────────────────────────────────────────────────── */}
       <div className="shrink-0 border-b border-bg-border bg-bg-surface px-4 py-3 flex items-center gap-3">
