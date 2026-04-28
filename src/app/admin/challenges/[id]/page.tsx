@@ -6,11 +6,17 @@ import { ChallengeResolvePanel } from "@/components/admin/ChallengeResolvePanel"
 import { ChallengeRemovePanel } from "@/components/admin/ChallengeRemovePanel";
 import { AdminWalletAdjustPanel } from "@/components/admin/AdminWalletAdjustPanel";
 import { AdminQuickMessage } from "@/components/admin/AdminQuickMessage";
-import { Swords, Trophy, AlertTriangle, User } from "lucide-react";
+import { Swords, Trophy, AlertTriangle, User, MessageCircle } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 import Link from "next/link";
 
 export const dynamic = "force-dynamic";
+
+function waLink(number: string): string {
+  const digits = number.replace(/\D/g, "");
+  const normalized = digits.startsWith("0") ? "254" + digits.slice(1) : digits;
+  return `https://wa.me/${normalized}`;
+}
 
 const STATUS_COLORS: Record<string, string> = {
   OPEN: "text-neon-yellow",
@@ -36,8 +42,8 @@ export default async function AdminChallengeDetailPage({
   const challenge = await prisma.challenge.findUnique({
     where: { id },
     include: {
-      host: { select: { id: true, username: true, displayName: true, avatarUrl: true } },
-      challenger: { select: { id: true, username: true, displayName: true, avatarUrl: true } },
+      host: { select: { id: true, username: true, displayName: true, avatarUrl: true, whatsappNumber: true } },
+      challenger: { select: { id: true, username: true, displayName: true, avatarUrl: true, whatsappNumber: true } },
       winner: { select: { id: true, username: true, displayName: true } },
       messages: {
         orderBy: { createdAt: "asc" },
@@ -147,6 +153,19 @@ export default async function AdminChallengeDetailPage({
                   <div>
                     <p className="text-sm font-semibold">{user?.displayName ?? user?.username ?? "—"}</p>
                     <p className={`text-[10px] text-${color}`}>{role}</p>
+                    {user?.whatsappNumber ? (
+                      <a
+                        href={waLink(user.whatsappNumber)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-1 text-[10px] text-neon-green hover:underline mt-0.5"
+                      >
+                        <MessageCircle size={9} />
+                        {user.whatsappNumber}
+                      </a>
+                    ) : (
+                      <p className="text-[10px] text-text-muted mt-0.5 italic">No WhatsApp</p>
+                    )}
                   </div>
                 </div>
                 {result ? (

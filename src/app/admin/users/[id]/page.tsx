@@ -6,7 +6,7 @@ import { TransactionStatusPill } from "@/components/ui/StatusPill";
 import { formatCurrency, formatDate } from "@/lib/utils/format";
 import { AdminUserActions } from "@/components/admin/AdminUserActions";
 import { AdminWalletAdjustPanel } from "@/components/admin/AdminWalletAdjustPanel";
-import { ShieldCheck } from "lucide-react";
+import { ShieldCheck, MessageCircle } from "lucide-react";
 
 export default async function AdminUserDetailPage({
   params,
@@ -44,6 +44,17 @@ export default async function AdminUserDetailPage({
             )}
           </div>
           <p className="text-sm text-text-muted">{user.email}</p>
+          {user.whatsappNumber && (
+            <a
+              href={`https://wa.me/${user.whatsappNumber.replace(/\D/g, "").replace(/^0/, "254")}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1 text-xs text-neon-green hover:underline mt-0.5"
+            >
+              <MessageCircle size={11} />
+              {user.whatsappNumber}
+            </a>
+          )}
           <div className="flex items-center gap-2 mt-1">
             <Badge variant={user.role === "ADMIN" ? "danger" : "default"}>
               {user.role}
