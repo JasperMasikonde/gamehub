@@ -1,9 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createHash } from "crypto";
 import { prisma } from "@/lib/prisma";
-import { transitionTransaction } from "@/lib/escrow";
-import { createNotification } from "@/lib/notifications";
-import { emitToast, emitChallengeUpdate, emitTournamentUpdate } from "@/lib/socket-server";
+import { claimAndFulfill } from "@/lib/payment-fulfillment";
 
 /**
  * NCBA Paybill-Level Push Notification endpoint
@@ -20,10 +18,6 @@ import { emitToast, emitChallengeUpdate, emitTournamentUpdate } from "@/lib/sock
  */
 
 // ── Hash verification ─────────────────────────────────────────────────────────
-// Formula from NCBA docs:
-// SHA256(secretKey + TransType + TransID + TransTime + TransAmount +
-//        CreditAccount + BillRefNumber + Mobile + Name + "1")
-// then Base64-encode the result
 function verifyHash(payload: NCBAPushPayload, secretKey: string): boolean {
   const raw =
     secretKey +
@@ -41,7 +35,6 @@ function verifyHash(payload: NCBAPushPayload, secretKey: string): boolean {
   return expected === (payload.SecretKey ?? payload.Hash ?? "");
 }
 
-// ── Payload types ─────────────────────────────────────────────────────────────
 interface NCBAPushPayload {
   TransType?: string;
   TransID?: string;
@@ -65,7 +58,6 @@ interface NCBAPushPayload {
   created_at?: string;
 }
 
-// ── Handler ───────────────────────────────────────────────────────────────────
 export async function POST(req: NextRequest) {
   let payload: NCBAPushPayload;
   try {
@@ -74,7 +66,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ResultCode: "C2B00012", ResultDesc: "Invalid JSON" }, { status: 400 });
   }
 
-  // 1. Authenticate — NCBA sends the username/password we registered with them
+  // 1. Authenticate
   const pushUsername = process.env.NCBA_PUSH_USERNAME;
   const pushPassword = process.env.NCBA_PUSH_PASSWORD;
   const secretKey = process.env.NCBA_PUSH_SECRET_KEY;
@@ -98,13 +90,13 @@ export async function POST(req: NextRequest) {
 
   const billRef = payload.BillRefNumber ?? payload.Narrative ?? "";
   const transId = payload.TransID ?? "";
-  const amount = parseFloat(payload.TransAmount ?? "0");
+  const receivedAmount = parseFloat(payload.TransAmount ?? "0");
 
   if (!billRef || !transId) {
     return NextResponse.json({ ResultCode: "C2B00012", ResultDesc: "Missing TransID or BillRefNumber" }, { status: 400 });
   }
 
-  // 3. Find the pending payment by referenceId (the account ref the customer typed)
+  // 3. Find the pending payment by referenceId
   const payment = await prisma.payment.findFirst({
     where: {
       referenceId: billRef,
@@ -113,107 +105,28 @@ export async function POST(req: NextRequest) {
   });
 
   if (!payment) {
-    // Could be a payment not initiated via the app (direct paybill payment).
-    // Acknowledge so NCBA doesn't retry — log it for manual review.
-    console.log("[push-notification] Unknown ref, no pending payment:", { billRef, transId, amount });
+    console.log("[push-notification] Unknown ref, no pending payment:", { billRef, transId, receivedAmount });
     return NextResponse.json({ ResultCode: "0", ResultDesc: "Accepted" });
   }
 
-  // 4. Optional amount sanity check
-  if (Math.abs(amount - Number(payment.amount)) > 1) {
-    console.warn("[push-notification] Amount mismatch", { expected: payment.amount, received: amount });
-    await prisma.payment.update({
-      where: { id: payment.id },
-      data: { status: "FAILED", failureReason: `Amount mismatch: expected ${payment.amount}, got ${amount}` },
+  // 4. Amount sanity check — reject if off by more than KES 1
+  if (Math.abs(receivedAmount - Number(payment.amount)) > 1) {
+    console.warn("[push-notification] Amount mismatch", { expected: payment.amount, received: receivedAmount });
+    await prisma.payment.updateMany({
+      where: { id: payment.id, status: { notIn: ["COMPLETED", "FAILED"] } },
+      data: { status: "FAILED", failureReason: `Amount mismatch: expected ${payment.amount}, got ${receivedAmount}` },
     });
     return NextResponse.json({ ResultCode: "0", ResultDesc: "Accepted" });
   }
 
-  // 5. Mark completed and store the M-Pesa TransID
-  await prisma.payment.update({
-    where: { id: payment.id },
-    data: {
-      status: "COMPLETED",
-      ncbaTransactionId: transId,
-    },
+  // 5. Store the M-Pesa TransID (informational — don't overwrite terminal status)
+  await prisma.payment.updateMany({
+    where: { id: payment.id, status: { notIn: ["COMPLETED", "FAILED"] } },
+    data: { ncbaTransactionId: transId },
   });
 
-  // 6. Fulfill the business action
-  try {
-    await fulfillPayment(payment.purpose, payment.entityId, payment.userId, payment.metadata ?? null);
-  } catch (err) {
-    console.error("[push-notification] fulfillPayment error:", err);
-  }
+  // 6. Atomically claim and fulfill
+  await claimAndFulfill(payment);
 
-  // NCBA requires this exact response to stop retrying
   return NextResponse.json({ ResultCode: "0", ResultDesc: "Accepted" });
-}
-
-// ── Business fulfillment (same as callback) ───────────────────────────────────
-async function fulfillPayment(
-  purpose: string,
-  entityId: string,
-  userId: string,
-  metadataJson: string | null
-) {
-  const metadata = metadataJson ? JSON.parse(metadataJson) : {};
-
-  if (purpose === "escrow") {
-    await transitionTransaction(entityId, "IN_ESCROW", userId);
-    return;
-  }
-
-  if (purpose === "challenge_host") {
-    await prisma.challenge.update({
-      where: { id: entityId },
-      data: { status: "OPEN" },
-    });
-    emitChallengeUpdate(userId, userId, entityId);
-    return;
-  }
-
-  if (purpose === "challenge") {
-    const { challengerSquadUrl, hostId } = metadata as { challengerSquadUrl: string; hostId: string };
-    await prisma.challenge.update({
-      where: { id: entityId },
-      data: { challengerId: userId, challengerSquadUrl, status: "ACTIVE" },
-    });
-    if (hostId) {
-      await createNotification(hostId, "CHALLENGE_ACCEPTED", {
-        title: "Challenge accepted!",
-        body: "Your match challenge has been accepted.",
-        linkUrl: `/challenges/${entityId}`,
-      });
-      emitToast(hostId, {
-        type: "success",
-        title: "Challenge accepted!",
-        message: "Your opponent paid the wager and is ready to play.",
-        linkUrl: `/challenges/${entityId}`,
-        linkLabel: "Go to challenge →",
-        duration: 10000,
-      });
-      emitChallengeUpdate(hostId, userId, entityId);
-    }
-    return;
-  }
-
-  if (purpose === "tournament") {
-    const tournament = await prisma.tournament.findUnique({ where: { id: entityId } });
-    if (!tournament) return;
-    await prisma.tournamentParticipant.upsert({
-      where: { tournamentId_userId: { tournamentId: entityId, userId } },
-      create: { tournamentId: entityId, userId },
-      update: {},
-    });
-    emitTournamentUpdate(entityId, tournament.slug);
-    return;
-  }
-
-  if (purpose === "shop") {
-    await prisma.shopOrder.update({
-      where: { id: entityId },
-      data: { status: "PAID" },
-    });
-    return;
-  }
 }

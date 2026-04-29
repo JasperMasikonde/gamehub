@@ -3,7 +3,7 @@ import { resolveSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
 import { createNotification } from "@/lib/notifications";
-import { emitToast, emitChallengeUpdate } from "@/lib/socket-server";
+import { emitToast, emitChallengeUpdate, emitWalletUpdate } from "@/lib/socket-server";
 import { creditWallet } from "@/lib/wallet";
 import { sendAdminNotification } from "@/lib/email";
 
@@ -52,21 +52,28 @@ export async function POST(
   });
 
   const loserId = winnerId === challenge.hostId ? challenge.challengerId! : challenge.hostId;
-  const pool = Number(challenge.wagerAmount) * 2;
-  const platFee = challenge.platformFee != null ? Number(challenge.platformFee) : 0;
-  const txFee = challenge.transactionFee != null ? Number(challenge.transactionFee) : 0;
-  const totalFee = platFee + txFee;
-  const payout = pool - totalFee;
+
+  // Integer-cent arithmetic to avoid floating-point rounding errors
+  const wagerCents = Math.round(Number(challenge.wagerAmount) * 100);
+  const poolCents = wagerCents * 2;
+  const platFeeCents = challenge.platformFee != null ? Math.round(Number(challenge.platformFee) * 100) : 0;
+  const txFeeCents = challenge.transactionFee != null ? Math.round(Number(challenge.transactionFee) * 100) : 0;
+  const totalFeeCents = platFeeCents + txFeeCents;
+  const payoutCents = poolCents - totalFeeCents;
+  const payout = payoutCents / 100;
   const prize = payout.toFixed(2);
+  const poolDisplay = (poolCents / 100).toFixed(2);
+  const feeDisplay = (totalFeeCents / 100).toFixed(2);
 
   // Credit winner's wallet
-  await creditWallet({
+  const walletTx = await creditWallet({
     userId: winnerId,
     amount: payout,
     type: "CHALLENGE_WIN",
-    description: `Challenge dispute resolved — win payout (KES ${pool.toFixed(2)} pool − KES ${totalFee.toFixed(2)} fees)`,
+    description: `Challenge dispute resolved — win payout (KES ${poolDisplay} pool − KES ${feeDisplay} fees)`,
     challengeId: id,
   });
+  emitWalletUpdate(winnerId, Number(walletTx.balanceAfter));
 
   await Promise.all([
     createNotification(winnerId, "CHALLENGE_WON", {

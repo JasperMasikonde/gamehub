@@ -29,9 +29,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Invalid purpose" }, { status: 400 });
   }
 
-  // For wallet deposits, always use the authenticated user's ID as the entity
-  // so users cannot deposit into another user's wallet by spoofing entityId
-  const resolvedEntityId = purpose === "wallet_deposit" ? session.user.id : entityId;
+  // For wallet deposits, server enforces entityId — client cannot deposit into another user's wallet
+  const resolvedEntityId = purpose === "wallet_deposit" ? session.user.id : (entityId as string);
   if (!resolvedEntityId) {
     return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
   }
@@ -46,6 +45,70 @@ export async function POST(req: NextRequest) {
   const amountNum = Number(amount);
   if (isNaN(amountNum) || amountNum <= 0) {
     return NextResponse.json({ error: "Invalid amount" }, { status: 400 });
+  }
+
+  // ── Challenge-specific validation ─────────────────────────────────────────
+  // Verify the amount matches the actual wager stored server-side, and that
+  // the challenge is in the correct state, so a user cannot underpay.
+  if (purpose === "challenge") {
+    const challenge = await prisma.challenge.findUnique({
+      where: { id: resolvedEntityId },
+      select: { wagerAmount: true, status: true, hostId: true },
+    });
+    if (!challenge) {
+      return NextResponse.json({ error: "Challenge not found" }, { status: 404 });
+    }
+    if (challenge.status !== "OPEN") {
+      return NextResponse.json({ error: "This challenge is no longer open" }, { status: 400 });
+    }
+    if (challenge.hostId === session.user.id) {
+      return NextResponse.json({ error: "You cannot join your own challenge" }, { status: 400 });
+    }
+    const expectedWager = Number(challenge.wagerAmount);
+    if (Math.abs(amountNum - expectedWager) > 0.01) {
+      return NextResponse.json(
+        { error: `Amount must match the challenge wager (KES ${expectedWager.toLocaleString("en-KE", { minimumFractionDigits: 2 })})` },
+        { status: 400 }
+      );
+    }
+  }
+
+  if (purpose === "challenge_host") {
+    const challenge = await prisma.challenge.findUnique({
+      where: { id: resolvedEntityId },
+      select: { wagerAmount: true, status: true, hostId: true },
+    });
+    if (!challenge) {
+      return NextResponse.json({ error: "Challenge not found" }, { status: 404 });
+    }
+    if (challenge.status !== "PENDING_HOST_PAYMENT") {
+      return NextResponse.json({ error: "Challenge is not awaiting host payment" }, { status: 400 });
+    }
+    if (challenge.hostId !== session.user.id) {
+      return NextResponse.json({ error: "Not your challenge" }, { status: 403 });
+    }
+    const expectedWager = Number(challenge.wagerAmount);
+    if (Math.abs(amountNum - expectedWager) > 0.01) {
+      return NextResponse.json(
+        { error: `Amount must match the challenge wager (KES ${expectedWager.toLocaleString("en-KE", { minimumFractionDigits: 2 })})` },
+        { status: 400 }
+      );
+    }
+  }
+
+  // ── Idempotency: return existing pending payment for the same entity ───────
+  // Prevents multiple STK pushes for the same payment by returning the
+  // in-progress payment record instead of creating a duplicate.
+  const existing = await prisma.payment.findFirst({
+    where: {
+      userId: session.user.id,
+      entityId: resolvedEntityId,
+      purpose,
+      status: { in: ["PENDING", "PROCESSING"] },
+    },
+  });
+  if (existing) {
+    return NextResponse.json({ paymentId: existing.id, message: "Payment already in progress" });
   }
 
   // Build a short reference (NCBA max 20 chars)
