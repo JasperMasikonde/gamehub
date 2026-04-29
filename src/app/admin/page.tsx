@@ -37,11 +37,13 @@ export default async function AdminOverviewPage() {
     can("MANAGE_LISTINGS") ? prisma.listing.count({ where: { status: "PENDING_APPROVAL" } }) : Promise.resolve(null),
     can("MANAGE_TRANSACTIONS") ? prisma.transaction.count({ where: { status: "IN_ESCROW" } }) : Promise.resolve(null),
     can("MANAGE_DISPUTES") ? prisma.dispute.count({ where: { status: { in: ["OPEN", "UNDER_REVIEW"] } } }) : Promise.resolve(null),
-    prisma.adminAction.findMany({
-      orderBy: { createdAt: "desc" },
-      take: 20,
-      include: { admin: { select: { username: true } } },
-    }),
+    isSuperAdmin
+      ? prisma.adminAction.findMany({
+          orderBy: { createdAt: "desc" },
+          take: 20,
+          include: { admin: { select: { username: true } } },
+        })
+      : Promise.resolve([]),
     can("MANAGE_TRANSACTIONS")
       ? prisma.transaction.findMany({ where: { status: "COMPLETED" }, select: { sellerReceives: true } })
       : Promise.resolve(null),
@@ -225,35 +227,37 @@ export default async function AdminOverviewPage() {
         })()}
       </div>
 
-      <div>
-        <h2 className="text-sm font-semibold mb-3">Recent Admin Actions</h2>
-        <Card>
-          <div className="divide-y divide-bg-border">
-            {recentActions.length === 0 ? (
-              <p className="text-sm text-text-muted text-center py-6">No actions yet</p>
-            ) : (
-              recentActions.map((a) => (
-                <div key={a.id} className="px-4 py-3 flex items-start justify-between gap-4">
-                  <div>
-                    <p className="text-xs font-mono text-neon-blue">{a.action}</p>
-                    {a.note && (
-                      <p className="text-xs text-text-muted mt-0.5 line-clamp-1">
-                        {a.note}
+      {isSuperAdmin && (
+        <div>
+          <h2 className="text-sm font-semibold mb-3">Recent Admin Actions</h2>
+          <Card>
+            <div className="divide-y divide-bg-border">
+              {recentActions.length === 0 ? (
+                <p className="text-sm text-text-muted text-center py-6">No actions yet</p>
+              ) : (
+                recentActions.map((a) => (
+                  <div key={a.id} className="px-4 py-3 flex items-start justify-between gap-4">
+                    <div>
+                      <p className="text-xs font-mono text-neon-blue">{a.action}</p>
+                      {a.note && (
+                        <p className="text-xs text-text-muted mt-0.5 line-clamp-1">
+                          {a.note}
+                        </p>
+                      )}
+                      <p className="text-xs text-text-muted/60 mt-0.5">
+                        by {a.admin.username}
                       </p>
-                    )}
-                    <p className="text-xs text-text-muted/60 mt-0.5">
-                      by {a.admin.username}
-                    </p>
+                    </div>
+                    <span className="text-xs text-text-muted shrink-0">
+                      {formatRelativeTime(a.createdAt)}
+                    </span>
                   </div>
-                  <span className="text-xs text-text-muted shrink-0">
-                    {formatRelativeTime(a.createdAt)}
-                  </span>
-                </div>
-              ))
-            )}
-          </div>
-        </Card>
-      </div>
+                ))
+              )}
+            </div>
+          </Card>
+        </div>
+      )}
     </div>
   );
 }
