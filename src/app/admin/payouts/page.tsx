@@ -20,13 +20,13 @@ export default async function AdminPayoutsPage() {
     },
   });
 
-  // Serialize Decimal → string for client component
   const requests: SerializedPayoutRequest[] = raw.map((r) => ({
     ...r,
     amount: r.amount.toString(),
     createdAt: r.createdAt.toISOString(),
     updatedAt: r.updatedAt.toISOString(),
     processedAt: r.processedAt?.toISOString() ?? null,
+    challengeId: r.challengeId ?? null,
   }));
 
   return (

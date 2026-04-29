@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { CheckCircle, XCircle, Clock, DollarSign, Loader2, ChevronDown } from "lucide-react";
+import { CheckCircle, XCircle, Clock, Loader2, ChevronDown, Swords } from "lucide-react";
+import Link from "next/link";
 import type { PayoutStatus } from "@prisma/client";
 
 interface PayoutUser {
@@ -19,6 +20,7 @@ export interface SerializedPayoutRequest {
   adminNote: string | null;
   processedAt: string | null;
   processedBy: string | null;
+  challengeId: string | null;
   createdAt: string;
   updatedAt: string;
   userId: string;
@@ -163,6 +165,15 @@ export function AdminPayoutsTable({ initialRequests }: { initialRequests: Serial
 
               {isExpanded && (
                 <div className="border-t border-border p-4 flex flex-col gap-3 bg-bg-elevated/30">
+                  {req.challengeId && (
+                    <Link
+                      href={`/admin/challenges/${req.challengeId}`}
+                      className="flex items-center gap-1.5 text-xs text-neon-purple hover:underline w-fit"
+                    >
+                      <Swords size={11} />
+                      From challenge #{req.challengeId.slice(-8).toUpperCase()} →
+                    </Link>
+                  )}
                   {req.adminNote && (
                     <p className="text-xs text-text-muted italic">Note: {req.adminNote}</p>
                   )}

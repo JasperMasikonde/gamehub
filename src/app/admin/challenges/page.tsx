@@ -4,11 +4,10 @@ import { prisma } from "@/lib/prisma";
 import { formatCurrency, formatDate, formatChallengeFormat } from "@/lib/utils/format";
 import { Card } from "@/components/ui/Card";
 import Link from "next/link";
-import { Swords, AlertTriangle, Phone, Banknote, Settings, LayoutList } from "lucide-react";
+import { Swords, AlertTriangle, Settings, LayoutList } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 import { ChallengeWindowSettings } from "@/components/admin/ChallengeWindowSettings";
 import { MatchCodePatternForm } from "@/components/admin/MatchCodePatternForm";
-import { AdminPayoutActions } from "@/components/admin/AdminPayoutActions";
 import { DeleteDemoChallengesButton } from "@/components/admin/DeleteDemoChallengesButton";
 import { Code } from "lucide-react";
 
@@ -25,8 +24,7 @@ const STATUS_COLORS: Record<string, string> = {
 
 const TABS = [
   { key: "challenges", label: "Challenges", icon: LayoutList },
-  { key: "payouts", label: "Payouts", icon: Banknote },
-  { key: "settings", label: "Settings", icon: Settings },
+  { key: "settings",   label: "Settings",   icon: Settings },
 ] as const;
 
 type Tab = (typeof TABS)[number]["key"];
@@ -53,52 +51,6 @@ export default async function AdminChallengesPage({
   });
 
   const disputed = challenges.filter((c) => c.status === "DISPUTED");
-  const completed = challenges.filter((c) => c.status === "COMPLETED" && c.winnerId);
-
-  // Fetch M-Pesa phone numbers for challenge winners
-  const completedIds = completed.map((c) => c.id);
-  const challengePayments = completedIds.length > 0
-    ? await prisma.payment.findMany({
-        where: {
-          entityId: { in: completedIds },
-          purpose: { in: ["challenge_host", "challenge"] },
-          status: "COMPLETED",
-        },
-        select: { entityId: true, purpose: true, phone: true, userId: true },
-      })
-    : [];
-
-  const phoneMap = new Map<string, { hostPhone?: string; challengerPhone?: string }>();
-  for (const p of challengePayments) {
-    const entry = phoneMap.get(p.entityId) ?? {};
-    if (p.purpose === "challenge_host") entry.hostPhone = p.phone;
-    if (p.purpose === "challenge") entry.challengerPhone = p.phone;
-    phoneMap.set(p.entityId, entry);
-  }
-
-  const winnerIds = completed.filter((c) => c.winnerId).map((c) => c.winnerId!);
-  const payoutRequests = completedIds.length > 0
-    ? await prisma.payoutRequest.findMany({
-        where: {
-          OR: [
-            { challengeId: { in: completedIds } },
-            ...(winnerIds.length > 0 ? [{ userId: { in: winnerIds }, challengeId: null }] : []),
-          ],
-          status: { not: "REJECTED" },
-        },
-        orderBy: { createdAt: "desc" },
-        select: { id: true, challengeId: true, userId: true, amount: true, phone: true, status: true },
-      })
-    : [];
-
-  const payoutMap = new Map<string, { id: string; status: "PENDING" | "APPROVED" | "PAID"; amount: number; phone: string }>();
-  for (const c of completed) {
-    if (!c.winnerId) continue;
-    const linked = payoutRequests.find((r) => r.challengeId === c.id);
-    const fallback = payoutRequests.find((r) => r.userId === c.winnerId && !r.challengeId);
-    const req = linked ?? fallback;
-    if (req) payoutMap.set(c.id, { id: req.id, status: req.status as "PENDING" | "APPROVED" | "PAID", amount: Number(req.amount), phone: req.phone });
-  }
 
   const config = await prisma.siteConfig.findUnique({ where: { id: "singleton" } });
   const resultWindowMinutes = config?.challengeResultWindowMinutes ?? 60;
@@ -106,12 +58,6 @@ export default async function AdminChallengesPage({
   const matchCodeHint = config?.matchCodeHint ?? "8 digits, e.g. 12345678 or 1234-5678";
 
   const STATUSES = ["ALL", "OPEN", "ACTIVE", "SUBMITTED", "COMPLETED", "DISPUTED", "CANCELLED"];
-
-  // Counts for tab badges
-  const pendingPayouts = completed.filter((c) => {
-    const req = payoutMap.get(c.id);
-    return req && req.status !== "PAID";
-  }).length;
 
   return (
     <div className="flex flex-col gap-6">
@@ -121,7 +67,7 @@ export default async function AdminChallengesPage({
           <Swords size={20} className="text-neon-purple" /> Challenges
         </h1>
         <p className="text-sm text-text-muted mt-0.5">
-          {challenges.length} total · {disputed.length} disputed · {completed.length} awaiting payout
+          {challenges.length} total · {disputed.length} disputed
         </p>
       </div>
 
@@ -129,7 +75,6 @@ export default async function AdminChallengesPage({
       <div className="flex gap-1 border-b border-bg-border">
         {TABS.map(({ key, label, icon: Icon }) => {
           const isActive = activeTab === key;
-          const badge = key === "payouts" && pendingPayouts > 0 ? pendingPayouts : null;
           return (
             <Link
               key={key}
@@ -143,11 +88,6 @@ export default async function AdminChallengesPage({
             >
               <Icon size={14} />
               {label}
-              {badge && (
-                <span className="ml-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-neon-green/15 text-neon-green">
-                  {badge}
-                </span>
-              )}
             </Link>
           );
         })}
@@ -156,6 +96,17 @@ export default async function AdminChallengesPage({
       {/* ── TAB: Challenges ── */}
       {activeTab === "challenges" && (
         <>
+          {/* Disputed alert */}
+          {disputed.length > 0 && (
+            <div className="flex items-center gap-2 px-4 py-3 rounded-xl border border-neon-red/30 bg-neon-red/5 text-sm">
+              <AlertTriangle size={14} className="text-neon-red shrink-0" />
+              <span className="text-neon-red font-medium">{disputed.length} disputed challenge{disputed.length !== 1 ? "s" : ""} need review</span>
+              <Link href="/admin/disputes" className="ml-auto text-xs text-neon-red underline hover:opacity-80">
+                Go to Disputes →
+              </Link>
+            </div>
+          )}
+
           {/* Status filter */}
           <div className="flex flex-wrap gap-1.5">
             {STATUSES.map((s) => {
@@ -182,7 +133,7 @@ export default async function AdminChallengesPage({
               <table className="w-full text-sm min-w-[640px]">
                 <thead>
                   <tr className="border-b border-bg-border">
-                    {["Host", "Challenger", "Format", "Wager", "Prize", "Winner", "Status", "Date"].map((h) => (
+                    {["Host", "Challenger", "Format", "Wager", "Prize", "Winner", "Status", "Date", ""].map((h) => (
                       <th key={h} className="text-left px-4 py-3 text-xs font-medium text-text-muted">
                         {h}
                       </th>
@@ -191,9 +142,6 @@ export default async function AdminChallengesPage({
                 </thead>
                 <tbody className="divide-y divide-bg-border">
                   {challenges.map((c) => {
-                    const phones = phoneMap.get(c.id);
-                    const winnerIsHost = c.winnerId === c.host.id;
-                    const payoutPhone = winnerIsHost ? phones?.hostPhone : phones?.challengerPhone;
                     const pool = Number(c.wagerAmount) * 2;
                     const cPlatFee = c.platformFee != null ? Number(c.platformFee) : 0;
                     const cTxFee = c.transactionFee != null ? Number(c.transactionFee) : 0;
@@ -220,20 +168,8 @@ export default async function AdminChallengesPage({
                         <td className="px-4 py-3 text-xs font-medium text-neon-yellow">
                           {formatCurrency(netPrize.toString())}
                         </td>
-                        <td className="px-4 py-3">
-                          {c.winner ? (
-                            <div>
-                              <p className="text-xs font-semibold text-neon-green">{c.winner.username}</p>
-                              {payoutPhone && (
-                                <div className="flex items-center gap-1 mt-0.5">
-                                  <Phone size={9} className="text-neon-green shrink-0" />
-                                  <span className="text-[10px] font-mono text-neon-green">{payoutPhone}</span>
-                                </div>
-                              )}
-                            </div>
-                          ) : (
-                            <span className="text-xs text-text-muted">—</span>
-                          )}
+                        <td className="px-4 py-3 text-xs font-semibold text-neon-green">
+                          {c.winner?.username ?? <span className="text-text-muted font-normal">—</span>}
                         </td>
                         <td className="px-4 py-3">
                           <span className={cn("text-[11px] font-semibold px-2 py-0.5 rounded-full border", STATUS_COLORS[c.status] ?? "text-text-muted")}>
@@ -257,125 +193,6 @@ export default async function AdminChallengesPage({
             </div>
           </Card>
         </>
-      )}
-
-      {/* ── TAB: Payouts ── */}
-      {activeTab === "payouts" && (
-        <div className="flex flex-col gap-6">
-          {/* Disputed — needs review */}
-          {disputed.length > 0 && (
-            <div>
-              <h2 className="text-sm font-semibold text-neon-red flex items-center gap-1.5 mb-2">
-                <AlertTriangle size={14} /> Needs Review — {disputed.length} disputed
-              </h2>
-              <div className="flex flex-col gap-2">
-                {disputed.map((c) => (
-                  <Link
-                    key={c.id}
-                    href={`/admin/challenges/${c.id}`}
-                    className="flex items-center gap-4 px-4 py-3 rounded-xl border border-neon-red/30 bg-neon-red/5 hover:bg-neon-red/10 transition-colors"
-                  >
-                    <AlertTriangle size={16} className="text-neon-red shrink-0" />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium">
-                        {c.host.username} vs {c.challenger?.username ?? "—"}
-                      </p>
-                      <p className="text-xs text-text-muted mt-0.5">
-                        {formatChallengeFormat(c.format, true)} · Wager {formatCurrency(c.wagerAmount.toString())} each · Winner gets {formatCurrency(
-                          (Number(c.wagerAmount) * 2 - (Number(c.platformFee) || 0) - (Number(c.transactionFee) || 0)).toString()
-                        )}
-                      </p>
-                    </div>
-                    <div className="text-right shrink-0">
-                      <p className="text-xs text-neon-red font-semibold">Conflicting results</p>
-                      <p className="text-xs text-text-muted">{formatDate(c.createdAt)}</p>
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Completed — payout list */}
-          {completed.length > 0 ? (
-            <div>
-              <h2 className="text-sm font-semibold text-neon-green flex items-center gap-1.5 mb-2">
-                <Banknote size={14} /> Awaiting Payout — {completed.length} winner{completed.length !== 1 ? "s" : ""}
-              </h2>
-              <div className="flex flex-col gap-2">
-                {completed.map((c) => {
-                  const phones = phoneMap.get(c.id);
-                  const winnerIsHost = c.winnerId === c.host.id;
-                  const payoutPhone = winnerIsHost ? phones?.hostPhone : phones?.challengerPhone;
-                  const pool = Number(c.wagerAmount) * 2;
-                  const platFee = c.platformFee != null ? Number(c.platformFee) : 0;
-                  const txFee = c.transactionFee != null ? Number(c.transactionFee) : 0;
-                  const winnerPayout = pool - platFee - txFee;
-                  const payoutReq = payoutMap.get(c.id);
-
-                  return (
-                    <div
-                      key={c.id}
-                      className="flex items-center gap-4 px-4 py-3 rounded-xl border border-neon-green/25 bg-neon-green/5"
-                    >
-                      <div className="w-8 h-8 rounded-full bg-neon-green/15 flex items-center justify-center shrink-0">
-                        <Swords size={14} className="text-neon-green" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold text-text-primary">
-                          {c.winner?.username}
-                          <span className="text-text-muted font-normal text-xs ml-1">won</span>
-                        </p>
-                        <p className="text-xs text-text-muted mt-0.5">
-                          {c.host.username} vs {c.challenger?.username ?? "—"} · {formatChallengeFormat(c.format, true)}
-                        </p>
-                        <Link href={`/admin/challenges/${c.id}`} className="text-[10px] text-neon-blue hover:underline">
-                          View challenge →
-                        </Link>
-                      </div>
-                      <div className="text-right shrink-0 flex flex-col items-end gap-1">
-                        <p className="text-base font-black text-neon-green">{formatCurrency(winnerPayout.toString())}</p>
-                        {(platFee > 0 || txFee > 0) && (
-                          <p className="text-[10px] text-text-muted">Pool {formatCurrency(pool.toString())} − fees {formatCurrency((platFee + txFee).toString())}</p>
-                        )}
-                        {payoutReq ? (
-                          <>
-                            <div className="flex items-center gap-1">
-                              <Phone size={10} className="text-neon-green" />
-                              <span className="text-xs font-mono font-semibold text-neon-green">{payoutReq.phone}</span>
-                            </div>
-                            <AdminPayoutActions
-                              payoutId={payoutReq.id}
-                              status={payoutReq.status}
-                              phone={payoutReq.phone}
-                              amount={payoutReq.amount}
-                            />
-                          </>
-                        ) : payoutPhone ? (
-                          <>
-                            <div className="flex items-center gap-1">
-                              <Phone size={10} className="text-neon-green" />
-                              <span className="text-xs font-mono font-semibold text-neon-green">{payoutPhone}</span>
-                            </div>
-                            <span className="text-[10px] text-text-muted italic">no payout request yet</span>
-                          </>
-                        ) : (
-                          <span className="text-xs text-text-muted italic">waiting for payout request</span>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          ) : (
-            <p className="text-sm text-text-muted py-4">No completed challenges awaiting payout.</p>
-          )}
-
-          {disputed.length === 0 && completed.length === 0 && (
-            <p className="text-sm text-text-muted py-4">No disputes or pending payouts.</p>
-          )}
-        </div>
       )}
 
       {/* ── TAB: Settings ── */}
