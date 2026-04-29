@@ -7,6 +7,9 @@ import { emitChallengeMessage, emitToast, emitNewMessage } from "@/lib/socket-se
 const sendSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("MATCH_CODE_REQUEST") }),
   z.object({ type: z.literal("MATCH_CODE"), code: z.string().min(1).max(200).trim() }),
+  z.object({ type: z.literal("EFOOTBALL_USERNAME_REQUEST") }),
+  z.object({ type: z.literal("EFOOTBALL_USERNAME"), username: z.string().min(1).max(100).trim() }),
+  z.object({ type: z.literal("EFOOTBALL_QUICK_REPLY"), key: z.enum(["USERNAME_WRONG", "ACCEPT_FRIEND_REQUEST", "FRIEND_REQUEST_SENT"]) }),
 ]);
 
 const LOCKED_STATUSES = ["COMPLETED", "DISPUTED", "CANCELLED"];
@@ -78,7 +81,10 @@ export async function POST(
   }
 
   const messageType = parsed.data.type;
-  let content = messageType === "MATCH_CODE" ? parsed.data.code : "";
+  let content = "";
+  if (messageType === "MATCH_CODE") content = parsed.data.code;
+  else if (messageType === "EFOOTBALL_USERNAME") content = parsed.data.username;
+  else if (messageType === "EFOOTBALL_QUICK_REPLY") content = parsed.data.key;
 
   // Validate match code format against the admin-configured pattern
   if (messageType === "MATCH_CODE") {
@@ -96,8 +102,26 @@ export async function POST(
       // If the stored regex is somehow broken, skip validation
     }
   }
+
   const recipientId = isHost ? challenge.challengerId! : challenge.hostId;
   const senderName = session.user.username;
+
+  const QUICK_REPLY_LABELS: Record<string, string> = {
+    USERNAME_WRONG: "That username is wrong",
+    ACCEPT_FRIEND_REQUEST: "Please accept my friend request",
+    FRIEND_REQUEST_SENT: "Friend request sent",
+  };
+
+  const inboxContent =
+    messageType === "MATCH_CODE"
+      ? `[challenge:${id}] Match code: ${content}`
+      : messageType === "EFOOTBALL_USERNAME"
+      ? `[challenge:${id}] eFootball username: ${content}`
+      : messageType === "EFOOTBALL_USERNAME_REQUEST"
+      ? `[challenge:${id}] ${senderName} is asking for your eFootball username`
+      : messageType === "EFOOTBALL_QUICK_REPLY"
+      ? `[challenge:${id}] ${QUICK_REPLY_LABELS[content] ?? content}`
+      : `[challenge:${id}] ${senderName} is requesting your match code`;
 
   const [message] = await Promise.all([
     prisma.challengeMessage.create({
@@ -109,16 +133,8 @@ export async function POST(
       },
       include: { sender: { select: { id: true, username: true, displayName: true, avatarUrl: true } } },
     }),
-    // Save a copy to the regular inbox for notification purposes
     prisma.message.create({
-      data: {
-        senderId: session.user.id,
-        recipientId,
-        content:
-          messageType === "MATCH_CODE"
-            ? `[challenge:${id}] Match code: ${content}`
-            : `[challenge:${id}] ${senderName} is requesting your match code`,
-      },
+      data: { senderId: session.user.id, recipientId, content: inboxContent },
     }),
   ]);
 
@@ -132,25 +148,39 @@ export async function POST(
     createdAt: message.createdAt.toISOString(),
   });
 
-  // Toast + unread for recipient
-  const toastMessage =
+  // Toast for recipient (skip for quick replies — they're contextual in-chat)
+  const toastTitle =
     messageType === "MATCH_CODE"
       ? `${senderName} shared their match code`
+      : messageType === "EFOOTBALL_USERNAME"
+      ? `${senderName} shared their eFootball username`
+      : messageType === "EFOOTBALL_USERNAME_REQUEST"
+      ? `${senderName} is asking for your eFootball username`
+      : messageType === "EFOOTBALL_QUICK_REPLY"
+      ? null
       : `${senderName} is requesting your match code`;
-  emitToast(recipientId, {
-    type: "info",
-    title: toastMessage,
-    message: messageType === "MATCH_CODE" ? "Open the challenge to see the code" : "Share your code in the challenge chat",
-    linkUrl: `/challenges/${id}`,
-    linkLabel: "Open chat →",
-    duration: 8000,
-  });
-  emitNewMessage(recipientId, {
-    messageId: message.id,
-    senderId: session.user.id,
-    senderUsername: senderName,
-    content: toastMessage,
-  });
+
+  if (toastTitle) {
+    const toastBody =
+      messageType === "MATCH_CODE" ? "Open the challenge to see the code"
+      : messageType === "EFOOTBALL_USERNAME" ? "Open the challenge to see their username"
+      : messageType === "EFOOTBALL_USERNAME_REQUEST" ? "Share your eFootball username in the chat"
+      : "Share your code in the challenge chat";
+    emitToast(recipientId, {
+      type: "info",
+      title: toastTitle,
+      message: toastBody,
+      linkUrl: `/challenges/${id}`,
+      linkLabel: "Open chat →",
+      duration: 8000,
+    });
+    emitNewMessage(recipientId, {
+      messageId: message.id,
+      senderId: session.user.id,
+      senderUsername: senderName,
+      content: toastTitle,
+    });
+  }
 
   return NextResponse.json({ message }, { status: 201 });
 }

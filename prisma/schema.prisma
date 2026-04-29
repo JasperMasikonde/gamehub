@@ -102,6 +102,9 @@ enum ChallengeFormat {
 enum ChallengeMessageType {
   MATCH_CODE_REQUEST
   MATCH_CODE
+  EFOOTBALL_USERNAME_REQUEST
+  EFOOTBALL_USERNAME
+  EFOOTBALL_QUICK_REPLY
 }
 
 enum ChallengeStatus {
