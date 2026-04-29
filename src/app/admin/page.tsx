@@ -2,7 +2,8 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { Card, CardContent } from "@/components/ui/Card";
 import { formatRelativeTime, formatCurrency } from "@/lib/utils/format";
-import { Users, ListOrdered, CreditCard, AlertTriangle, Banknote, Swords, Eye, TrendingUp } from "lucide-react";
+import { Users, ListOrdered, CreditCard, AlertTriangle, Banknote, Eye, TrendingUp } from "lucide-react";
+import { AdminPayoutsCard } from "@/components/admin/AdminPayoutsCard";
 import Link from "next/link";
 import type { AdminPermission } from "@prisma/client";
 
@@ -47,7 +48,9 @@ export default async function AdminOverviewPage() {
     can("MANAGE_TRANSACTIONS")
       ? prisma.transaction.findMany({ where: { status: "COMPLETED" }, select: { sellerReceives: true } })
       : Promise.resolve(null),
-    can("MANAGE_CHALLENGES") ? prisma.challenge.count({ where: { status: "COMPLETED" } }) : Promise.resolve(null),
+    can("MANAGE_CHALLENGES")
+      ? prisma.payoutRequest.findMany({ where: { status: { in: ["PENDING", "APPROVED"] } }, select: { status: true } })
+      : Promise.resolve(null),
     prisma.siteVisit.count({ where: { date: today } }),
     prisma.siteVisit.count({ where: { date: { gte: sevenDaysAgo } } }),
     prisma.siteVisit.count({ where: { date: { gte: thirtyDaysAgo } } }),
@@ -61,6 +64,13 @@ export default async function AdminOverviewPage() {
 
   const escrowPayoutTotal = pendingEscrowPayouts
     ? pendingEscrowPayouts.reduce((sum, tx) => sum + Number(tx.sellerReceives), 0)
+    : 0;
+
+  const pendingPayoutCount = pendingChallengePayouts
+    ? pendingChallengePayouts.filter((r) => r.status === "PENDING").length
+    : 0;
+  const approvedPayoutCount = pendingChallengePayouts
+    ? pendingChallengePayouts.filter((r) => r.status === "APPROVED").length
     : 0;
 
   const stats = [
@@ -129,32 +139,12 @@ export default async function AdminOverviewPage() {
               </Link>
             )}
 
-            {/* Challenge payouts */}
+            {/* Challenge / wallet payout requests */}
             {can("MANAGE_CHALLENGES") && (
-              <Link href="/admin/challenges?status=COMPLETED">
-                <div className={`flex items-center gap-4 p-4 rounded-xl border cursor-pointer transition-colors
-                  ${pendingChallengePayouts! > 0
-                    ? "bg-neon-purple/5 border-neon-purple/30 hover:bg-neon-purple/10"
-                    : "bg-bg-elevated border-bg-border hover:border-bg-border/80"}`}>
-                  <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0
-                    ${pendingChallengePayouts! > 0 ? "bg-neon-purple/15" : "bg-bg-surface"}`}>
-                    <Swords size={18} className={pendingChallengePayouts! > 0 ? "text-neon-purple" : "text-text-muted"} />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-text-primary">Challenge Payouts</p>
-                    <p className="text-xs text-text-muted mt-0.5">
-                      {pendingChallengePayouts! > 0
-                        ? `${pendingChallengePayouts} winner${pendingChallengePayouts !== 1 ? "s" : ""} awaiting payment`
-                        : "No pending payouts"}
-                    </p>
-                  </div>
-                  <div className="text-right shrink-0">
-                    <p className={`text-lg font-black ${pendingChallengePayouts! > 0 ? "text-neon-purple" : "text-text-muted"}`}>
-                      {pendingChallengePayouts}
-                    </p>
-                  </div>
-                </div>
-              </Link>
+              <AdminPayoutsCard
+                initialPending={pendingPayoutCount}
+                initialApproved={approvedPayoutCount}
+              />
             )}
           </div>
         </div>

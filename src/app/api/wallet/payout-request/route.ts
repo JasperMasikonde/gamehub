@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { resolveSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
-import { emitWalletUpdate } from "@/lib/socket-server";
+import { emitWalletUpdate, emitToAdmins, broadcastAdminRefresh } from "@/lib/socket-server";
 import { sendAdminNotification } from "@/lib/email";
 
 const schema = z.object({
@@ -84,6 +84,17 @@ export async function POST(req: Request) {
 
   // Push live balance to user's browser
   emitWalletUpdate(userId, newBalance);
+
+  // Notify all online admins in real-time
+  emitToAdmins({
+    type: "info",
+    title: "New payout request",
+    message: `KES ${Number(amount).toLocaleString()} to ${phone}`,
+    linkUrl: "/admin/payouts",
+    linkLabel: "Review →",
+    duration: 10000,
+  });
+  broadcastAdminRefresh("payouts");
 
   // Notify admin by email (fire-and-forget)
   (async () => {
