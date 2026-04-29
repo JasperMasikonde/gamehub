@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { Card, CardContent, CardHeader } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
@@ -6,7 +7,7 @@ import { TransactionStatusPill } from "@/components/ui/StatusPill";
 import { formatCurrency, formatDate } from "@/lib/utils/format";
 import { AdminUserActions } from "@/components/admin/AdminUserActions";
 import { AdminWalletAdjustPanel } from "@/components/admin/AdminWalletAdjustPanel";
-import { ShieldCheck, MessageCircle } from "lucide-react";
+import { ShieldCheck, MessageCircle, History } from "lucide-react";
 
 export default async function AdminUserDetailPage({
   params,
@@ -82,6 +83,14 @@ export default async function AdminUserDetailPage({
       </div>
 
       <AdminWalletAdjustPanel userId={user.id} username={user.username} />
+
+      <Link
+        href={`/admin/users/${user.id}/transactions`}
+        className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl border border-border text-sm text-text-muted hover:border-neon-blue hover:text-neon-blue transition-colors"
+      >
+        <History size={14} />
+        View all transactions
+      </Link>
 
       <div className="grid grid-cols-3 gap-3 text-center">
         <Card>
