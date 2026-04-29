@@ -9,6 +9,7 @@ import { sendAdminNotification } from "@/lib/email";
 
 const schema = z.object({
   result: z.enum(["HOST_WIN", "CHALLENGER_WIN"]),
+  screenshotUrl: z.string().url().optional(),
 });
 
 export async function POST(
@@ -44,7 +45,7 @@ export async function POST(
     return NextResponse.json({ error: first ?? "Invalid input" }, { status: 400 });
   }
 
-  const { result } = parsed.data;
+  const { result, screenshotUrl } = parsed.data;
 
   // Prevent double submission
   if (isHost && challenge.hostResult)
@@ -53,8 +54,8 @@ export async function POST(
     return NextResponse.json({ error: "You already submitted a result" }, { status: 400 });
 
   const updateData: Record<string, unknown> = isHost
-    ? { hostResult: result }
-    : { challengerResult: result };
+    ? { hostResult: result, ...(screenshotUrl ? { hostResultScreenshot: screenshotUrl } : {}) }
+    : { challengerResult: result, ...(screenshotUrl ? { challengerResultScreenshot: screenshotUrl } : {}) };
 
   const hostResult = isHost ? result : challenge.hostResult;
   const challengerResult = isChallenger ? result : challenge.challengerResult;

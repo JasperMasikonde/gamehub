@@ -355,6 +355,12 @@ export default async function ChallengeDetailPage({
           challengeId={id}
           isHost={isHost}
           alreadySubmitted={myResult !== null}
+          myName={session.user.username}
+          opponentName={
+            isHost
+              ? (challenge.challenger?.displayName ?? challenge.challenger?.username ?? "Opponent")
+              : (challenge.host.displayName ?? challenge.host.username)
+          }
         />
       )}
 

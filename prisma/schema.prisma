@@ -483,8 +483,10 @@ model Challenge {
   hostSquadUrl       String
   challengerSquadUrl String?
 
-  hostResult       MatchResult?
-  challengerResult MatchResult?
+  hostResult             MatchResult?
+  challengerResult       MatchResult?
+  hostResultScreenshot   String?
+  challengerResultScreenshot String?
   winnerId         String?
   winner           User?       @relation("ChallengeWinner", fields: [winnerId], references: [id])
 
