@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader } from "@/components/ui/Card";
 import { ChallengeResolvePanel } from "@/components/admin/ChallengeResolvePanel";
 import { ChallengeRemovePanel } from "@/components/admin/ChallengeRemovePanel";
 import { ChallengeUnmatchPanel } from "@/components/admin/ChallengeUnmatchPanel";
+import { ChallengeForceMatchPanel } from "@/components/admin/ChallengeForceMatchPanel";
 import { AdminWalletAdjustPanel } from "@/components/admin/AdminWalletAdjustPanel";
 import { AdminQuickMessage } from "@/components/admin/AdminQuickMessage";
 import { Swords, Trophy, AlertTriangle, User, MessageCircle, KeyRound, Gamepad2 } from "lucide-react";
@@ -282,6 +283,14 @@ export default async function AdminChallengeDetailPage({
           )}
         </div>
       </div>
+
+      {/* Force-match a challenger — only when OPEN */}
+      {challenge.status === "OPEN" && (
+        <ChallengeForceMatchPanel
+          challengeId={id}
+          wagerAmount={Number(challenge.wagerAmount).toLocaleString("en-KE", { minimumFractionDigits: 2 })}
+        />
+      )}
 
       {/* Unmatch challenger — available while ACTIVE or SUBMITTED (one party submitted) */}
       {["ACTIVE", "SUBMITTED"].includes(challenge.status) && challenge.challenger && (
