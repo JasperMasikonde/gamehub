@@ -4,6 +4,7 @@ import { formatCurrency, formatDate } from "@/lib/utils/format";
 import { Card, CardContent, CardHeader } from "@/components/ui/Card";
 import { ChallengeResolvePanel } from "@/components/admin/ChallengeResolvePanel";
 import { ChallengeRemovePanel } from "@/components/admin/ChallengeRemovePanel";
+import { ChallengeUnmatchPanel } from "@/components/admin/ChallengeUnmatchPanel";
 import { AdminWalletAdjustPanel } from "@/components/admin/AdminWalletAdjustPanel";
 import { AdminQuickMessage } from "@/components/admin/AdminQuickMessage";
 import { Swords, Trophy, AlertTriangle, User, MessageCircle, KeyRound, Gamepad2 } from "lucide-react";
@@ -281,6 +282,15 @@ export default async function AdminChallengeDetailPage({
           )}
         </div>
       </div>
+
+      {/* Unmatch challenger — only available while ACTIVE */}
+      {challenge.status === "ACTIVE" && challenge.challenger && (
+        <ChallengeUnmatchPanel
+          challengeId={id}
+          challengerName={challenge.challenger.displayName ?? challenge.challenger.username}
+          wagerAmount={Number(challenge.wagerAmount).toLocaleString("en-KE", { minimumFractionDigits: 2 })}
+        />
+      )}
 
       {/* Remove challenge — only show if not already in a terminal state */}
       {!["COMPLETED", "CANCELLED"].includes(challenge.status) && (
