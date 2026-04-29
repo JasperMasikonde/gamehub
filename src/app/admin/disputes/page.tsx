@@ -5,7 +5,7 @@ import { prisma } from "@/lib/prisma";
 export const dynamic = "force-dynamic";
 import { Card } from "@/components/ui/Card";
 import { DisputeStatusPill } from "@/components/ui/StatusPill";
-import { formatCurrency, formatDate } from "@/lib/utils/format";
+import { formatCurrency, formatDate, formatChallengeFormat } from "@/lib/utils/format";
 import Link from "next/link";
 import { AlertTriangle, Swords } from "lucide-react";
 
@@ -68,7 +68,7 @@ export default async function AdminDisputesPage() {
                     {c.host.username} vs {c.challenger?.username ?? "—"}
                   </p>
                   <p className="text-xs text-text-muted mt-0.5">
-                    {c.format === "BEST_OF_3" ? "Best of 3" : "Best of 5"} · Wager{" "}
+                    {formatChallengeFormat(c.format)} · Wager{" "}
                     {formatCurrency(c.wagerAmount.toString())} each · Prize{" "}
                     {formatCurrency((Number(c.wagerAmount) * 2).toString())}
                   </p>

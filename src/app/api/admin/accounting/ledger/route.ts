@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireSuperAdmin } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { formatChallengeFormat } from "@/lib/utils/format";
 
 const SHOP_PAID = ["PAID", "PROCESSING", "SHIPPED", "DELIVERED"] as const;
 
@@ -56,7 +57,7 @@ export async function GET(req: NextRequest) {
       orderBy: { completedAt: "desc" },
     });
     for (const c of challenges) {
-      entries.push({ id: c.id, date: (c.completedAt ?? c.createdAt).toISOString(), type: "CHALLENGE", description: `${c.format === "BEST_OF_3" ? "BO3" : "BO5"} Challenge`, gross: Number(c.wagerAmount) * 2, revenue: Number(c.platformFee), reference: c.id, party: `${c.host.username} vs ${c.challenger?.username ?? "—"}` });
+      entries.push({ id: c.id, date: (c.completedAt ?? c.createdAt).toISOString(), type: "CHALLENGE", description: `${formatChallengeFormat(c.format, true)} Challenge`, gross: Number(c.wagerAmount) * 2, revenue: Number(c.platformFee), reference: c.id, party: `${c.host.username} vs ${c.challenger?.username ?? "—"}` });
     }
   }
 

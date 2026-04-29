@@ -94,6 +94,7 @@ enum EscrowPartyRole {
 }
 
 enum ChallengeFormat {
+  BEST_OF_1
   BEST_OF_3
   BEST_OF_5
 }

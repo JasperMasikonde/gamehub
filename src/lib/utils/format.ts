@@ -17,6 +17,12 @@ export function formatDate(date: Date | string): string {
   }).format(new Date(date));
 }
 
+export function formatChallengeFormat(format: string, short = false): string {
+  if (format === "BEST_OF_1") return short ? "Bo1" : "Best of 1";
+  if (format === "BEST_OF_3") return short ? "Bo3" : "Best of 3";
+  return short ? "Bo5" : "Best of 5";
+}
+
 export function formatRelativeTime(date: Date | string): string {
   const d = new Date(date);
   const diff = Date.now() - d.getTime();

@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { formatCurrency, formatDate } from "@/lib/utils/format";
+import { formatCurrency, formatDate, formatChallengeFormat } from "@/lib/utils/format";
 import { Card, CardContent, CardHeader } from "@/components/ui/Card";
 import { ChallengeResolvePanel } from "@/components/admin/ChallengeResolvePanel";
 import { ChallengeRemovePanel } from "@/components/admin/ChallengeRemovePanel";
@@ -62,7 +62,7 @@ export default async function AdminChallengeDetailPage({
   const txFee = challenge.transactionFee != null ? Number(challenge.transactionFee) : null;
   const totalFee = (fee ?? 0) + (txFee ?? 0);
   const winnerPayout = prize - totalFee;
-  const formatLabel = challenge.format === "BEST_OF_3" ? "Best of 3" : "Best of 5";
+  const formatLabel = formatChallengeFormat(challenge.format);
 
   return (
     <div className="max-w-2xl flex flex-col gap-5">

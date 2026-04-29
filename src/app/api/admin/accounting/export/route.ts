@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireSuperAdmin } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { formatChallengeFormat } from "@/lib/utils/format";
 
 const SHOP_PAID = ["PAID", "PROCESSING", "SHIPPED", "DELIVERED"] as const;
 const VAT_RATE = 0.16;
@@ -64,7 +65,7 @@ export async function GET(req: NextRequest) {
   };
 
   for (const t of txs) rows.push(mkRow(t.completedAt ?? t.createdAt, "Marketplace", t.listing.title, `${t.buyer.username} -> ${t.seller.username}`, Number(t.amount), Number(t.platformFee), t.id));
-  for (const c of challenges) rows.push(mkRow(c.completedAt ?? c.createdAt, "Challenge", `${c.format === "BEST_OF_3" ? "BO3" : "BO5"} Challenge`, `${c.host.username} vs ${c.challenger?.username ?? "—"}`, Number(c.wagerAmount) * 2, Number(c.platformFee), c.id));
+  for (const c of challenges) rows.push(mkRow(c.completedAt ?? c.createdAt, "Challenge", `${formatChallengeFormat(c.format, true)} Challenge`, `${c.host.username} vs ${c.challenger?.username ?? "—"}`, Number(c.wagerAmount) * 2, Number(c.platformFee), c.id));
   for (const o of shopOrders) rows.push(mkRow(o.createdAt, "Shop", `Shop Order #${o.id.slice(-6).toUpperCase()}`, o.user.username, Number(o.total), Number(o.total), o.id));
   for (const o of rankPushOrders) rows.push(mkRow(o.completedAt ?? o.createdAt, "Rank Push", o.listing.title, o.client.username, Number(o.amount), Number(o.platformFee), o.id));
   for (const p of participants) rows.push(mkRow(p.joinedAt, "Tournament", p.tournament.name, p.user.username, Number(p.tournament.entryFee), Number(p.tournament.entryFee), p.tournamentId));

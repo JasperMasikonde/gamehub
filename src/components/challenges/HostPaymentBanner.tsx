@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { Swords, Wallet, CreditCard } from "lucide-react";
 import { PaymentPanel } from "@/components/payments/PaymentPanel";
 import { WalletPayButton } from "@/components/wallet/WalletPayButton";
-import { formatCurrency } from "@/lib/utils/format";
+import { formatCurrency, formatChallengeFormat } from "@/lib/utils/format";
 
 export function HostPaymentBanner({
   challengeId,
@@ -18,7 +18,7 @@ export function HostPaymentBanner({
 }) {
   const router = useRouter();
   const [payMethod, setPayMethod] = useState<"wallet" | "mpesa">("wallet");
-  const formatLabel = format === "BEST_OF_3" ? "Best of 3" : "Best of 5";
+  const formatLabel = formatChallengeFormat(format);
 
   return (
     <div className="border border-neon-yellow/30 bg-neon-yellow/5 rounded-xl p-5 space-y-4">

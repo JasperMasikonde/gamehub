@@ -6,7 +6,7 @@ import { createNotification } from "@/lib/notifications";
 import { emitToAdmins } from "@/lib/socket-server";
 
 const createSchema = z.object({
-  format: z.enum(["BEST_OF_3", "BEST_OF_5"]),
+  format: z.enum(["BEST_OF_1", "BEST_OF_3", "BEST_OF_5"]),
   wagerAmount: z.coerce.number().positive(),
   description: z.string().max(500).optional(),
   hostSquadUrl: z.string().min(1, "Squad screenshot is required"),

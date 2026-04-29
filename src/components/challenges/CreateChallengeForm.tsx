@@ -7,11 +7,11 @@ import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Textarea } from "@/components/ui/Textarea";
 import { cn } from "@/lib/utils/cn";
-import { formatCurrency } from "@/lib/utils/format";
+import { formatCurrency, formatChallengeFormat } from "@/lib/utils/format";
 
 export function CreateChallengeForm({ savedWhatsapp }: { savedWhatsapp: string | null }) {
   const router = useRouter();
-  const [format, setFormat] = useState<"BEST_OF_3" | "BEST_OF_5">("BEST_OF_3");
+  const [format, setFormat] = useState<"BEST_OF_1" | "BEST_OF_3" | "BEST_OF_5">("BEST_OF_3");
   const [wager, setWager] = useState("");
   const [description, setDescription] = useState("");
   const [whatsapp, setWhatsapp] = useState(savedWhatsapp ?? "");
@@ -100,23 +100,23 @@ export function CreateChallengeForm({ savedWhatsapp }: { savedWhatsapp: string |
       {/* Format */}
       <div>
         <label className="block text-sm font-medium mb-3">Match Format</label>
-        <div className="grid grid-cols-2 gap-3">
-          {(["BEST_OF_3", "BEST_OF_5"] as const).map((f) => (
+        <div className="grid grid-cols-3 gap-3">
+          {(["BEST_OF_1", "BEST_OF_3", "BEST_OF_5"] as const).map((f) => (
             <button
               key={f}
               type="button"
               onClick={() => setFormat(f)}
               className={cn(
-                "px-4 py-3 rounded-xl border-2 text-sm font-semibold transition-all text-left",
+                "px-3 py-3 rounded-xl border-2 text-sm font-semibold transition-all text-left",
                 format === f
                   ? "border-neon-purple bg-neon-purple/10 text-neon-purple"
                   : "border-bg-border text-text-muted hover:border-bg-border/80"
               )}
             >
-              <Swords size={14} className="inline mr-2" />
-              {f === "BEST_OF_3" ? "Best of 3" : "Best of 5"}
+              <Swords size={14} className="inline mr-1.5" />
+              {formatChallengeFormat(f)}
               <p className="text-[11px] font-normal mt-0.5 opacity-70">
-                {f === "BEST_OF_3" ? "First to win 2 matches" : "First to win 3 matches"}
+                {f === "BEST_OF_1" ? "1 game decides" : f === "BEST_OF_3" ? "First to win 2" : "First to win 3"}
               </p>
             </button>
           ))}

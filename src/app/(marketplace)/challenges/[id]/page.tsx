@@ -2,7 +2,7 @@ import { notFound, redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { Card, CardContent, CardHeader } from "@/components/ui/Card";
-import { formatCurrency, formatDate } from "@/lib/utils/format";
+import { formatCurrency, formatDate, formatChallengeFormat } from "@/lib/utils/format";
 import { AcceptChallengePanel } from "@/components/challenges/AcceptChallengePanel";
 import { HostPaymentBanner } from "@/components/challenges/HostPaymentBanner";
 import { SubmitResultPanel } from "@/components/challenges/SubmitResultPanel";
@@ -117,7 +117,7 @@ export default async function ChallengeDetailPage({
     }
   }
 
-  const formatLabel = challenge.format === "BEST_OF_3" ? "Best of 3" : "Best of 5";
+  const formatLabel = formatChallengeFormat(challenge.format);
   const prize = Number(challenge.wagerAmount) * 2;
   const totalFee = (challenge.platformFee ? Number(challenge.platformFee) : 0)
     + (challenge.transactionFee ? Number(challenge.transactionFee) : 0);

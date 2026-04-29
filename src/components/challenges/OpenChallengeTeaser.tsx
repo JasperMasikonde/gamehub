@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Swords, ArrowRight, Clock, Shield } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
+import { formatChallengeFormat } from "@/lib/utils/format";
 
 interface Props {
   challenge: {
@@ -87,7 +88,7 @@ export function OpenChallengeTeaser({ challenge, totalOpen }: Props) {
               <span className="font-medium text-text-primary">{hostName}</span>
             </span>
             <span className="text-bg-border">·</span>
-            <span>{challenge.format.replace(/_/g, " ")}</span>
+            <span>{formatChallengeFormat(challenge.format)}</span>
             {challenge.description && (
               <>
                 <span className="text-bg-border">·</span>

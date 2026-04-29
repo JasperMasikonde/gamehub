@@ -15,7 +15,7 @@ import Link from "next/link";
 import { Swords, Plus, Trophy, Clock, CheckCircle, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Card, CardContent } from "@/components/ui/Card";
-import { formatCurrency, formatDate } from "@/lib/utils/format";
+import { formatCurrency, formatDate, formatChallengeFormat } from "@/lib/utils/format";
 import { cn } from "@/lib/utils/cn";
 
 export const dynamic = "force-dynamic";
@@ -191,7 +191,7 @@ export default async function ChallengesPage({
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
                           <span className="text-xs bg-neon-purple/10 text-neon-purple border border-neon-purple/20 px-2 py-0.5 rounded-full font-medium">
-                            {c.format === "BEST_OF_3" ? "Best of 3" : "Best of 5"}
+                            {formatChallengeFormat(c.format)}
                           </span>
                         </div>
                         <p className="text-sm font-semibold text-text-primary">
@@ -288,7 +288,7 @@ export default async function ChallengesPage({
                               {STATUS_LABEL[c.status] ?? c.status}
                             </span>
                             <span className="text-xs bg-neon-purple/10 text-neon-purple border border-neon-purple/20 px-2 py-0.5 rounded-full font-medium">
-                              {c.format === "BEST_OF_3" ? "BO3" : "BO5"}
+                              {formatChallengeFormat(c.format, true)}
                             </span>
                             {won && <span className="text-xs text-neon-green font-semibold">You won 🏆</span>}
                             {lost && <span className="text-xs text-neon-red font-semibold">You lost</span>}

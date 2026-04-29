@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { PaymentPanel } from "@/components/payments/PaymentPanel";
 import { WalletPayButton } from "@/components/wallet/WalletPayButton";
-import { formatCurrency } from "@/lib/utils/format";
+import { formatCurrency, formatChallengeFormat } from "@/lib/utils/format";
 import { cn } from "@/lib/utils/cn";
 
 export function AcceptChallengePanel({
@@ -81,7 +81,7 @@ export function AcceptChallengePanel({
     setUploading(false);
   };
 
-  const formatLabel = format === "BEST_OF_3" ? "Best of 3" : "Best of 5";
+  const formatLabel = formatChallengeFormat(format);
 
   // ── Step 2: Payment ─────────────────────────────────────────────────────
   if (showPayment && squadUpload) {

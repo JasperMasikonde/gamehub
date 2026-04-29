@@ -1,7 +1,7 @@
 import { requirePermission } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { formatCurrency, formatDate } from "@/lib/utils/format";
+import { formatCurrency, formatDate, formatChallengeFormat } from "@/lib/utils/format";
 import { Card } from "@/components/ui/Card";
 import Link from "next/link";
 import { Swords, AlertTriangle, Phone, Banknote, Settings, LayoutList } from "lucide-react";
@@ -212,7 +212,7 @@ export default async function AdminChallengesPage({
                           {c.challenger?.username ?? <span className="italic">waiting</span>}
                         </td>
                         <td className="px-4 py-3 text-xs text-text-muted">
-                          {c.format === "BEST_OF_3" ? "Bo3" : "Bo5"}
+                          {formatChallengeFormat(c.format, true)}
                         </td>
                         <td className="px-4 py-3 text-xs font-medium text-neon-green">
                           {formatCurrency(c.wagerAmount.toString())}
@@ -281,7 +281,7 @@ export default async function AdminChallengesPage({
                         {c.host.username} vs {c.challenger?.username ?? "—"}
                       </p>
                       <p className="text-xs text-text-muted mt-0.5">
-                        {c.format === "BEST_OF_3" ? "Bo3" : "Bo5"} · Wager {formatCurrency(c.wagerAmount.toString())} each · Winner gets {formatCurrency(
+                        {formatChallengeFormat(c.format, true)} · Wager {formatCurrency(c.wagerAmount.toString())} each · Winner gets {formatCurrency(
                           (Number(c.wagerAmount) * 2 - (Number(c.platformFee) || 0) - (Number(c.transactionFee) || 0)).toString()
                         )}
                       </p>
@@ -327,7 +327,7 @@ export default async function AdminChallengesPage({
                           <span className="text-text-muted font-normal text-xs ml-1">won</span>
                         </p>
                         <p className="text-xs text-text-muted mt-0.5">
-                          {c.host.username} vs {c.challenger?.username ?? "—"} · {c.format === "BEST_OF_3" ? "Bo3" : "Bo5"}
+                          {c.host.username} vs {c.challenger?.username ?? "—"} · {formatChallengeFormat(c.format, true)}
                         </p>
                         <Link href={`/admin/challenges/${c.id}`} className="text-[10px] text-neon-blue hover:underline">
                           View challenge →
