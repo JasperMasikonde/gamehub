@@ -31,8 +31,8 @@ export async function POST(
   });
 
   if (!challenge) return NextResponse.json({ error: "Not found" }, { status: 404 });
-  if (challenge.status !== "ACTIVE") {
-    return NextResponse.json({ error: "Only ACTIVE challenges can be unmatched" }, { status: 400 });
+  if (!["ACTIVE", "SUBMITTED"].includes(challenge.status)) {
+    return NextResponse.json({ error: "Only ACTIVE or SUBMITTED challenges can be unmatched" }, { status: 400 });
   }
   if (!challenge.challengerId || !challenge.challenger) {
     return NextResponse.json({ error: "No challenger to unmatch" }, { status: 400 });

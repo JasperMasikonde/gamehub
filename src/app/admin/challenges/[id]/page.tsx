@@ -283,8 +283,8 @@ export default async function AdminChallengeDetailPage({
         </div>
       </div>
 
-      {/* Unmatch challenger — only available while ACTIVE */}
-      {challenge.status === "ACTIVE" && challenge.challenger && (
+      {/* Unmatch challenger — available while ACTIVE or SUBMITTED (one party submitted) */}
+      {["ACTIVE", "SUBMITTED"].includes(challenge.status) && challenge.challenger && (
         <ChallengeUnmatchPanel
           challengeId={id}
           challengerName={challenge.challenger.displayName ?? challenge.challenger.username}
