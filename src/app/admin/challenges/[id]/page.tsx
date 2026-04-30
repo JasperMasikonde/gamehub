@@ -195,9 +195,13 @@ export default async function AdminChallengeDetailPage({
           <div className="grid grid-cols-2 gap-4">
             <div>
               <p className="text-xs text-text-muted mb-1">Host squad</p>
-              <a href={challenge.hostSquadUrl} target="_blank" rel="noopener noreferrer">
-                <img src={challenge.hostSquadUrl} alt="Host squad" className="w-full aspect-video object-cover rounded-lg border border-bg-border hover:border-neon-purple/40 transition-colors" />
-              </a>
+              {challenge.hostSquadUrl ? (
+                <a href={challenge.hostSquadUrl} target="_blank" rel="noopener noreferrer">
+                  <img src={challenge.hostSquadUrl} alt="Host squad" className="w-full aspect-video object-cover rounded-lg border border-bg-border hover:border-neon-purple/40 transition-colors" />
+                </a>
+              ) : (
+                <p className="text-xs text-text-muted italic">No screenshot</p>
+              )}
             </div>
             {challenge.challengerSquadUrl && (
               <div>

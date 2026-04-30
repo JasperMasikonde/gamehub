@@ -184,7 +184,7 @@ export default async function ChallengesPage({
                   <CardContent>
                     <div className="flex items-center gap-4">
                       <img
-                        src={c.hostSquadUrl}
+                        src={c.hostSquadUrl ?? ""}
                         alt="Squad"
                         className="w-20 h-14 object-cover rounded-lg border border-bg-border shrink-0"
                       />
@@ -278,7 +278,7 @@ export default async function ChallengesPage({
                     <CardContent>
                       <div className="flex items-center gap-4">
                         <img
-                          src={c.hostSquadUrl}
+                          src={c.hostSquadUrl ?? ""}
                           alt="Squad"
                           className="w-20 h-14 object-cover rounded-lg border border-bg-border shrink-0"
                         />

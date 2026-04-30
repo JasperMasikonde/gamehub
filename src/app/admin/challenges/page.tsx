@@ -62,13 +62,22 @@ export default async function AdminChallengesPage({
   return (
     <div className="flex flex-col gap-6">
       {/* Header */}
-      <div>
-        <h1 className="text-xl font-bold flex items-center gap-2">
-          <Swords size={20} className="text-neon-purple" /> Challenges
-        </h1>
-        <p className="text-sm text-text-muted mt-0.5">
-          {challenges.length} total · {disputed.length} disputed
-        </p>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-xl font-bold flex items-center gap-2">
+            <Swords size={20} className="text-neon-purple" /> Challenges
+          </h1>
+          <p className="text-sm text-text-muted mt-0.5">
+            {challenges.length} total · {disputed.length} disputed
+          </p>
+        </div>
+        <Link
+          href="/admin/challenges/create"
+          className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-neon-purple/10 border border-neon-purple/30 text-neon-purple text-xs font-semibold hover:bg-neon-purple/20 transition-colors shrink-0"
+        >
+          <Swords size={13} />
+          Create Challenge
+        </Link>
       </div>
 
       {/* Subtabs */}

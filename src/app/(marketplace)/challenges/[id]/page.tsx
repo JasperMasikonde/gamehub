@@ -252,9 +252,11 @@ export default async function ChallengeDetailPage({
                   <p className="text-[10px] text-neon-purple">Host</p>
                 </div>
               </div>
-              <a href={challenge.hostSquadUrl} target="_blank" rel="noopener noreferrer">
-                <img src={challenge.hostSquadUrl} alt="Host squad" className="w-full aspect-video object-cover rounded-lg border border-bg-border hover:border-neon-purple/40 transition-colors" />
-              </a>
+              {challenge.hostSquadUrl && (
+                <a href={challenge.hostSquadUrl} target="_blank" rel="noopener noreferrer">
+                  <img src={challenge.hostSquadUrl} alt="Host squad" className="w-full aspect-video object-cover rounded-lg border border-bg-border hover:border-neon-purple/40 transition-colors" />
+                </a>
+              )}
             </div>
 
             {/* Challenger */}
